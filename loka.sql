@@ -1285,3 +1285,8 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+/*A leur donner pour la page d'insncription de locataire, la possibilité de choisir une fourchette de revenu mensuel.*/
+/*ALTER TABLE locataire
+    MODIFY COLUMN id_agence BIGINT(20) UNSIGNED NULL,
+    ADD COLUMN revenu_mensuel_fourchette VARCHAR(50) DEFAULT NULL AFTER revenu_mensuel;*/
