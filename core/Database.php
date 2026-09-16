@@ -1,0 +1,44 @@
+<?php
+declare(strict_types=1);
+
+final class Database
+{
+	private static ?PDO $connection = null;
+
+	private function __construct()
+	{
+	}
+
+	public static function connection(): PDO
+	{
+		if (self::$connection instanceof PDO) {
+			return self::$connection;
+		}
+
+		$config = require dirname(__DIR__) . '/config/database.php';
+		$dsn = sprintf(
+			'mysql:host=%s;port=%d;dbname=%s;charset=%s',
+			$config['host'],
+			$config['port'],
+			$config['name'],
+			$config['charset']
+		);
+
+		try {
+			self::$connection = new PDO($dsn, $config['user'], $config['password'], [
+				PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+				PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+				PDO::ATTR_EMULATE_PREPARES => false,
+			]);
+		} catch (PDOException $exception) {
+			throw new RuntimeException('Impossible de se connecter à la base de données.', 0, $exception);
+		}
+
+		return self::$connection;
+	}
+
+	public static function reset(): void
+	{
+		self::$connection = null;
+	}
+}
