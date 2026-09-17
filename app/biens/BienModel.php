@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/core/Database.php';
@@ -226,6 +227,152 @@ final class BienModel
 		);
 		$stmt->execute(['id_bien' => $propertyId, 'id_agence' => $agencyId]);
 		return $stmt->rowCount() > 0;
+	}
+
+	public static function equipmentAssignments(int $agencyId, int $propertyId): array
+	{
+		self::assertPropertyBelongsToAgency($agencyId, $propertyId);
+		$stmt = Database::connection()->prepare(
+			'SELECT e.id_equipement, e.nom, be.quantite
+			 FROM bien_equipement be
+			 INNER JOIN equipement e ON e.id_equipement = be.id_equipement
+			 WHERE be.id_bien = :id_bien ORDER BY e.nom'
+		);
+		$stmt->execute(['id_bien' => $propertyId]);
+		return $stmt->fetchAll();
+	}
+
+	public static function updateEquipmentAssignments(int $agencyId, int $propertyId, array $equipmentIds): void
+	{
+		self::assertPropertyBelongsToAgency($agencyId, $propertyId);
+		$db = Database::connection();
+		$db->beginTransaction();
+		try {
+			$validIds = [];
+			if ($equipmentIds !== []) {
+				$placeholders = implode(',', array_fill(0, count($equipmentIds), '?'));
+				$stmt = $db->prepare('SELECT id_equipement FROM equipement WHERE id_equipement IN (' . $placeholders . ')');
+				$stmt->execute(array_map('intval', $equipmentIds));
+				$validIds = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+				if (count($validIds) !== count(array_unique(array_map('intval', $equipmentIds)))) {
+					throw new InvalidArgumentException('Un équipement sélectionné est introuvable.');
+				}
+			}
+			$delete = $db->prepare('DELETE FROM bien_equipement WHERE id_bien = :id_bien');
+			$delete->execute(['id_bien' => $propertyId]);
+			$insert = $db->prepare('INSERT INTO bien_equipement (id_bien, id_equipement, quantite) VALUES (:id_bien, :id_equipement, 1)');
+			foreach ($validIds as $equipmentId) {
+				$insert->execute(['id_bien' => $propertyId, 'id_equipement' => $equipmentId]);
+			}
+			$db->commit();
+		} catch (Throwable $exception) {
+			$db->rollBack();
+			throw $exception;
+		}
+	}
+
+	public static function photos(int $agencyId, int $propertyId): array
+	{
+		self::assertPropertyBelongsToAgency($agencyId, $propertyId);
+		$stmt = Database::connection()->prepare(
+			'SELECT p.id_photo, p.nom_fichier, p.chemin_stockage, p.est_principale, p.ordre_affichage
+			 FROM photo_bien p INNER JOIN bien b ON b.id_bien = p.id_bien
+			 WHERE p.id_bien = :id_bien AND b.id_agence = :id_agence
+			 ORDER BY p.est_principale DESC, p.ordre_affichage, p.id_photo'
+		);
+		$stmt->execute(['id_bien' => $propertyId, 'id_agence' => $agencyId]);
+		return $stmt->fetchAll();
+	}
+
+	public static function addPhoto(int $agencyId, int $propertyId, string $filename, string $storagePath, bool $main): int
+	{
+		self::assertPropertyBelongsToAgency($agencyId, $propertyId);
+		$db = Database::connection();
+		$db->beginTransaction();
+		try {
+			$order = $db->prepare('SELECT COALESCE(MAX(ordre_affichage), -1) + 1 FROM photo_bien WHERE id_bien = :id_bien');
+			$order->execute(['id_bien' => $propertyId]);
+			$displayOrder = (int) $order->fetchColumn();
+			if ($main) {
+				$reset = $db->prepare('UPDATE photo_bien SET est_principale = 0 WHERE id_bien = :id_bien');
+				$reset->execute(['id_bien' => $propertyId]);
+			}
+			$stmt = $db->prepare(
+				'INSERT INTO photo_bien (id_bien, nom_fichier, chemin_stockage, est_principale, ordre_affichage)
+				 VALUES (:id_bien, :nom_fichier, :chemin_stockage, :est_principale, :ordre_affichage)'
+			);
+			$stmt->execute([
+				'id_bien' => $propertyId,
+				'nom_fichier' => $filename,
+				'chemin_stockage' => $storagePath,
+				'est_principale' => $main ? 1 : 0,
+				'ordre_affichage' => $displayOrder,
+			]);
+			$db->commit();
+			return (int) $db->lastInsertId();
+		} catch (Throwable $exception) {
+			$db->rollBack();
+			throw $exception;
+		}
+	}
+
+	public static function setMainPhoto(int $agencyId, int $propertyId, int $photoId): void
+	{
+		self::assertPhotoBelongsToAgency($agencyId, $propertyId, $photoId);
+		$db = Database::connection();
+		$db->beginTransaction();
+		try {
+			$db->prepare('UPDATE photo_bien SET est_principale = 0 WHERE id_bien = :id_bien')->execute(['id_bien' => $propertyId]);
+			$db->prepare('UPDATE photo_bien SET est_principale = 1 WHERE id_photo = :id_photo AND id_bien = :id_bien')
+				->execute(['id_photo' => $photoId, 'id_bien' => $propertyId]);
+			$db->commit();
+		} catch (Throwable $exception) {
+			$db->rollBack();
+			throw $exception;
+		}
+	}
+
+	public static function deletePhoto(int $agencyId, int $propertyId, int $photoId): ?string
+	{
+		self::assertPhotoBelongsToAgency($agencyId, $propertyId, $photoId);
+		$db = Database::connection();
+		$stmt = $db->prepare('SELECT chemin_stockage FROM photo_bien WHERE id_photo = :id_photo AND id_bien = :id_bien');
+		$stmt->execute(['id_photo' => $photoId, 'id_bien' => $propertyId]);
+		$path = $stmt->fetchColumn();
+		$mainCheck = $db->prepare('SELECT est_principale FROM photo_bien WHERE id_photo = :id_photo AND id_bien = :id_bien');
+		$mainCheck->execute(['id_photo' => $photoId, 'id_bien' => $propertyId]);
+		$wasMain = (bool) $mainCheck->fetchColumn();
+		$delete = $db->prepare('DELETE FROM photo_bien WHERE id_photo = :id_photo AND id_bien = :id_bien');
+		$delete->execute(['id_photo' => $photoId, 'id_bien' => $propertyId]);
+		if ($wasMain) {
+			$promote = $db->prepare(
+				'UPDATE photo_bien SET est_principale = 1
+				 WHERE id_photo = (SELECT id_photo FROM (SELECT id_photo FROM photo_bien WHERE id_bien = :id_bien ORDER BY ordre_affichage, id_photo LIMIT 1) next_photo)'
+			);
+			$promote->execute(['id_bien' => $propertyId]);
+		}
+		return $path === false ? null : (string) $path;
+	}
+
+	private static function assertPropertyBelongsToAgency(int $agencyId, int $propertyId): void
+	{
+		$stmt = Database::connection()->prepare('SELECT 1 FROM bien WHERE id_bien = :id_bien AND id_agence = :id_agence AND deleted_at IS NULL');
+		$stmt->execute(['id_bien' => $propertyId, 'id_agence' => $agencyId]);
+		if (!$stmt->fetchColumn()) {
+			throw new RuntimeException('Le bien est introuvable ou inaccessible.');
+		}
+	}
+
+	private static function assertPhotoBelongsToAgency(int $agencyId, int $propertyId, int $photoId): void
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT 1 FROM photo_bien p INNER JOIN bien b ON b.id_bien = p.id_bien
+			 WHERE p.id_photo = :id_photo AND p.id_bien = :id_bien AND b.id_agence = :id_agence AND b.deleted_at IS NULL'
+		);
+		$stmt->execute(['id_photo' => $photoId, 'id_bien' => $propertyId, 'id_agence' => $agencyId]);
+		if (!$stmt->fetchColumn()) {
+			throw new RuntimeException('La photo est introuvable ou inaccessible.');
+		}
 	}
 
 	private static function propertyParams(int $agencyId, array $input): array

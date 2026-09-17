@@ -120,4 +120,37 @@ final class BienValidator
 
 		return $errors;
 	}
+
+	public static function equipmentAssignments(array $input): array
+	{
+		$equipmentIds = $input['equipements'] ?? [];
+		if (!is_array($equipmentIds)) {
+			return ['equipements' => 'La sélection des équipements est invalide.'];
+		}
+		foreach ($equipmentIds as $equipmentId) {
+			if (filter_var($equipmentId, FILTER_VALIDATE_INT) === false || (int) $equipmentId < 1) {
+				return ['equipements' => 'Un équipement sélectionné est invalide.'];
+			}
+		}
+		return [];
+	}
+
+	public static function photo(array $file): array
+	{
+		if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+			return ['photo' => 'La photo n’a pas pu être téléversée.'];
+		}
+		if (($file['size'] ?? 0) < 1 || $file['size'] > 5 * 1024 * 1024) {
+			return ['photo' => 'La photo doit peser au maximum 5 Mo.'];
+		}
+		$tmpPath = (string) ($file['tmp_name'] ?? '');
+		if (!is_uploaded_file($tmpPath) || @getimagesize($tmpPath) === false) {
+			return ['photo' => 'Le fichier envoyé n’est pas une image valide.'];
+		}
+		$mime = (new finfo(FILEINFO_MIME_TYPE))->file($tmpPath);
+		if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true)) {
+			return ['photo' => 'Formats acceptés : JPEG, PNG et WebP.'];
+		}
+		return [];
+	}
 }

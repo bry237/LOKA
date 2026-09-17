@@ -51,4 +51,14 @@ final class BienController
 		}
 		return [[], $id];
 	}
+
+	public static function updateEquipment(int $agencyId, int $propertyId, array $input): array
+	{
+		$errors = BienValidator::equipmentAssignments($input);
+		if ($errors !== []) {
+			return [$errors, null];
+		}
+		BienModel::updateEquipmentAssignments($agencyId, $propertyId, array_map('intval', $input['equipements'] ?? []));
+		return [[], $propertyId];
+	}
 }
