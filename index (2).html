@@ -60,6 +60,7 @@
     <div class="hero__visual" data-reveal>
       <div class="hero__image-frame">
         <img src="https://images.pexels.com/photos/6180674/pexels-photo-6180674.jpeg?auto=compress&cs=tinysrgb&w=1400" alt="Intérieur lumineux et moderne d'un appartement proposé sur LOKA" loading="eager">
+        <span class="hero__image-label">01 / 04</span>
       </div>
 
       <div class="floating-chip floating-chip--top">
@@ -80,6 +81,12 @@
           <strong>Gestion centralisée</strong>
           <span>contrat, loyers, documents</span>
         </div>
+      </div>
+
+      <div class="floating-property" aria-hidden="true">
+        <span class="floating-property__dot"></span>
+        <div><strong>Lyon, France</strong><small>Appartement · 72 m²</small></div>
+        <b>980 €</b>
       </div>
     </div>
   </section>
@@ -123,7 +130,7 @@
   <!-- ===================== STATISTIQUES ===================== -->
   <section class="stats" data-reveal>
     <div class="stats__grid">
-      <div class="stat">
+      <div class="stat stat--accent">
         <span class="stat__value" data-count="500" data-suffix="+">0</span>
         <span class="stat__label">Logements</span>
       </div>
@@ -135,7 +142,7 @@
         <span class="stat__value" data-count="50" data-suffix="+">0</span>
         <span class="stat__label">Propriétaires</span>
       </div>
-      <div class="stat">
+      <div class="stat stat--dark">
         <span class="stat__value" data-static="24/7">0</span>
         <span class="stat__label">Gestion simplifiée</span>
       </div>
@@ -143,7 +150,7 @@
   </section>
 
   <!-- ===================== LOGEMENTS EN VEDETTE ===================== -->
-  <section class="listings" id="logements">
+  <section class="listings listings--tinted" id="logements">
     <div class="section-head" data-reveal>
       <p class="eyebrow">À découvrir</p>
       <h2>Des logements qui pourraient vous correspondre</h2>
@@ -202,7 +209,7 @@
 
       <article class="property-card" data-city="toulouse" data-type="appartement" data-budget="1450">
         <div class="property-card__media">
-          <img src="https://images.pexels.com/photos/33619257/pexels-photo-33619257.jpeg?auto=compress&cs=tinysrgb&w=900" alt="Résidence moderne avec balcons à Toulouse" loading="lazy">
+          <img src="https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=900" alt="Résidence moderne avec balcons à Toulouse" loading="lazy">
           <span class="badge badge--success">Disponible</span>
         </div>
         <div class="property-card__body">
@@ -297,6 +304,8 @@
   <section class="owners" data-reveal>
     <div class="owners__media">
       <img src="https://images.pexels.com/photos/8815878/pexels-photo-8815878.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Agent immobilier professionnel souriant dans un bureau moderne" loading="lazy">
+      <div class="owners__signal" aria-hidden="true"><span>Performance mensuelle</span><strong>+28,4%</strong><i></i></div>
+      <div class="owners__avatar" aria-hidden="true"><span>LM</span><small>Louise Martin<br><b>Gestionnaire</b></small></div>
     </div>
     <div class="owners__content">
       <p class="eyebrow">Propriétaires &amp; gestionnaires</p>
@@ -310,6 +319,7 @@
   <section class="experience" data-reveal>
     <div class="experience__frame">
       <img src="https://images.pexels.com/photos/5570222/pexels-photo-5570222.jpeg?auto=compress&cs=tinysrgb&w=1400" alt="Salon spacieux et lumineux d'un logement géré via LOKA" loading="lazy">
+      <div class="experience__overlay" aria-hidden="true"><span class="experience__live"><i></i> Tout est à jour</span><strong>Une vue claire<br>sur votre quotidien.</strong><small>Contrats, loyers et interventions réunis.</small></div>
 
       <span class="experience__pill experience__pill--1">✓ Contrats</span>
       <span class="experience__pill experience__pill--2">✓ Paiements</span>
