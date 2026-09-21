@@ -62,8 +62,8 @@ final class AuthController
 	public static function redirectForRole(string $role): string
 	{
 		return match ($role) {
-			'Administrateur plateforme' => '../administration/agences/index.php',
-			'Administrateur agence' => '../administration/utilisateurs/index.php',
+			'Administrateur plateforme' => '../administration/utilisateurs/index.php',
+			'Administrateur agence' => '../administration/agences/index.php',
 			'Gestionnaire immobilier' => '../biens/index.php',
 			'Comptable' => '../paiements/index.php',
 			'Proprietaire' => '../proprietaires/index.php',
