@@ -38,7 +38,24 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  function validateForm(form, feedbackId, passwordId, confirmationId) {
+  async function submitRegistration(form, feedback, accountType) {
+    const csrfResponse = await fetch("ajouter.php?action=csrf", { credentials: "same-origin" });
+    const csrfPayload = await csrfResponse.json();
+    if (!csrfResponse.ok || !csrfPayload.csrf_token) throw new Error("Jeton de sécurité indisponible.");
+
+    const payload = new FormData(form);
+    payload.append("csrf_token", csrfPayload.csrf_token);
+    payload.append("account_type", accountType);
+    const response = await fetch("ajouter.php", { method: "POST", body: payload, credentials: "same-origin" });
+    const result = await response.json();
+    if (!response.ok) {
+      const message = result.errors?.general || Object.values(result.errors || {})[0] || result.error || "Inscription impossible.";
+      throw new Error(message);
+    }
+    window.location.href = result.redirect;
+  }
+
+  function validateForm(form, feedbackId, passwordId, confirmationId, accountType) {
     const feedback = document.getElementById(feedbackId);
     form.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -59,10 +76,14 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      feedback.textContent = "Votre espace est prêt à être relié à LOKA. Cette étape frontend ne transmet encore aucune donnée.";
+      feedback.textContent = "Création de votre espace…";
+      submitRegistration(form, feedback, accountType).catch((error) => {
+        feedback.classList.add("is-error");
+        feedback.textContent = error.message;
+      });
     });
   }
 
-  validateForm(document.getElementById("individual-form"), "individual-feedback", "individual-password", "individual-password-confirm");
-  validateForm(document.getElementById("professional-form"), "professional-feedback", "manager-password", "manager-password-confirm");
+  validateForm(document.getElementById("individual-form"), "individual-feedback", "individual-password", "individual-password-confirm", "proprietor");
+  validateForm(document.getElementById("professional-form"), "professional-feedback", "manager-password", "manager-password-confirm", "agency");
 });

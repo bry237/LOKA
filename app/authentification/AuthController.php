@@ -31,6 +31,34 @@ final class AuthController
 		return [[], 'connexion.php?registered=1'];
 	}
 
+	public static function handleProprietorRegistration(array $input): array
+	{
+		if (!Auth::verifyCsrf($input['csrf_token'] ?? null)) return [['general' => 'Votre session a expiré. Rechargez la page.'], null];
+		[$errors, $data] = AuthValidator::proprietorRegistration($input);
+		if ($errors) return [$errors, null];
+		if (AuthModel::emailExists($data['email'])) return [['general' => 'Cette adresse email est déjà utilisée.'], null];
+		try {
+			AuthModel::registerProprietor($data);
+		} catch (Throwable $exception) {
+			return [['general' => 'Création de l’espace propriétaire impossible pour le moment.'], null];
+		}
+		return [[], 'connexion.php?registered=1'];
+	}
+
+	public static function handleAgencyRegistration(array $input): array
+	{
+		if (!Auth::verifyCsrf($input['csrf_token'] ?? null)) return [['general' => 'Votre session a expiré. Rechargez la page.'], null];
+		[$errors, $data] = AuthValidator::agencyRegistration($input);
+		if ($errors) return [$errors, null];
+		if (AuthModel::emailExists($data['email']) || AuthModel::emailExists($data['agence_email'])) return [['general' => 'Cette adresse email est déjà utilisée.'], null];
+		try {
+			AuthModel::registerAgency($data);
+		} catch (Throwable $exception) {
+			return [['general' => 'Création de l’espace agence impossible pour le moment.'], null];
+		}
+		return [[], 'connexion.php?registered=1'];
+	}
+
 	public static function redirectForRole(string $role): string
 	{
 		return match ($role) {
