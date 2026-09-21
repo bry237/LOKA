@@ -44,7 +44,7 @@
       <section class="form-view" id="individual-view" hidden aria-labelledby="individual-title">
         <button class="back-link" type="button" data-back><span aria-hidden="true">←</span> Retour au choix</button>
         <div class="view-heading view-heading--form"><p class="eyebrow">Particulier</p><h2 id="individual-title">Créer votre espace particulier</h2><p>Quelques informations pour commencer.</p></div>
-        <form class="signup-form" id="individual-form" novalidate>
+        <form class="signup-form" id="individual-form" action="ajouter.php" method="post" novalidate>
           <fieldset><legend>Vos informations</legend><div class="form-grid">
             <div class="field"><label for="individual-last-name">Nom</label><input id="individual-last-name" name="last_name" autocomplete="family-name" required></div>
             <div class="field"><label for="individual-first-name">Prénom</label><input id="individual-first-name" name="first_name" autocomplete="given-name" required></div>
@@ -65,7 +65,7 @@
       <section class="form-view" id="professional-view" hidden aria-labelledby="professional-title">
         <button class="back-link" type="button" data-back><span aria-hidden="true">←</span> Retour au choix</button>
         <div class="view-heading view-heading--form"><p class="eyebrow">Professionnel</p><h2 id="professional-title">Créer votre espace professionnel</h2><p>Configurez votre espace agence.</p></div>
-        <form class="signup-form" id="professional-form" novalidate>
+        <form class="signup-form" id="professional-form" action="ajouter.php" method="post" novalidate>
           <fieldset><legend>Informations de l'agence</legend><div class="form-grid"><div class="field field--wide"><label for="agency-name">Nom de l'agence</label><input id="agency-name" name="agency_name" required></div><div class="field"><label for="agency-email">Email professionnel</label><input id="agency-email" name="agency_email" type="email" autocomplete="email" required></div><div class="field"><label for="agency-phone">Téléphone</label><input id="agency-phone" name="agency_phone" type="tel" required></div><div class="field field--wide"><label for="agency-address">Adresse</label><input id="agency-address" name="agency_address" required></div><div class="field"><label for="agency-postal-code">Code postal</label><input id="agency-postal-code" name="agency_postal_code" inputmode="numeric" required></div><div class="field"><label for="agency-city">Ville</label><input id="agency-city" name="agency_city" required></div><div class="field"><label for="agency-country">Pays</label><input id="agency-country" name="agency_country" value="France" required></div></div></fieldset>
           <fieldset><legend>Informations du responsable</legend><div class="form-grid"><div class="field"><label for="manager-last-name">Nom</label><input id="manager-last-name" name="manager_last_name" required></div><div class="field"><label for="manager-first-name">Prénom</label><input id="manager-first-name" name="manager_first_name" required></div><div class="field"><label for="manager-email">Email</label><input id="manager-email" name="manager_email" type="email" required></div><div class="field"><label for="manager-phone">Téléphone</label><input id="manager-phone" name="manager_phone" type="tel" required></div><div class="field"><label for="manager-password">Mot de passe</label><div class="password-wrap"><input id="manager-password" name="manager_password" type="password" minlength="8" autocomplete="new-password" required><button type="button" data-toggle-password="manager-password">Voir</button></div></div><div class="field"><label for="manager-password-confirm">Confirmation du mot de passe</label><div class="password-wrap"><input id="manager-password-confirm" name="manager_password_confirm" type="password" autocomplete="new-password" required><button type="button" data-toggle-password="manager-password-confirm">Voir</button></div></div></div></fieldset>
           <div class="form-actions"><button class="btn btn--ghost" type="button" data-back>Retour</button><button class="btn btn--primary" type="submit">Créer mon espace agence</button></div><p class="form-feedback" id="professional-feedback" role="status" aria-live="polite"></p>
@@ -73,6 +73,6 @@
       </section>
     </main>
   </div>
-  <script src="inscription.js"></script>
+  <script src="inscription.js?v=20260921-2"></script>
 </body>
 </html>

@@ -61,7 +61,7 @@ final class AuthModel
 	{
 		return self::registerProfile($data, 'Proprietaire', 'proprietaire', [
 			'nom', 'prenom', 'email', 'telephone', 'adresse', 'code_postal', 'ville', 'pays', 'date_naissance', 'projet'
-		]);
+		], false);
 	}
 
 	public static function registerAgency(array $data): int
@@ -89,7 +89,7 @@ final class AuthModel
 		}
 	}
 
-	private static function registerProfile(array $data, string $roleName, string $table, array $profileFields): int
+	private static function registerProfile(array $data, string $roleName, string $table, array $profileFields, bool $hasStatus = true): int
 	{
 		$db = Database::connection();
 		$db->beginTransaction();
@@ -98,7 +98,9 @@ final class AuthModel
 			$userId = self::insertUser($db, $role, $data, null);
 			$columns = implode(', ', $profileFields);
 			$parameters = implode(', ', array_map(static fn (string $field): string => ':' . $field, $profileFields));
-			$profile = $db->prepare("INSERT INTO {$table} (id_utilisateur, id_agence, {$columns}, statut) VALUES (:id_utilisateur, NULL, {$parameters}, 'ACTIVE')");
+			$statusColumns = $hasStatus ? ', statut' : '';
+			$statusValues = $hasStatus ? ", 'ACTIVE'" : '';
+			$profile = $db->prepare("INSERT INTO {$table} (id_utilisateur, id_agence, {$columns}{$statusColumns}) VALUES (:id_utilisateur, NULL, {$parameters}{$statusValues})");
 			$values = ['id_utilisateur' => $userId];
 			foreach ($profileFields as $field) $values[$field] = $data[$field];
 			$profile->execute($values);
