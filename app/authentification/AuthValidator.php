@@ -88,7 +88,7 @@ final class AuthValidator
 			'email' => 'Email du responsable', 'telephone' => 'Téléphone du responsable',
 		]);
 		if (!filter_var($data['agence_email'], FILTER_VALIDATE_EMAIL)) $errors['agency_email'] = 'Email professionnel invalide.';
-		self::validateCommonAccount($data, $input, $errors, 'manager_password', 'manager_password_confirm');
+		self::validateCommonAccount($data, $input, $errors, 'password', 'manager_password_confirm');
 		return [$errors, $data];
 	}
 

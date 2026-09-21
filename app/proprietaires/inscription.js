@@ -39,6 +39,9 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   async function submitRegistration(form, feedback, accountType) {
+    if (window.location.protocol === "file:") {
+      throw new Error("Ouvrez LOKA via http://localhost/LOKA pour créer votre espace.");
+    }
     const csrfResponse = await fetch("ajouter.php?action=csrf", { credentials: "same-origin" });
     const csrfPayload = await csrfResponse.json();
     if (!csrfResponse.ok || !csrfPayload.csrf_token) throw new Error("Jeton de sécurité indisponible.");
