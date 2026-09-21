@@ -124,6 +124,9 @@ section { padding: 112px 24px; position: relative; }
 .btn--text { background: transparent; color: var(--heading); padding: 10px 14px; }
 .btn--text:hover { color: var(--primary-dark); }
 
+.btn--owner { color: var(--primary-dark); border: 1px solid rgba(15,139,141,.28); background: rgba(239,251,250,.72); }
+.btn--owner:hover { border-color: var(--primary); background: var(--primary-pale); box-shadow: 0 8px 18px -14px var(--primary-dark); }
+
 .btn--white { background: var(--white); color: var(--primary-deep); }
 .btn--white:hover { background: var(--primary-pale); }
 
@@ -602,7 +605,7 @@ section { padding: 112px 24px; position: relative; }
 }
 
 @media (max-width: 920px) {
-  .nav__links, .nav__actions .btn--text { display: none; }
+  .nav__links, .nav__actions .btn--text, .nav__actions .btn--owner { display: none; }
   .nav__burger { display: flex; }
   .nav__actions { gap: 10px; }
 
