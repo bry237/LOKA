@@ -27,6 +27,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	tabs.forEach((tab) => tab.addEventListener("click", () => showPanel(tab.dataset.panel)));
 	document.querySelectorAll("[data-switch]").forEach((button) => button.addEventListener("click", () => showPanel(button.dataset.switch)));
+	const hash = window.location.hash.replace("#", "");
+	if (hash === "inscription" || hash === "register") showPanel("register");
 
 	document.querySelectorAll("[data-password]").forEach((button) => button.addEventListener("click", () => {
 		const input = document.getElementById(button.dataset.password);

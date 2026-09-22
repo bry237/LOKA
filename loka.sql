@@ -383,7 +383,8 @@ CREATE TABLE `journal_audit` (
 
 CREATE TABLE `locataire` (
   `id_locataire` bigint(20) UNSIGNED NOT NULL,
-  `id_agence` bigint(20) UNSIGNED NOT NULL,
+  `id_utilisateur` bigint(20) UNSIGNED DEFAULT NULL,
+  `id_agence` bigint(20) UNSIGNED DEFAULT NULL,
   `nom` varchar(150) NOT NULL,
   `prenom` varchar(150) NOT NULL,
   `email` varchar(255) DEFAULT NULL,
@@ -395,6 +396,7 @@ CREATE TABLE `locataire` (
   `date_naissance` date DEFAULT NULL,
   `profession` varchar(150) DEFAULT NULL,
   `revenu_mensuel` decimal(12,2) DEFAULT NULL,
+  `revenu_mensuel_fourchette` varchar(50) DEFAULT NULL,
   `statut` enum('ACTIVE','INACTIVE','ARCHIVED') NOT NULL DEFAULT 'ACTIVE',
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -514,7 +516,8 @@ CREATE TABLE `photo_bien` (
 
 CREATE TABLE `proprietaire` (
   `id_proprietaire` bigint(20) UNSIGNED NOT NULL,
-  `id_agence` bigint(20) UNSIGNED NOT NULL,
+  `id_utilisateur` bigint(20) UNSIGNED DEFAULT NULL,
+  `id_agence` bigint(20) UNSIGNED DEFAULT NULL,
   `nom` varchar(150) NOT NULL,
   `prenom` varchar(150) NOT NULL,
   `email` varchar(255) DEFAULT NULL,
@@ -524,6 +527,7 @@ CREATE TABLE `proprietaire` (
   `ville` varchar(100) DEFAULT NULL,
   `pays` varchar(100) DEFAULT 'France',
   `date_naissance` date DEFAULT NULL,
+  `projet` enum('rent','sell','rent-sell') DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `deleted_at` datetime DEFAULT NULL
@@ -853,6 +857,7 @@ ALTER TABLE `journal_audit`
 --
 ALTER TABLE `locataire`
   ADD PRIMARY KEY (`id_locataire`),
+  ADD KEY `idx_locataire_utilisateur` (`id_utilisateur`),
   ADD KEY `idx_locataire_agence` (`id_agence`),
   ADD KEY `idx_locataire_email` (`email`),
   ADD KEY `idx_locataire_statut` (`statut`);
@@ -904,6 +909,7 @@ ALTER TABLE `photo_bien`
 --
 ALTER TABLE `proprietaire`
   ADD PRIMARY KEY (`id_proprietaire`),
+  ADD KEY `idx_proprietaire_utilisateur` (`id_utilisateur`),
   ADD KEY `idx_proprietaire_agence` (`id_agence`),
   ADD KEY `idx_proprietaire_email` (`email`);
 
@@ -1221,7 +1227,8 @@ ALTER TABLE `journal_audit`
 -- Contraintes pour la table `locataire`
 --
 ALTER TABLE `locataire`
-  ADD CONSTRAINT `fk_locataire_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE;
+  ADD CONSTRAINT `fk_locataire_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_locataire_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
 -- Contraintes pour la table `notification`
@@ -1253,7 +1260,8 @@ ALTER TABLE `photo_bien`
 -- Contraintes pour la table `proprietaire`
 --
 ALTER TABLE `proprietaire`
-  ADD CONSTRAINT `fk_proprietaire_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE;
+  ADD CONSTRAINT `fk_proprietaire_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_proprietaire_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
 -- Contraintes pour la table `quittance`

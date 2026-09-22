@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOKA — Trouvez et gérez votre logement, simplement</title>
+<meta name="description" content="LOKA simplifie la recherche et la gestion de votre logement. Trouvez un bien qui vous correspond et gérez votre location depuis un espace unique.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="landing.css">
+</head>
+<body>
+
+<!-- ===================== NAVBAR ===================== -->
+<header class="nav" id="nav">
+  <div class="nav__inner">
+    <a href="#top" class="brand">
+      <span class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3 10.5 12 4l9 6.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V19a1 1 0 0 0 1 1h3v-5h6v5h3a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="brand__name">LOKA</span>
+    </a>
+
+    <nav class="nav__links" id="navLinks" aria-label="Navigation principale">
+      <a href="#top">Accueil</a>
+      <a href="#logements">Logements</a>
+      <a href="#comment-ca-marche">Comment ça marche</a>
+      <a href="#pourquoi-loka">À propos</a>
+    </nav>
+
+    <div class="nav__actions">
+      <a href="app/proprietaires/inscription.html" class="btn btn--owner btn--sm">Déposer un bien</a>
+      <a href="app/authentification/connexion.php" class="btn btn--text">Se connecter</a>
+      <a href="app/authentification/connexion.php#inscription" class="btn btn--primary btn--sm">Créer un compte</a>
+    </div>
+
+    <button class="nav__burger" id="navBurger" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="navLinks">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ===================== HERO ===================== -->
+  <section class="hero">
+    <div class="hero__text" data-reveal>
+      <p class="eyebrow">Recherche &amp; gestion de logements</p>
+      <h1 class="hero__title">Votre logement.<br>Votre espace.<br><span>Votre LOKA.</span></h1>
+      <p class="hero__subtitle">LOKA simplifie la recherche et la gestion de votre logement. Trouvez un bien qui vous correspond et gérez votre location depuis un espace unique.</p>
+
+      <div class="hero__cta">
+        <a href="#recherche" class="btn btn--primary btn--lg">Rechercher un logement</a>
+        <a href="app/authentification/connexion.php#inscription" class="btn btn--outline btn--lg">Créer un compte</a>
+      </div>
+
+      <p class="hero__trust">Une plateforme pensée pour simplifier votre expérience immobilière.</p>
+    </div>
+
+    <div class="hero__visual" data-reveal>
+      <div class="hero__image-frame">
+        <img src="https://images.pexels.com/photos/6180674/pexels-photo-6180674.jpeg?auto=compress&cs=tinysrgb&w=1400" alt="Intérieur lumineux et moderne d'un appartement proposé sur LOKA" loading="eager">
+        <span class="hero__image-label">01 / 04</span>
+      </div>
+
+      <div class="floating-chip floating-chip--top">
+        <span class="floating-chip__icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        </span>
+        <div>
+          <strong>+500</strong>
+          <span>logements disponibles</span>
+        </div>
+      </div>
+
+      <div class="floating-chip floating-chip--bottom">
+        <span class="floating-chip__icon floating-chip__icon--dark">
+          <svg viewBox="0 0 24 24" fill="none"><path d="m4 13 5 5L20 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <div>
+          <strong>Gestion centralisée</strong>
+          <span>contrat, loyers, documents</span>
+        </div>
+      </div>
+
+      <div class="floating-property" aria-hidden="true">
+        <span class="floating-property__dot"></span>
+        <div><strong>Lyon, France</strong><small>Appartement · 72 m²</small></div>
+        <b>980 €</b>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== BARRE DE RECHERCHE ===================== -->
+  <section class="search" id="recherche" data-reveal>
+    <form class="search__bar" id="searchForm">
+      <div class="search__field">
+        <label for="searchCity">Où souhaitez-vous vivre ?</label>
+        <input type="text" id="searchCity" name="city" placeholder="Ville ou localisation">
+      </div>
+      <span class="search__divider" aria-hidden="true"></span>
+      <div class="search__field">
+        <label for="searchType">Type de logement</label>
+        <select id="searchType" name="type">
+          <option value="">Tous types</option>
+          <option value="appartement">Appartement</option>
+          <option value="maison">Maison</option>
+          <option value="studio">Studio</option>
+        </select>
+      </div>
+      <span class="search__divider" aria-hidden="true"></span>
+      <div class="search__field">
+        <label for="searchBudget">Budget</label>
+        <select id="searchBudget" name="budget">
+          <option value="">Jusqu'à ...</option>
+          <option value="600">600 €</option>
+          <option value="900">900 €</option>
+          <option value="1200">1 200 €</option>
+          <option value="1500">1 500 €+</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn--primary search__submit">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Rechercher
+      </button>
+    </form>
+    <p class="search__status" id="searchStatus" role="status" aria-live="polite"></p>
+  </section>
+
+  <!-- ===================== STATISTIQUES ===================== -->
+  <section class="stats" data-reveal>
+    <div class="stats__grid">
+      <div class="stat stat--accent">
+        <span class="stat__value" data-count="500" data-suffix="+">0</span>
+        <span class="stat__label">Logements</span>
+      </div>
+      <div class="stat">
+        <span class="stat__value" data-count="200" data-suffix="+">0</span>
+        <span class="stat__label">Locataires</span>
+      </div>
+      <div class="stat">
+        <span class="stat__value" data-count="50" data-suffix="+">0</span>
+        <span class="stat__label">Propriétaires</span>
+      </div>
+      <div class="stat stat--dark">
+        <span class="stat__value" data-static="24/7">0</span>
+        <span class="stat__label">Gestion simplifiée</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LOGEMENTS EN VEDETTE ===================== -->
+  <section class="listings listings--tinted" id="logements">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">À découvrir</p>
+      <h2>Des logements qui pourraient vous correspondre</h2>
+      <p class="section-head__text">Une sélection de biens vérifiés, prêts à visiter.</p>
+    </div>
+
+    <div class="listings__grid" data-reveal>
+
+      <article class="property-card" data-city="limoges" data-type="appartement" data-budget="650">
+        <div class="property-card__media">
+          <img src="https://images.pexels.com/photos/6238679/pexels-photo-6238679.jpeg?auto=compress&cs=tinysrgb&w=900" alt="Appartement moderne avec mur de brique à Limoges" loading="lazy">
+          <span class="badge badge--success">Disponible</span>
+        </div>
+        <div class="property-card__body">
+          <h3>Appartement moderne</h3>
+          <p class="property-card__loc">Limoges, France</p>
+          <p class="property-card__meta">2 pièces · 48 m²</p>
+          <div class="property-card__foot">
+            <span class="property-card__price">650&nbsp;€ <small>/ mois</small></span>
+            <a href="#" class="link-arrow">Voir le logement</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="property-card" data-city="lyon" data-type="appartement" data-budget="980">
+        <div class="property-card__media">
+          <img src="https://images.pexels.com/photos/28991200/pexels-photo-28991200.jpeg?auto=compress&cs=tinysrgb&w=900" alt="Loft lumineux et minimaliste à Lyon" loading="lazy">
+          <span class="badge badge--success">Disponible</span>
+        </div>
+        <div class="property-card__body">
+          <h3>Loft lumineux</h3>
+          <p class="property-card__loc">Lyon, France</p>
+          <p class="property-card__meta">3 pièces · 72 m²</p>
+          <div class="property-card__foot">
+            <span class="property-card__price">980&nbsp;€ <small>/ mois</small></span>
+            <a href="#" class="link-arrow">Voir le logement</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="property-card" data-city="bordeaux" data-type="studio" data-budget="490">
+        <div class="property-card__media">
+          <img src="https://images.pexels.com/photos/4857757/pexels-photo-4857757.jpeg?auto=compress&cs=tinysrgb&w=900" alt="Studio contemporain à Bordeaux" loading="lazy">
+          <span class="badge badge--warning">Bientôt libre</span>
+        </div>
+        <div class="property-card__body">
+          <h3>Studio contemporain</h3>
+          <p class="property-card__loc">Bordeaux, France</p>
+          <p class="property-card__meta">1 pièce · 28 m²</p>
+          <div class="property-card__foot">
+            <span class="property-card__price">490&nbsp;€ <small>/ mois</small></span>
+            <a href="#" class="link-arrow">Voir le logement</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="property-card" data-city="toulouse" data-type="appartement" data-budget="1450">
+        <div class="property-card__media">
+          <img src="https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=900" alt="Résidence moderne avec balcons à Toulouse" loading="lazy">
+          <span class="badge badge--success">Disponible</span>
+        </div>
+        <div class="property-card__body">
+          <h3>Appartement familial</h3>
+          <p class="property-card__loc">Toulouse, France</p>
+          <p class="property-card__meta">4 pièces · 110 m²</p>
+          <div class="property-card__foot">
+            <span class="property-card__price">1&nbsp;450&nbsp;€ <small>/ mois</small></span>
+            <a href="#" class="link-arrow">Voir le logement</a>
+          </div>
+        </div>
+      </article>
+
+    </div>
+
+    <div class="listings__more" data-reveal>
+      <a href="#recherche" class="btn btn--outline">Affiner ma recherche</a>
+    </div>
+  </section>
+
+  <!-- ===================== COMMENT ÇA MARCHE ===================== -->
+  <section class="steps" id="comment-ca-marche">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">Le parcours LOKA</p>
+      <h2>Trouver votre logement devient simple.</h2>
+    </div>
+
+    <ol class="steps__grid" data-reveal>
+      <li class="step">
+        <span class="step__number">01</span>
+        <h3>Créez votre compte</h3>
+        <p>Renseignez vos informations en quelques instants.</p>
+      </li>
+      <li class="step step--offset">
+        <span class="step__number">02</span>
+        <h3>Définissez vos critères</h3>
+        <p>Ville, budget, type de bien : à vous de choisir.</p>
+      </li>
+      <li class="step">
+        <span class="step__number">03</span>
+        <h3>Découvrez les logements</h3>
+        <p>Parcourez une sélection de biens qui vous ressemblent.</p>
+      </li>
+      <li class="step step--offset">
+        <span class="step__number">04</span>
+        <h3>Gérez votre location</h3>
+        <p>Contrat, loyers et documents, au même endroit.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ===================== POURQUOI LOKA ===================== -->
+  <section class="why" id="pourquoi-loka">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">Nos engagements</p>
+      <h2>Une nouvelle façon de gérer le logement.</h2>
+    </div>
+
+    <div class="why__grid" data-reveal>
+      <div class="why-card">
+        <span class="why-card__icon">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </span>
+        <h3>Recherche simplifiée</h3>
+        <p>Trouvez rapidement des logements correspondant à vos critères.</p>
+      </div>
+      <div class="why-card">
+        <span class="why-card__icon">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M4 10h16" stroke="currentColor" stroke-width="1.6"/></svg>
+        </span>
+        <h3>Gestion centralisée</h3>
+        <p>Retrouvez vos informations et votre location au même endroit.</p>
+      </div>
+      <div class="why-card">
+        <span class="why-card__icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.4c-1.1 0-2.1-.2-3-.6L3 21l1.8-5.4a8.4 8.4 0 1 1 16.2-4.1Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        </span>
+        <h3>Communication facilitée</h3>
+        <p>Échangez facilement avec les gestionnaires et les différents intervenants.</p>
+      </div>
+      <div class="why-card">
+        <span class="why-card__icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M14 3v5h5M9 13h6M9 17h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </span>
+        <h3>Suivi transparent</h3>
+        <p>Contrats, paiements, interventions et documents accessibles depuis un espace unique.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PROPRIÉTAIRES ET GESTIONNAIRES ===================== -->
+  <section class="owners" data-reveal>
+    <div class="owners__media">
+      <img src="https://images.pexels.com/photos/8815878/pexels-photo-8815878.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Agent immobilier professionnel souriant dans un bureau moderne" loading="lazy">
+      <div class="owners__signal" aria-hidden="true"><span>Performance mensuelle</span><strong>+28,4%</strong><i></i></div>
+      <div class="owners__avatar" aria-hidden="true"><span>LM</span><small>Louise Martin<br><b>Gestionnaire</b></small></div>
+    </div>
+    <div class="owners__content">
+      <p class="eyebrow">Propriétaires &amp; gestionnaires</p>
+      <h2>Vous gérez des biens immobiliers ?</h2>
+      <p>LOKA vous aide à centraliser la gestion de vos biens, locataires, contrats, paiements et interventions depuis une seule plateforme.</p>
+      <a href="app/proprietaires/inscription.html" class="btn btn--primary">Déposer ou gérer un bien</a>
+    </div>
+  </section>
+
+  <!-- ===================== EXPÉRIENCE LOKA ===================== -->
+  <section class="experience" data-reveal>
+    <div class="experience__frame">
+      <img src="https://images.pexels.com/photos/5570222/pexels-photo-5570222.jpeg?auto=compress&cs=tinysrgb&w=1400" alt="Salon spacieux et lumineux d'un logement géré via LOKA" loading="lazy">
+      <div class="experience__overlay" aria-hidden="true"><span class="experience__live"><i></i> Tout est à jour</span><strong>Une vue claire<br>sur votre quotidien.</strong><small>Contrats, loyers et interventions réunis.</small></div>
+
+      <span class="experience__pill experience__pill--1">✓ Contrats</span>
+      <span class="experience__pill experience__pill--2">✓ Paiements</span>
+      <span class="experience__pill experience__pill--3">✓ Documents</span>
+      <span class="experience__pill experience__pill--4">✓ Maintenance</span>
+      <span class="experience__pill experience__pill--5">✓ Notifications</span>
+    </div>
+    <p class="experience__caption">Tout ce dont vous avez besoin, au même endroit.</p>
+  </section>
+
+  <!-- ===================== CTA FINAL ===================== -->
+  <section class="final-cta" data-reveal>
+    <div class="final-cta__content">
+      <h2>Prêt à trouver votre prochain logement ?</h2>
+      <p>Commencez votre recherche avec LOKA et découvrez une nouvelle façon de vivre et de gérer votre logement.</p>
+      <div class="final-cta__actions">
+        <a href="app/authentification/connexion.php#inscription" class="btn btn--white">Créer mon compte</a>
+        <a href="app/authentification/connexion.php" class="btn btn--outline-white">Se connecter</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="footer">
+  <div class="footer__grid">
+    <div class="footer__brand">
+      <a href="#top" class="brand brand--footer">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3 10.5 12 4l9 6.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V19a1 1 0 0 0 1 1h3v-5h6v5h3a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="brand__name">LOKA</span>
+      </a>
+      <p>Recherche et gestion de logements, simplifiées.</p>
+    </div>
+
+    <div class="footer__col">
+      <h4>Plateforme</h4>
+      <a href="#logements">Logements</a>
+      <a href="#comment-ca-marche">Comment ça marche</a>
+      <a href="#pourquoi-loka">À propos</a>
+    </div>
+
+    <div class="footer__col">
+      <h4>Compte</h4>
+      <a href="app/authentification/connexion.php">Se connecter</a>
+      <a href="app/authentification/connexion.php#inscription">Créer un compte</a>
+    </div>
+
+    <div class="footer__col">
+      <h4>Informations</h4>
+      <a href="#">Confidentialité</a>
+      <a href="#">Conditions d'utilisation</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+
+  <div class="footer__bottom">
+    <p>© 2026 LOKA. Tous droits réservés.</p>
+  </div>
+</footer>
+
+<script src="landing.js"></script>
+</body>
+</html>
