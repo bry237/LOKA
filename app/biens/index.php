@@ -2,38 +2,26 @@
 declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/core/Authorization.php';
 require_once __DIR__ . '/BienController.php';
-
 $user = Authorization::requireRole('Administrateur plateforme', 'Administrateur agence', 'Gestionnaire immobilier');
 $agencyId = (int) ($user['id_agence'] ?? 0);
-if ($agencyId < 1) {
-	http_response_code(400);
-	exit('Aucune agence n’est associée à ce compte.');
-}
+if ($agencyId < 1) { http_response_code(400); exit('Aucune agence associee a ce compte.'); }
 $references = BienController::references($agencyId);
 $properties = BienModel::list($agencyId, $_GET);
+$statusLabels = ['CREATED' => 'Brouillon', 'AVAILABLE' => 'Disponible', 'OCCUPIED' => 'Loue', 'MAINTENANCE' => 'Maintenance', 'ARCHIVED' => 'Archive'];
+$statusClasses = ['CREATED' => 'created', 'AVAILABLE' => 'available', 'OCCUPIED' => 'occupied', 'MAINTENANCE' => 'maintenance', 'ARCHIVED' => 'archived'];
 ?>
 <!doctype html>
 <html lang="fr">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Biens immobiliers</title></head>
-<body>
-<main>
-	<h1>Biens immobiliers</h1>
-	<p><a href="ajouter.php">Ajouter un bien</a> | <a href="references.php">Référentiels</a></p>
-	<form method="get">
-		<label>Recherche <input name="q" value="<?= htmlspecialchars((string) ($_GET['q'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
-		<label>Statut <select name="statut"><option value="">Tous sauf archivés</option><?php foreach (['CREATED','AVAILABLE','OCCUPIED','MAINTENANCE','ARCHIVED'] as $status): ?><option value="<?= $status ?>"<?= ($_GET['statut'] ?? '') === $status ? ' selected' : '' ?>><?= $status ?></option><?php endforeach; ?></select></label>
-		<label>Type <select name="id_type_bien"><option value="">Tous</option><?php foreach ($references['types'] as $type): ?><option value="<?= (int) $type['id_type_bien'] ?>"<?= (string) ($_GET['id_type_bien'] ?? '') === (string) $type['id_type_bien'] ? ' selected' : '' ?>><?= htmlspecialchars($type['nom'], ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select></label>
-		<label>Loyer max <input type="number" step="0.01" min="0" name="loyer_max" value="<?= htmlspecialchars((string) ($_GET['loyer_max'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
-		<label>Surface min <input type="number" step="0.01" min="0" name="surface_min" value="<?= htmlspecialchars((string) ($_GET['surface_min'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
-		<button type="submit">Filtrer</button>
-	</form>
-	<table><thead><tr><th>Référence</th><th>Titre</th><th>Type</th><th>Ville</th><th>Surface</th><th>Loyer</th><th>Statut</th><th>Actions</th></tr></thead><tbody>
-	<?php foreach ($properties as $property): ?><tr>
-		<td><?= htmlspecialchars($property['reference'], ENT_QUOTES, 'UTF-8') ?></td><td><?= htmlspecialchars($property['titre'], ENT_QUOTES, 'UTF-8') ?></td><td><?= htmlspecialchars($property['type_bien'], ENT_QUOTES, 'UTF-8') ?></td><td><?= htmlspecialchars($property['ville'], ENT_QUOTES, 'UTF-8') ?></td><td><?= htmlspecialchars((string) $property['surface'], ENT_QUOTES, 'UTF-8') ?> m²</td><td><?= htmlspecialchars((string) $property['loyer'], ENT_QUOTES, 'UTF-8') ?> €</td><td><?= htmlspecialchars($property['statut'], ENT_QUOTES, 'UTF-8') ?></td>
-		<td><a href="detail.php?id=<?= (int) $property['id_bien'] ?>">Détail</a> <a href="modifier.php?id=<?= (int) $property['id_bien'] ?>">Modifier</a></td>
-	</tr><?php endforeach; ?>
-	</tbody></table>
-	<?php if ($properties === []): ?><p>Aucun bien trouvé.</p><?php endif; ?>
-</main>
-</body>
-</html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Biens | LOKA</title><link rel="stylesheet" href="bien.css"></head>
+<body><div class="app-shell">
+	<aside class="sidebar"><a class="brand" href="index.php"><span class="brand__mark">L</span><span>LOKA</span></a><nav class="nav">
+		<div class="nav__label">Gestion</div><a class="is-active" href="index.php"><span class="nav__icon">⌂</span><span>Biens</span></a><a href="references.php"><span class="nav__icon">◈</span><span>Référentiels</span></a><a href="#"><span class="nav__icon">♙</span><span>Propriétaires</span></a><a href="#"><span class="nav__icon">▣</span><span>Contrats</span></a>
+		<div class="nav__label">Suivi</div><a href="#"><span class="nav__icon">€</span><span>Paiements</span></a><a href="#"><span class="nav__icon">⚒</span><span>Maintenance</span></a><a href="#"><span class="nav__icon">▤</span><span>Documents</span></a>
+	</nav><div class="sidebar__footer">Espace gestionnaire<br>Agence immobilière</div></aside>
+	<div class="content"><header class="topbar"><div><div class="topbar__eyebrow">Espace de travail</div><div class="topbar__title">Gestion immobilière</div></div><div class="user-chip"><span class="avatar"><?= strtoupper(substr((string) ($user['prenom'] ?? 'U'), 0, 1)) ?></span><span><?= htmlspecialchars((string) ($user['prenom'] ?? 'Utilisateur'), ENT_QUOTES, 'UTF-8') ?></span></div></header>
+	<main class="page"><div class="page__header"><div><h1 class="page__title">Biens immobiliers</h1><p class="page__subtitle">Pilotez votre portefeuille et gardez une vue claire sur vos biens.</p></div><div class="actions"><a class="button button--secondary" href="references.php">Référentiels</a><a class="button button--primary" href="ajouter.php">＋ Ajouter un bien</a></div></div>
+		<div class="stats"><div class="card stat"><div class="stat__top"><span>Total des biens</span><span class="stat__icon">⌂</span></div><div class="stat__value"><?= count($properties) ?></div></div><div class="card stat"><div class="stat__top"><span>Disponibles</span><span class="stat__icon">✓</span></div><div class="stat__value"><?= count(array_filter($properties, static fn(array $p): bool => $p['statut'] === 'AVAILABLE')) ?></div></div><div class="card stat"><div class="stat__top"><span>Occupés</span><span class="stat__icon">▣</span></div><div class="stat__value"><?= count(array_filter($properties, static fn(array $p): bool => $p['statut'] === 'OCCUPIED')) ?></div></div><div class="card stat"><div class="stat__top"><span>Surface totale</span><span class="stat__icon">↗</span></div><div class="stat__value"><?= number_format(array_sum(array_map(static fn(array $p): float => (float) $p['surface'], $properties)), 0, ',', ' ') ?> m²</div></div></div>
+		<section class="card"><div class="card__header"><div><h2 class="card__title">Portefeuille immobilier</h2><div class="cell-muted"><?= count($properties) ?> résultat(s) dans votre agence</div></div></div><form class="toolbar" method="get"><label>Rechercher<input name="q" placeholder="Référence, titre ou ville" value="<?= htmlspecialchars((string) ($_GET['q'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label><label>Statut<select name="statut"><option value="">Tous sauf archivés</option><?php foreach ($statusLabels as $key => $label): ?><option value="<?= $key ?>"<?= ($_GET['statut'] ?? '') === $key ? ' selected' : '' ?>><?= $label ?></option><?php endforeach; ?></select></label><label>Type<select name="id_type_bien"><option value="">Tous les types</option><?php foreach ($references['types'] as $type): ?><option value="<?= (int) $type['id_type_bien'] ?>"<?= (string) ($_GET['id_type_bien'] ?? '') === (string) $type['id_type_bien'] ? ' selected' : '' ?>><?= htmlspecialchars($type['nom'], ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select></label><label>Loyer max<input type="number" step="0.01" min="0" name="loyer_max" placeholder="€" value="<?= htmlspecialchars((string) ($_GET['loyer_max'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label><label>Surface min<input type="number" step="0.01" min="0" name="surface_min" placeholder="m²" value="<?= htmlspecialchars((string) ($_GET['surface_min'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label><button type="submit">Filtrer</button></form>
+		<div class="table-wrap"><table><thead><tr><th>Bien</th><th>Type</th><th>Localisation</th><th>Surface</th><th>Loyer</th><th>Statut</th><th></th></tr></thead><tbody><?php foreach ($properties as $property): ?><tr><td><div class="cell-title"><?= htmlspecialchars($property['titre'], ENT_QUOTES, 'UTF-8') ?></div><div class="cell-muted"><?= htmlspecialchars($property['reference'], ENT_QUOTES, 'UTF-8') ?></div></td><td><?= htmlspecialchars($property['type_bien'], ENT_QUOTES, 'UTF-8') ?></td><td><?= htmlspecialchars($property['ville'], ENT_QUOTES, 'UTF-8') ?></td><td><?= htmlspecialchars((string) $property['surface'], ENT_QUOTES, 'UTF-8') ?> m²</td><td><?= number_format((float) $property['loyer'], 2, ',', ' ') ?> €</td><td><span class="badge badge--<?= $statusClasses[$property['statut']] ?? 'created' ?>"><?= $statusLabels[$property['statut']] ?? $property['statut'] ?></span></td><td><a class="button button--ghost" href="detail.php?id=<?= (int) $property['id_bien'] ?>">Voir</a></td></tr><?php endforeach; ?></tbody></table></div><?php if ($properties === []): ?><div class="empty"><div class="empty__icon">⌂</div><strong>Aucun bien trouvé</strong><div>Modifiez vos filtres ou ajoutez votre premier bien.</div></div><?php endif; ?></section>
+	</main></div>
+</div></body></html>

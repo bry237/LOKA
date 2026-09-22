@@ -41,10 +41,11 @@ $csrfToken = Auth::csrfToken();
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="bien.css">
 	<title>Référentiels immobiliers</title>
 </head>
 <body>
-	<main>
+	<main class="page">
 		<h1>Référentiels immobiliers</h1>
 		<?php if ($success !== null): ?><p role="status"><?= htmlspecialchars($success, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
 		<?php if (isset($errors['general'])): ?><p role="alert"><?= htmlspecialchars($errors['general'], ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
