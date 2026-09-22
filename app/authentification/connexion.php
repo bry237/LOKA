@@ -31,7 +31,10 @@ $message = $errors['general'] ?? null;
 if ($message === null && $errors) {
 	$message = (string) reset($errors);
 }
+
 ?>
+
+
 <!doctype html>
 <html lang="fr">
 <head>
