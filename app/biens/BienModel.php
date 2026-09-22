@@ -242,6 +242,20 @@ final class BienModel
 		return $stmt->fetchAll();
 	}
 
+	public static function owners(int $agencyId, int $propertyId): array
+	{
+		self::assertPropertyBelongsToAgency($agencyId, $propertyId);
+		$stmt = Database::connection()->prepare(
+			'SELECT p.id_proprietaire, p.nom, p.prenom, p.email, bp.quote_part, bp.date_debut
+			 FROM bien_proprietaire bp
+			 INNER JOIN proprietaire p ON p.id_proprietaire = bp.id_proprietaire AND p.id_agence = :id_agence
+			 WHERE bp.id_bien = :id_bien AND bp.date_fin IS NULL AND p.deleted_at IS NULL
+			 ORDER BY p.nom, p.prenom'
+		);
+		$stmt->execute(['id_agence' => $agencyId, 'id_bien' => $propertyId]);
+		return $stmt->fetchAll();
+	}
+
 	public static function updateEquipmentAssignments(int $agencyId, int $propertyId, array $equipmentIds): void
 	{
 		self::assertPropertyBelongsToAgency($agencyId, $propertyId);

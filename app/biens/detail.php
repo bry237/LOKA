@@ -24,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 $equipmentIds = array_map('intval', array_column(BienModel::equipmentAssignments($agencyId, $propertyId), 'id_equipement'));
 $equipmentOptions = BienModel::equipments();
+$owners = BienModel::owners($agencyId, $propertyId);
 $photos = BienModel::photos($agencyId, $propertyId);
 ?>
 <!doctype html>
@@ -44,6 +45,7 @@ $photos = BienModel::photos($agencyId, $propertyId);
 	<button type="submit">Enregistrer les équipements</button>
 </form></div></aside></div>
 <section class="card" style="margin-top:20px"><div class="card__header"><h2 class="card__title">Galerie photos</h2><a href="photos.php?id=<?= $propertyId ?>">Gérer la galerie</a></div><div class="card__body"><div class="photo-grid"><?php foreach (array_slice($photos, 0, 4) as $photo): ?><div class="photo"><img src="/LOKA/<?= htmlspecialchars($photo['chemin_stockage'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($photo['nom_fichier'], ENT_QUOTES, 'UTF-8') ?>"><div class="photo__body"><?= $photo['est_principale'] ? '<span class="badge badge--available">Photo principale</span>' : '' ?></div></div><?php endforeach; ?><?php if ($photos === []): ?><div class="empty">Aucune photo ajoutée pour le moment.</div><?php endif; ?></div></div></section>
+<section class="card" style="margin-top:20px"><div class="card__header"><h2 class="card__title">Propriétaires associés</h2><span class="cell-muted"><?= count($owners) ?> propriétaire(s)</span></div><div class="card__body"><?php if ($owners === []): ?><div class="empty">Aucun propriétaire associé.</div><?php else: ?><div class="table-wrap"><table><thead><tr><th>Propriétaire</th><th>E-mail</th><th>Quote-part</th><th>Date de début</th></tr></thead><tbody><?php foreach ($owners as $owner): ?><tr><td class="cell-title"><?= htmlspecialchars($owner['prenom'] . ' ' . $owner['nom'], ENT_QUOTES, 'UTF-8') ?></td><td><?= htmlspecialchars((string) ($owner['email'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td><td><?= htmlspecialchars((string) $owner['quote_part'], ENT_QUOTES, 'UTF-8') ?> %</td><td><?= htmlspecialchars($owner['date_debut'], ENT_QUOTES, 'UTF-8') ?></td></tr><?php endforeach; ?></tbody></table></div><?php endif; ?></div></section>
 <?php if ($property['statut'] !== 'ARCHIVED'): ?>
 <form method="post" action="supprimer.php" style="margin-top:20px">
 	<input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Auth::csrfToken(), ENT_QUOTES, 'UTF-8') ?>">
