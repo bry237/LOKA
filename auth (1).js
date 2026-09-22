@@ -57,6 +57,12 @@ function initTabs() {
   document.querySelectorAll("[data-switch]").forEach((el) => {
     el.addEventListener("click", () => activate(el.dataset.switch));
   });
+
+  // Arrivée depuis un lien externe (ex: landing page) avec #inscription ou #register
+  const hash = window.location.hash.replace("#", "");
+  if (hash === "inscription" || hash === "register") {
+    activate("register");
+  }
 }
 
 /* ---------------------------------------------------------

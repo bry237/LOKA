@@ -9,7 +9,7 @@ $errors = [];
 $successMessage = null;
 
 if (isset($_GET['registered'])) {
-	$successMessage = 'Votre compte locataire a été créé. Vous pouvez maintenant vous connecter.';
+	$successMessage = 'Votre compte a été créé. Vous pouvez maintenant vous connecter.';
 }
 if (isset($_GET['logout'])) {
 	$successMessage = 'Vous êtes maintenant déconnecté.';
@@ -47,7 +47,7 @@ if ($message === null && $errors) {
 <main class="auth-page">
 	<section class="auth-card">
 		<div class="auth-panel__inner">
-			<a class="brand" href="../../public/index.php" aria-label="Retour à l’accueil LOKA">
+			<a class="brand" href="../../index%20(2).html" aria-label="Retour à l’accueil LOKA">
 				<span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M4 14.2 16 4l12 10.2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.5 12.5V27h17V12.5M12 27v-7h8v7" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg></span><span class="brand__name">LOKA</span>
 			</a>
 
