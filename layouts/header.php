@@ -12,6 +12,7 @@ declare(strict_types=1);
  */
 $pageTitle ??= 'Administration';
 $extraHead ??= '';
+$sidebarFile ??= 'sidebar.php';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -29,7 +30,7 @@ $extraHead ??= '';
 <div class="app">
   <div class="sidebar-overlay" id="overlay"></div>
 
-  <?php require __DIR__ . '/sidebar.php'; ?>
+  <?php require __DIR__ . '/' . $sidebarFile; ?>
 
   <main class="main">
     <?php require __DIR__ . '/navbar.php'; ?>

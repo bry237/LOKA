@@ -63,7 +63,7 @@ final class AuthController
 	{
 		return match ($role) {
 			'Administrateur plateforme' => '../administration/dashboard/index.php',
-			'Administrateur agence' => '../administration/agences/index.php',
+			'Administrateur agence' => '../administration/mon-agence/index.php',
 			'Gestionnaire immobilier' => '../biens/index.php',
 			'Comptable' => '../paiements/index.php',
 			'Proprietaire' => '../proprietaires/index.php',
