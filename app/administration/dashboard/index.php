@@ -83,10 +83,12 @@ require dirname(__DIR__, 3) . '/layouts/header.php';
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="text" id="tableSearch" placeholder="Rechercher une agence…">
           </div>
-          <div class="select-box" id="statusFilter">
-            <span id="statusFilterLabel">Tous les statuts</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </div>
+          <select class="filter-select" id="statusFilter">
+            <option value="all">Tous les statuts</option>
+            <option value="actif">Actif</option>
+            <option value="attente">En attente</option>
+            <option value="suspendu">Suspendu</option>
+          </select>
         </div>
       </div>
       <p style="font-size:11.5px;color:#8AA0A0;margin:0 18px 10px;">Dernières agences inscrites sur la plateforme</p>

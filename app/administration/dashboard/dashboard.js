@@ -129,7 +129,7 @@ function renderTable(){
       <td><span class="plan-badge ${a.plan.toLowerCase()}">${a.plan}</span></td>
       <td>${a.date}</td>
       <td><span class="status-badge ${a.status}">${STATUS_LABEL[a.status]}</span></td>
-      <td><span class="consult-link">Consulter ${ICONS.arrow}</span></td>
+      <td><a class="consult-link" href="../agences/detail.php?id=${a.id}" data-modal>Consulter ${ICONS.arrow}</a></td>
     </tr>
   `).join('') || `<tr><td colspan="6" style="text-align:center;color:#8AA0A0;padding:26px;">Aucune agence ne correspond à votre recherche.</td></tr>`;
 
@@ -243,17 +243,8 @@ document.getElementById('tableSearch').addEventListener('input', (e)=>{
   searchVal = e.target.value; currentPage = 1; renderTable();
 });
 
-const statusOptions = [
-  {v:"all", label:"Tous les statuts"},
-  {v:"actif", label:"Actif"},
-  {v:"attente", label:"En attente"},
-  {v:"suspendu", label:"Suspendu"}
-];
-let statusIdx = 0;
-document.getElementById('statusFilter').addEventListener('click', ()=>{
-  statusIdx = (statusIdx+1) % statusOptions.length;
-  statusFilterVal = statusOptions[statusIdx].v;
-  document.getElementById('statusFilterLabel').textContent = statusOptions[statusIdx].label;
+document.getElementById('statusFilter').addEventListener('change', (e)=>{
+  statusFilterVal = e.target.value;
   currentPage = 1;
   renderTable();
 });

@@ -148,7 +148,7 @@ final class DashboardModel
 	{
 		$db = Database::connection();
 		$rows = $db->query(
-			"SELECT a.nom, a.ville, a.statut, a.created_at,
+			"SELECT a.id_agence, a.nom, a.ville, a.statut, a.created_at,
 					(SELECT CONCAT(u.prenom, ' ', u.nom) FROM utilisateur u
 					 WHERE u.id_agence = a.id_agence AND u.id_role = 2 AND u.deleted_at IS NULL
 					 ORDER BY u.id_utilisateur LIMIT 1) AS admin_nom,
@@ -165,6 +165,7 @@ final class DashboardModel
 
 		return array_map(static function (array $row) use ($statusMap): array {
 			return [
+				'id' => (int) $row['id_agence'],
 				'name' => $row['nom'],
 				'type' => $row['ville'] ?? '',
 				'admin' => $row['admin_nom'] ?? '—',

@@ -24,7 +24,8 @@ $profileInitials ??= '';
       <div class="topbar-actions">
         <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" placeholder="Rechercher une agence, un utilisateur…">
+          <input type="text" id="globalSearchInput" placeholder="Rechercher une agence, un utilisateur…" autocomplete="off">
+          <div class="search-results" id="globalSearchResults" hidden></div>
         </div>
         <button class="icon-btn" id="notifBtn" aria-label="Notifications">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>

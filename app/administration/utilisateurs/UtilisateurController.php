@@ -23,6 +23,11 @@ final class UtilisateurController
 		];
 	}
 
+	public static function detail(int $id): ?array
+	{
+		return UtilisateurModel::detail($id);
+	}
+
 	/**
 	 * @return string|null Message d'erreur, ou null si l'opération a réussi.
 	 */

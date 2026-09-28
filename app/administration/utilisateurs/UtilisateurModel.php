@@ -64,6 +64,22 @@ final class UtilisateurModel
 		];
 	}
 
+	public static function detail(int $id): ?array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT u.id_utilisateur, u.nom, u.prenom, u.email, u.telephone, u.statut, u.derniere_connexion,
+					u.created_at, u.updated_at, u.id_role, u.id_agence,
+					r.nom AS role_nom, a.nom AS agence_nom
+			 FROM utilisateur u
+			 INNER JOIN role r ON r.id_role = u.id_role
+			 LEFT JOIN agence a ON a.id_agence = u.id_agence
+			 WHERE u.id_utilisateur = :id AND u.deleted_at IS NULL LIMIT 1'
+		);
+		$stmt->execute(['id' => $id]);
+		$row = $stmt->fetch();
+		return $row ?: null;
+	}
+
 	public static function setStatus(int $id, string $status): void
 	{
 		$stmt = Database::connection()->prepare('UPDATE utilisateur SET statut = :statut WHERE id_utilisateur = :id');

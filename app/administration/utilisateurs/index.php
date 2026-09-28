@@ -116,23 +116,29 @@ require dirname(__DIR__, 3) . '/layouts/header.php';
                 <td><?= htmlspecialchars($lastLogin, ENT_QUOTES, 'UTF-8') ?></td>
                 <td><span class="status-badge <?= $statusTones[$u['statut']] ?? '' ?>"><?= htmlspecialchars($statusLabels[$u['statut']] ?? $u['statut'], ENT_QUOTES, 'UTF-8') ?></span></td>
                 <td>
-                  <?php if ($isSelf): ?>
-                    <span class="cell-sub">Vous</span>
-                  <?php elseif ($u['statut'] === 'ACTIVE'): ?>
-                    <form class="inline-form" method="post" action="desactiver.php">
-                      <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                      <input type="hidden" name="id" value="<?= (int) $u['id_utilisateur'] ?>">
-                      <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentQuery, ENT_QUOTES, 'UTF-8') ?>">
-                      <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Désactiver ce compte ?');">Désactiver</button>
-                    </form>
-                  <?php else: ?>
-                    <form class="inline-form" method="post" action="activer.php">
-                      <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                      <input type="hidden" name="id" value="<?= (int) $u['id_utilisateur'] ?>">
-                      <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentQuery, ENT_QUOTES, 'UTF-8') ?>">
-                      <button type="submit" class="btn btn-sm btn-success">Activer</button>
-                    </form>
-                  <?php endif; ?>
+                  <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;">
+                    <a class="consult-link" href="detail.php?id=<?= (int) $u['id_utilisateur'] ?>" data-modal>
+                      Consulter
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+                    </a>
+                    <?php if ($isSelf): ?>
+                      <span class="cell-sub">Vous</span>
+                    <?php elseif ($u['statut'] === 'ACTIVE'): ?>
+                      <form class="inline-form" method="post" action="desactiver.php">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                        <input type="hidden" name="id" value="<?= (int) $u['id_utilisateur'] ?>">
+                        <input type="hidden" name="redirect" value="<?= htmlspecialchars('index.php' . ($currentQuery !== '' ? '?' . $currentQuery : ''), ENT_QUOTES, 'UTF-8') ?>">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Désactiver ce compte ?');">Désactiver</button>
+                      </form>
+                    <?php else: ?>
+                      <form class="inline-form" method="post" action="activer.php">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                        <input type="hidden" name="id" value="<?= (int) $u['id_utilisateur'] ?>">
+                        <input type="hidden" name="redirect" value="<?= htmlspecialchars('index.php' . ($currentQuery !== '' ? '?' . $currentQuery : ''), ENT_QUOTES, 'UTF-8') ?>">
+                        <button type="submit" class="btn btn-sm btn-success">Activer</button>
+                      </form>
+                    <?php endif; ?>
+                  </div>
                 </td>
               </tr>
             <?php endforeach; ?>
