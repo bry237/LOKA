@@ -72,7 +72,7 @@ final class AuthModel
 			$role = self::roleId($db, 'Administrateur agence');
 			$agency = $db->prepare(
 				'INSERT INTO agence (nom, email, telephone, adresse, ville, code_postal, pays, statut)
-				 VALUES (:nom, :email, :telephone, :adresse, :ville, :code_postal, :pays, \'ACTIVE\')'
+				 VALUES (:nom, :email, :telephone, :adresse, :ville, :code_postal, :pays, \'PENDING\')'
 			);
 			$agency->execute([
 				'nom' => $data['agence_nom'], 'email' => $data['agence_email'], 'telephone' => $data['agence_telephone'],
@@ -81,6 +81,16 @@ final class AuthModel
 			]);
 			$agencyId = (int) $db->lastInsertId();
 			$userId = self::insertUser($db, $role, $data, $agencyId);
+
+			$freePlan = $db->query("SELECT id_abonnement FROM abonnement WHERE nom = 'Gratuit' LIMIT 1")->fetchColumn();
+			if ($freePlan) {
+				$subscription = $db->prepare(
+					'INSERT INTO agence_abonnement (id_agence, id_abonnement, date_debut, statut)
+					 VALUES (:id_agence, :id_abonnement, CURDATE(), \'ACTIVE\')'
+				);
+				$subscription->execute(['id_agence' => $agencyId, 'id_abonnement' => $freePlan]);
+			}
+
 			$db->commit();
 			return $userId;
 		} catch (Throwable $exception) {

@@ -1,69 +1,16 @@
 
 /* =========================================================
-   DATA_MOCK — Données d'exemple.
-   À l'intégration réelle : remplacer chaque bloc par un appel
-   API vers vos tables (utilisateur, agence, bien, abonnement,
-   agence_administrateur, journal_audit...).
+   Données du dashboard — chargées depuis data.php (JSON),
+   voir DashboardModel.php pour les requêtes réelles.
    ========================================================= */
 
-const DATA_MOCK = {
-  kpis: [
-    { label:"Utilisateurs", value:"1 248", change:"+11.4%", up:true, sub:"vs période précédente", icon:"users", tone:"teal" },
-    { label:"Agences", value:"86", change:"+6.1%", up:true, sub:"vs période précédente", icon:"building", tone:"dark" },
-    { label:"Biens", value:"3 204", change:"+1.7%", up:true, sub:"vs période précédente", icon:"home", tone:"amber" },
-    { label:"Abonnements actifs", value:"74", change:"+2.3%", up:true, sub:"vs période précédente", icon:"card", tone:"violet" }
-  ],
+let DATA_MOCK = null;
 
-  evolution: {
-    "7j":  { labels:["J-6","J-5","J-4","J-3","J-2","J-1","J"], users:[860,900,930,890,950,1020,1080], agences:[60,62,63,61,65,68,70], biens:[2600,2650,2700,2680,2720,2780,2820] },
-    "30j": {
-      labels:["1","3","5","7","9","11","13","15","17","19","21","23","25","27","29"],
-      users:[720,760,800,840,900,980,1040,1080,1040,980,940,1000,1080,1150,1248],
-      agences:[48,50,53,55,58,62,66,70,68,64,60,66,72,78,86],
-      biens:[2100,2180,2260,2340,2420,2520,2620,2700,2640,2560,2500,2620,2820,3000,3204]
-    },
-    "3m":  { labels:["S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12"], users:[520,600,680,760,820,900,980,1040,1000,1080,1180,1248], agences:[30,36,40,45,50,55,60,65,62,70,78,86], biens:[1500,1650,1800,1950,2100,2280,2420,2560,2480,2700,2960,3204] },
-    "1a":  { labels:["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"], users:[300,360,420,480,540,620,700,780,860,980,1120,1248], agences:[15,18,22,26,30,35,40,46,52,60,72,86], biens:[900,1050,1200,1350,1500,1700,1900,2100,2350,2650,2950,3204] }
-  },
-
-  plans: [
-    { label:"Gratuit", value:24, pct:"28%", color:"#B7C6C6" },
-    { label:"Pro",      value:38, pct:"44%", color:"#0F8B8D" },
-    { label:"Max",      value:24, pct:"28%", color:"#075E63" }
-  ],
-
-  activity: [
-    { icon:"plus", tone:"teal",  title:"Nouvelle agence créée", sub:"Horizon Immo · a rejoint la plateforme", time:"Il y a 12 min" },
-    { icon:"user", tone:"blue",  title:"Nouvel utilisateur inscrit", sub:"S. Nguyen · via Toutimmobilier.fr", time:"Il y a 47 min" },
-    { icon:"check",tone:"green", title:"Abonnement activé", sub:"Atlantide Gestion est passé au Pro Max", time:"Il y a 1h" },
-    { icon:"edit", tone:"amber", title:"Abonnement modifié", sub:"Cap Immobilier · passage du Pro à Max", time:"Il y a 2h" },
-    { icon:"x",    tone:"red",   title:"Compte désactivé", sub:"a.morel@agence-test.fr par un administrateur", time:"Hier · 18:32" },
-    { icon:"shield",tone:"gray", title:"Action administrative", sub:"Mise à jour des permissions du rôle Comptable", time:"Hier · 14:05" }
-  ],
-
-  watch: [
-    { icon:"⏳", tone:"amber", title:"5 agences en attente d'activation", sub:"Inscrites depuis plus de 48h" },
-    { icon:"⛔", tone:"red",   title:"3 comptes récemment désactivés", sub:"Sans réactivation depuis 7 jours" },
-    { icon:"⏰", tone:"blue",  title:"7 abonnements arrivent à expiration", sub:"D'ici 7 jours" },
-    { icon:"✓",  tone:"green", title:"Aucune alerte système en cours", sub:"Dernière vérification : il y a 3 min" }
-  ],
-
-  agencies: [
-    { name:"Horizon Immo",     type:"Agence PropTech", admin:"Claire Dubois",  plan:"Pro",     date:"21/09/2026", status:"attente"  },
-    { name:"Atlantide Gestion",type:"Agence PropTech", admin:"Marc Leflem",    plan:"Pro",     date:"20/09/2026", status:"actif"    },
-    { name:"Cap Immobilier",   type:"Agence PropTech", admin:"Nadia Bensaid",  plan:"Max",     date:"17/09/2026", status:"actif"    },
-    { name:"Foncière du Sud",  type:"Agence PropTech", admin:"Julien Roy",     plan:"Gratuit", date:"15/09/2026", status:"suspendu" },
-    { name:"Toit Bleu Agence", type:"Agence PropTech", admin:"Sophie Marchand",plan:"Pro",     date:"12/09/2026", status:"actif"    },
-    { name:"Néréide Habitat",  type:"Agence PropTech", admin:"Karim Haddad",   plan:"Max",     date:"10/09/2026", status:"actif"    },
-    { name:"Alizés Patrimoine",type:"Agence PropTech", admin:"Emma Petit",     plan:"Pro",     date:"08/09/2026", status:"actif"    },
-    { name:"Litoral Conseil",  type:"Agence PropTech", admin:"Hugo Simon",     plan:"Gratuit", date:"05/09/2026", status:"attente"  },
-    { name:"Racine Immobilier",type:"Agence PropTech", admin:"Léa Fontaine",   plan:"Max",     date:"03/09/2026", status:"actif"    },
-    { name:"Ancrage Gestion",  type:"Agence PropTech", admin:"Thomas Girard",  plan:"Pro",     date:"01/09/2026", status:"suspendu" },
-    { name:"Méridien Biens",   type:"Agence PropTech", admin:"Camille Roux",   plan:"Pro",     date:"29/08/2026", status:"actif"    },
-    { name:"Boréal Habitat",   type:"Agence PropTech", admin:"Antoine Faure",  plan:"Gratuit", date:"27/08/2026", status:"attente"  },
-  ],
-  totalAgencies: 32
-};
+async function loadDashboardData(){
+  const res = await fetch('data.php', { credentials: 'same-origin' });
+  if(!res.ok) throw new Error('Échec du chargement des données (HTTP ' + res.status + ')');
+  return res.json();
+}
 
 /* ---------------- Icons ---------------- */
 const ICONS = {
@@ -188,7 +135,7 @@ function renderTable(){
 
   const shownFrom = data.length ? start+1 : 0;
   const shownTo = Math.min(start+pageSize, data.length);
-  document.getElementById('footerCount').textContent = `Affichage ${shownFrom}-${shownTo} sur ${DATA_MOCK.totalAgencies} agences`;
+  document.getElementById('footerCount').textContent = `Affichage ${shownFrom}-${shownTo} sur ${data.length} agences`;
 
   const pag = document.getElementById('pagination');
   let html = `<button class="page-btn" id="prevPage" ${currentPage===1?'disabled':''}>‹</button>`;
@@ -225,7 +172,7 @@ function buildEvolutionChart(range){
       labels:d.labels,
       datasets:[
         { label:'Utilisateurs', data:d.users, borderColor:'#0F8B8D', backgroundColor:gradUsers, fill:true, tension:.4, pointRadius:0, borderWidth:2.4 },
-        { label:'Agences', data:d.agences, borderColor:'#075E63', backgroundColor:'transparent', fill:false, tension:.4, pointRadius:0, borderWidth:2 },
+        { label:'Agences', data:d.agences, borderColor:'#075E63', backgroundColor:'transparent', fill:false, tension:.4, pointRadius:0, borderWidth:2, yAxisID:'y2' },
         { label:'Biens', data:d.biens, borderColor:'#F59E0B', backgroundColor:'transparent', fill:false, tension:.4, pointRadius:0, borderWidth:2, yAxisID:'y1' }
       ]
     },
@@ -244,13 +191,17 @@ function buildEvolutionChart(range){
       scales:{
         x:{ grid:{ display:false }, ticks:{ color:'#8AA0A0', font:{size:10.5}, maxRotation:0 } },
         y:{ position:'left', grid:{ color:'#EEF3F3' }, ticks:{ color:'#8AA0A0', font:{size:10.5} } },
-        y1:{ position:'right', display:false }
+        y1:{ position:'right', display:false },
+        y2:{ position:'right', display:false }
       }
     }
   });
 }
 
 function buildDonutChart(){
+  const total = DATA_MOCK.plans.reduce((sum,p)=>sum+p.value, 0);
+  document.getElementById('donutTotal').textContent = total;
+
   const ctx = document.getElementById('donutChart').getContext('2d');
   donutChart = new Chart(ctx, {
     type:'doughnut',
@@ -280,10 +231,6 @@ function buildDonutChart(){
 }
 
 /* ---------------- Interactions ---------------- */
-document.getElementById('bannerClose').addEventListener('click', ()=>{
-  document.getElementById('banner').style.display='none';
-});
-
 document.getElementById('rangeTabs').addEventListener('click', (e)=>{
   const tab = e.target.closest('.range-tab');
   if(!tab) return;
@@ -333,11 +280,22 @@ document.getElementById('menuToggle').addEventListener('click', openSidebar);
 overlay.addEventListener('click', closeSidebar);
 
 /* ---------------- Init ---------------- */
-renderKpis();
-renderActivity();
-renderWatch();
-renderDonutLegend();
-renderTable();
-buildEvolutionChart('30j');
-buildDonutChart();
+async function init(){
+  try {
+    DATA_MOCK = await loadDashboardData();
+  } catch (err) {
+    console.error(err);
+    document.getElementById('kpiGrid').innerHTML =
+      '<p style="color:#DC2626;font-size:13px;">Impossible de charger les données du dashboard. Réessayez plus tard.</p>';
+    return;
+  }
+  renderKpis();
+  renderActivity();
+  renderWatch();
+  renderDonutLegend();
+  renderTable();
+  buildEvolutionChart('30j');
+  buildDonutChart();
+}
+init();
 
