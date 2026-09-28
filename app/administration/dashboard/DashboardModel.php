@@ -71,7 +71,7 @@ final class DashboardModel
 	{
 		$db = Database::connection();
 		$stmt = $db->prepare(
-			"SELECT ja.action, ja.entite, ja.date_action, u.nom, u.prenom, a.nom AS agence_nom
+			"SELECT ja.action, ja.entite, ja.date_action, ja.nouvelle_valeur, u.nom, u.prenom, a.nom AS agence_nom
 			 FROM journal_audit ja
 			 LEFT JOIN utilisateur u ON u.id_utilisateur = ja.id_utilisateur
 			 LEFT JOIN agence a ON a.id_agence = ja.id_agence
@@ -82,7 +82,8 @@ final class DashboardModel
 		$stmt->execute();
 
 		return array_map(static function (array $row): array {
-			[$icon, $tone, $title] = self::activityPresentation($row['action'], $row['entite']);
+			$nouvelleValeur = $row['nouvelle_valeur'] ? json_decode((string) $row['nouvelle_valeur'], true) : null;
+			[$icon, $tone, $title] = self::activityPresentation($row['action'], $row['entite'], is_array($nouvelleValeur) ? $nouvelleValeur : []);
 			$who = trim(($row['prenom'] ?? '') . ' ' . ($row['nom'] ?? ''));
 			$sub = $row['agence_nom'] ?? ($who !== '' ? $who : 'Système');
 			return [
@@ -279,17 +280,51 @@ final class DashboardModel
 		return $buckets;
 	}
 
-	private static function activityPresentation(string $action, string $entite): array
+	private const ENTITY_LABELS = [
+		'agence' => 'une agence',
+		'utilisateur' => 'un utilisateur',
+		'bien' => 'un bien',
+		'contrat' => 'un contrat',
+		'paiement' => 'un paiement',
+		'abonnement' => 'un abonnement',
+	];
+
+	/** @param array<string,mixed> $nouvelleValeur */
+	private static function activityPresentation(string $action, string $entite, array $nouvelleValeur = []): array
 	{
+		if ($action === 'UPDATE' && isset($nouvelleValeur['statut'])) {
+			if ($entite === 'agence') {
+				$label = match ($nouvelleValeur['statut']) {
+					'SUSPENDED' => 'Agence suspendue',
+					'ACTIVE' => 'Agence activée',
+					'PENDING' => 'Agence remise en attente',
+					default => 'Statut de l’agence modifié',
+				};
+				return [$nouvelleValeur['statut'] === 'SUSPENDED' ? 'x' : 'check', $nouvelleValeur['statut'] === 'SUSPENDED' ? 'red' : 'teal', $label];
+			}
+			if ($entite === 'utilisateur') {
+				return match ($nouvelleValeur['statut']) {
+					'ACTIVE' => ['check', 'teal', 'Compte utilisateur activé'],
+					'INACTIVE' => ['x', 'red', 'Compte utilisateur désactivé'],
+					'LOCKED' => ['shield', 'gray', 'Compte utilisateur verrouillé'],
+					default => ['edit', 'amber', 'Statut du compte modifié'],
+				};
+			}
+		}
+
+		$label = self::ENTITY_LABELS[$entite] ?? 'un élément';
+
 		return match (true) {
 			$action === 'CREATE' && $entite === 'agence' => ['plus', 'teal', 'Nouvelle agence créée'],
 			$action === 'CREATE' && $entite === 'utilisateur' => ['user', 'blue', 'Nouvel utilisateur inscrit'],
-			$action === 'CREATE' => ['plus', 'teal', "Création — {$entite}"],
-			$action === 'UPDATE' => ['edit', 'amber', "Modification — {$entite}"],
-			$action === 'DELETE' => ['x', 'red', "Suppression — {$entite}"],
+			$action === 'CREATE' => ['plus', 'teal', "Création d’{$label}"],
+			$action === 'UPDATE' && $entite === 'agence' => ['edit', 'amber', 'Informations d’agence modifiées'],
+			$action === 'UPDATE' && $entite === 'utilisateur' => ['edit', 'amber', 'Profil utilisateur modifié'],
+			$action === 'UPDATE' => ['edit', 'amber', "Modification d’{$label}"],
+			$action === 'DELETE' => ['x', 'red', "Suppression d’{$label}"],
 			$action === 'LOGIN' => ['shield', 'gray', 'Connexion'],
 			$action === 'LOGOUT' => ['shield', 'gray', 'Déconnexion'],
-			default => ['shield', 'gray', "Action — {$entite}"],
+			default => ['shield', 'gray', "Action sur {$label}"],
 		};
 	}
 
