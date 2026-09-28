@@ -280,12 +280,14 @@ final class DashboardModel
 
 	private static function activityPresentation(string $action, string $entite): array
 	{
-		return match ($action) {
-			'CREATE' => ['plus', 'teal', "Création — {$entite}"],
-			'UPDATE' => ['edit', 'amber', "Modification — {$entite}"],
-			'DELETE' => ['x', 'red', "Suppression — {$entite}"],
-			'LOGIN' => ['user', 'blue', 'Connexion'],
-			'LOGOUT' => ['user', 'gray', 'Déconnexion'],
+		return match (true) {
+			$action === 'CREATE' && $entite === 'agence' => ['plus', 'teal', 'Nouvelle agence créée'],
+			$action === 'CREATE' && $entite === 'utilisateur' => ['user', 'blue', 'Nouvel utilisateur inscrit'],
+			$action === 'CREATE' => ['plus', 'teal', "Création — {$entite}"],
+			$action === 'UPDATE' => ['edit', 'amber', "Modification — {$entite}"],
+			$action === 'DELETE' => ['x', 'red', "Suppression — {$entite}"],
+			$action === 'LOGIN' => ['shield', 'gray', 'Connexion'],
+			$action === 'LOGOUT' => ['shield', 'gray', 'Déconnexion'],
 			default => ['shield', 'gray', "Action — {$entite}"],
 		};
 	}

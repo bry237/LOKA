@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/core/Database.php';
+require_once dirname(__DIR__, 2) . '/core/Logger.php';
 
 final class AuthModel
 {
@@ -49,6 +50,11 @@ final class AuthModel
 				'ville' => $data['ville'], 'pays' => $data['pays'], 'date_naissance' => $data['date_naissance'],
 				'profession' => $data['profession'], 'revenu_mensuel_fourchette' => $data['revenu_mensuel_fourchette'],
 			]);
+
+			Logger::audit('CREATE', 'utilisateur', $userId, $userId, null, null, [
+				'nom' => $data['nom'], 'prenom' => $data['prenom'], 'email' => $data['email'], 'role' => 'Locataire',
+			]);
+
 			$db->commit();
 			return $userId;
 		} catch (Throwable $exception) {
@@ -91,6 +97,13 @@ final class AuthModel
 				$subscription->execute(['id_agence' => $agencyId, 'id_abonnement' => $freePlan]);
 			}
 
+			Logger::audit('CREATE', 'agence', $agencyId, $userId, $agencyId, null, [
+				'nom' => $data['agence_nom'], 'email' => $data['agence_email'],
+			]);
+			Logger::audit('CREATE', 'utilisateur', $userId, $userId, $agencyId, null, [
+				'nom' => $data['nom'], 'prenom' => $data['prenom'], 'email' => $data['email'], 'role' => 'Administrateur agence',
+			]);
+
 			$db->commit();
 			return $userId;
 		} catch (Throwable $exception) {
@@ -114,6 +127,11 @@ final class AuthModel
 			$values = ['id_utilisateur' => $userId];
 			foreach ($profileFields as $field) $values[$field] = $data[$field];
 			$profile->execute($values);
+
+			Logger::audit('CREATE', 'utilisateur', $userId, $userId, null, null, [
+				'nom' => $data['nom'] ?? null, 'prenom' => $data['prenom'] ?? null, 'email' => $data['email'] ?? null, 'role' => $roleName,
+			]);
+
 			$db->commit();
 			return $userId;
 		} catch (Throwable $exception) {

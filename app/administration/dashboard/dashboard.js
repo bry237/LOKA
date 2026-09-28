@@ -117,11 +117,11 @@ function renderTable(){
   body.innerHTML = pageData.map(a => `
     <tr>
       <td>
-        <div class="agency-cell">
-          <div class="agency-avatar">${initials(a.name)}</div>
+        <div class="cell">
+          <div class="cell-avatar">${initials(a.name)}</div>
           <div>
-            <div class="agency-name">${a.name}</div>
-            <div class="agency-type">${a.type}</div>
+            <div class="cell-title">${a.name}</div>
+            <div class="cell-sub">${a.type}</div>
           </div>
         </div>
       </td>
@@ -257,27 +257,6 @@ document.getElementById('statusFilter').addEventListener('click', ()=>{
   currentPage = 1;
   renderTable();
 });
-
-/* Sidebar nav active state; connect routing here when backend pages are ready. */
-document.querySelectorAll('.nav-link[data-page]').forEach(link=>{
-  link.addEventListener('click', ()=>{
-    document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
-    link.classList.add('active');
-    if(window.innerWidth<=900){ closeSidebar(); }
-  });
-});
-
-document.getElementById('logoutLink').addEventListener('click', ()=>{
-  window.location.href = '../../authentification/deconnexion.php';
-});
-
-/* Mobile sidebar */
-const sidebar = document.getElementById('sidebar');
-const overlay = document.getElementById('overlay');
-function openSidebar(){ sidebar.classList.add('open'); overlay.classList.add('show'); }
-function closeSidebar(){ sidebar.classList.remove('open'); overlay.classList.remove('show'); }
-document.getElementById('menuToggle').addEventListener('click', openSidebar);
-overlay.addEventListener('click', closeSidebar);
 
 /* ---------------- Init ---------------- */
 async function init(){

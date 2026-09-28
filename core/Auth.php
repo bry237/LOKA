@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Session.php';
+require_once __DIR__ . '/Logger.php';
 
 final class Auth
 {
@@ -69,6 +70,8 @@ final class Auth
 			'token' => $token,
 		];
 
+		Logger::audit('LOGIN', 'utilisateur', (int) $user['id_utilisateur'], (int) $user['id_utilisateur'], $user['id_agence'] !== null ? (int) $user['id_agence'] : null);
+
 		return self::user();
 	}
 
@@ -94,20 +97,24 @@ final class Auth
 		$user = $stmt->fetch();
 
 		if (!$user) {
-			self::logout();
+			self::logout(false);
 			return null;
 		}
 
 		return $user;
 	}
 
-	public static function logout(): void
+	public static function logout(bool $explicit = true): void
 	{
 		Session::start();
 		$session = $_SESSION[self::SESSION_KEY] ?? null;
 		if ($session) {
 			$stmt = Database::connection()->prepare('DELETE FROM session_utilisateur WHERE token_hash = :token_hash');
 			$stmt->execute(['token_hash' => hash('sha256', $session['token'])]);
+
+			if ($explicit) {
+				Logger::audit('LOGOUT', 'utilisateur', $session['id_utilisateur'], $session['id_utilisateur'], $session['id_agence']);
+			}
 		}
 		Session::destroy();
 	}

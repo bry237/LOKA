@@ -10,6 +10,7 @@ $extraScripts ??= '';
   </main>
 </div>
 
+<script src="/LOKA/layouts/admin.js"></script>
 <?= $extraScripts ?>
 </body>
 </html>
