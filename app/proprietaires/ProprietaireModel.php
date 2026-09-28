@@ -112,16 +112,31 @@ final class ProprietaireModel
 		if (!$property->fetchColumn()) {
 			throw new InvalidArgumentException('Le bien sélectionné appartient à une autre agence.');
 		}
-		$existing = $db->prepare('SELECT 1 FROM bien_proprietaire WHERE id_bien = :id_bien AND id_proprietaire = :id_proprietaire AND date_fin IS NULL');
-		$existing->execute(['id_bien' => $propertyId, 'id_proprietaire' => $ownerId]);
-		if ($existing->fetchColumn()) {
-			throw new InvalidArgumentException('Ce propriétaire est déjà associé à ce bien.');
-		}
-		$stmt = $db->prepare(
-			'INSERT INTO bien_proprietaire (id_bien, id_proprietaire, quote_part, date_debut)
-			 VALUES (:id_bien, :id_proprietaire, :quote_part, :date_debut)'
+		$quotePart = (float) $input['quote_part'];
+		$total = $db->prepare(
+			'SELECT COALESCE(SUM(quote_part), 0) FROM bien_proprietaire
+			 WHERE id_bien = :id_bien AND date_fin IS NULL AND id_proprietaire <> :id_proprietaire'
 		);
-		$stmt->execute(['id_bien' => $propertyId, 'id_proprietaire' => $ownerId, 'quote_part' => (float) $input['quote_part'], 'date_debut' => $input['date_debut']]);
+		$total->execute(['id_bien' => $propertyId, 'id_proprietaire' => $ownerId]);
+		if ((float) $total->fetchColumn() + $quotePart > 100.0) {
+			throw new InvalidArgumentException('La somme des quotes-parts actives ne peut pas dépasser 100 %.');
+		}
+
+		$existing = $db->prepare('SELECT date_fin FROM bien_proprietaire WHERE id_bien = :id_bien AND id_proprietaire = :id_proprietaire');
+		$existing->execute(['id_bien' => $propertyId, 'id_proprietaire' => $ownerId]);
+		$existingDateEnd = $existing->fetchColumn();
+		if ($existingDateEnd === false) {
+			$stmt = $db->prepare(
+				'INSERT INTO bien_proprietaire (id_bien, id_proprietaire, quote_part, date_debut)
+				 VALUES (:id_bien, :id_proprietaire, :quote_part, :date_debut)'
+			);
+		} else {
+			$stmt = $db->prepare(
+				'UPDATE bien_proprietaire SET quote_part = :quote_part, date_debut = :date_debut, date_fin = NULL
+				 WHERE id_bien = :id_bien AND id_proprietaire = :id_proprietaire'
+			);
+		}
+		$stmt->execute(['id_bien' => $propertyId, 'id_proprietaire' => $ownerId, 'quote_part' => $quotePart, 'date_debut' => $input['date_debut']]);
 	}
 
 	public static function detachProperty(int $agencyId, int $ownerId, int $propertyId): void
@@ -136,10 +151,44 @@ final class ProprietaireModel
 		$stmt->execute(['id_bien' => $propertyId, 'id_proprietaire' => $ownerId, 'id_agence' => $agencyId]);
 	}
 
+	public static function propertyWithOwners(int $agencyId, int $propertyId): ?array
+	{
+		self::assertOwnerlessPropertyAccess($agencyId, $propertyId);
+		$stmt = Database::connection()->prepare(
+			'SELECT b.id_bien, b.id_agence, b.reference, b.titre, b.statut,
+					p.id_proprietaire, p.nom, p.prenom, p.email, bp.quote_part, bp.date_debut
+			 FROM bien b
+			 LEFT JOIN bien_proprietaire bp ON bp.id_bien = b.id_bien AND bp.date_fin IS NULL
+			 LEFT JOIN proprietaire p ON p.id_proprietaire = bp.id_proprietaire
+				 AND p.id_agence = b.id_agence AND p.deleted_at IS NULL
+			 WHERE b.id_bien = :id_bien AND b.id_agence = :id_agence AND b.deleted_at IS NULL
+			 ORDER BY p.nom, p.prenom'
+		);
+		$stmt->execute(['id_bien' => $propertyId, 'id_agence' => $agencyId]);
+		$rows = $stmt->fetchAll();
+		if ($rows === []) {
+			return null;
+		}
+		$property = $rows[0];
+		$property['owners'] = array_values(array_filter($rows, static fn(array $row): bool => $row['id_proprietaire'] !== null));
+		return $property;
+	}
+
 	private static function assertOwner(int $agencyId, int $ownerId): void
 	{
 		if (!self::find($agencyId, $ownerId)) {
 			throw new RuntimeException('Le propriétaire est introuvable ou inaccessible.');
+		}
+	}
+
+	private static function assertOwnerlessPropertyAccess(int $agencyId, int $propertyId): void
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT 1 FROM bien WHERE id_bien = :id_bien AND id_agence = :id_agence AND deleted_at IS NULL'
+		);
+		$stmt->execute(['id_bien' => $propertyId, 'id_agence' => $agencyId]);
+		if (!$stmt->fetchColumn()) {
+			throw new RuntimeException('Le bien est introuvable ou inaccessible.');
 		}
 	}
 

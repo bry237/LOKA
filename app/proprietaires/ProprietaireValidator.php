@@ -32,14 +32,15 @@ final class ProprietaireValidator
 		$errors = [];
 		$propertyId = filter_var($input['id_bien'] ?? null, FILTER_VALIDATE_INT);
 		$share = filter_var($input['quote_part'] ?? 100, FILTER_VALIDATE_FLOAT);
-		$date = DateTimeImmutable::createFromFormat('Y-m-d', (string) ($input['date_debut'] ?? ''));
+		$dateValue = (string) ($input['date_debut'] ?? '');
+		$date = DateTimeImmutable::createFromFormat('!Y-m-d', $dateValue);
 		if ($propertyId === false || $propertyId < 1) {
 			$errors['id_bien'] = 'Le bien sélectionné est invalide.';
 		}
 		if ($share === false || $share <= 0 || $share > 100) {
 			$errors['quote_part'] = 'La quote-part doit être comprise entre 0,01 et 100.';
 		}
-		if (!$date) {
+		if (!$date || $date->format('Y-m-d') !== $dateValue) {
 			$errors['date_debut'] = 'La date de début est obligatoire.';
 		}
 		return $errors;
