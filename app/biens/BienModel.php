@@ -195,9 +195,11 @@ final class BienModel
 
 		$stmt = $db->prepare(
 			'INSERT INTO bien (id_agence, id_type_bien, id_adresse, id_immeuble, reference, titre, surface,
-				nombre_pieces, etage, loyer, charges, caution, statut, description)
+				nombre_pieces, etage, loyer, charges, caution, statut, description,
+				meuble, date_disponibilite, dpe_classe, ges_classe)
 			 VALUES (:id_agence, :id_type_bien, :id_adresse, :id_immeuble, :reference, :titre, :surface,
-				:nombre_pieces, :etage, :loyer, :charges, :caution, :statut, :description)'
+				:nombre_pieces, :etage, :loyer, :charges, :caution, :statut, :description,
+				:meuble, :date_disponibilite, :dpe_classe, :ges_classe)'
 		);
 		$stmt->execute(self::propertyParams($agencyId, $input));
 		return (int) $db->lastInsertId();
@@ -212,7 +214,8 @@ final class BienModel
 			'UPDATE bien SET id_type_bien = :id_type_bien, id_adresse = :id_adresse, id_immeuble = :id_immeuble,
 				reference = :reference, titre = :titre, surface = :surface, nombre_pieces = :nombre_pieces,
 				etage = :etage, loyer = :loyer, charges = :charges, caution = :caution, statut = :statut,
-				description = :description
+				description = :description, meuble = :meuble, date_disponibilite = :date_disponibilite,
+				dpe_classe = :dpe_classe, ges_classe = :ges_classe
 			 WHERE id_bien = :id_bien AND id_agence = :id_agence AND deleted_at IS NULL'
 		);
 		$stmt->execute($params);
@@ -391,6 +394,7 @@ final class BienModel
 
 	private static function propertyParams(int $agencyId, array $input): array
 	{
+		$dpeValues = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 		return [
 			'id_agence' => $agencyId,
 			'id_type_bien' => (int) $input['id_type_bien'],
@@ -406,6 +410,10 @@ final class BienModel
 			'caution' => (float) $input['caution'],
 			'statut' => $input['statut'] ?? 'CREATED',
 			'description' => self::nullable($input['description'] ?? null),
+			'meuble' => (int) ($input['meuble'] ?? 0),
+			'date_disponibilite' => self::nullable($input['date_disponibilite'] ?? null),
+			'dpe_classe' => in_array($input['dpe_classe'] ?? '', $dpeValues, true) ? $input['dpe_classe'] : null,
+			'ges_classe' => in_array($input['ges_classe'] ?? '', $dpeValues, true) ? $input['ges_classe'] : null,
 		];
 	}
 
