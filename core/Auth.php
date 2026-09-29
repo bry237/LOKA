@@ -104,6 +104,16 @@ final class Auth
 		return $user;
 	}
 
+	public static function isAgencyPending(array $user): bool
+	{
+		if ($user['id_agence'] === null) {
+			return false;
+		}
+		$stmt = Database::connection()->prepare('SELECT statut FROM agence WHERE id_agence = :id LIMIT 1');
+		$stmt->execute(['id' => $user['id_agence']]);
+		return $stmt->fetchColumn() === 'PENDING';
+	}
+
 	public static function logout(bool $explicit = true): void
 	{
 		Session::start();

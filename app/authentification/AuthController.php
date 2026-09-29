@@ -14,6 +14,10 @@ final class AuthController
 		if ($errors) return [$errors, null];
 		$user = Auth::login($data['email'], $data['password']);
 		if (!$user) return [['general' => 'Adresse email ou mot de passe incorrect.'], null];
+		if (Auth::isAgencyPending($user)) {
+			Auth::logout(false);
+			return [['general' => "Votre agence est en cours de validation par notre équipe. Vous serez notifié dès l'activation."], null];
+		}
 		return [[], self::redirectForRole($user['role_nom'])];
 	}
 
@@ -45,14 +49,14 @@ final class AuthController
 		return [[], 'connexion.php?registered=1'];
 	}
 
-	public static function handleAgencyRegistration(array $input): array
+	public static function handleAgencyRegistration(array $input, array $files = []): array
 	{
 		if (!Auth::verifyCsrf($input['csrf_token'] ?? null)) return [['general' => 'Votre session a expiré. Rechargez la page.'], null];
-		[$errors, $data] = AuthValidator::agencyRegistration($input);
+		[$errors, $data] = AuthValidator::agencyRegistration($input, $files);
 		if ($errors) return [$errors, null];
 		if (AuthModel::emailExists($data['email']) || AuthModel::emailExists($data['agence_email'])) return [['general' => 'Cette adresse email est déjà utilisée.'], null];
 		try {
-			AuthModel::registerAgency($data);
+			AuthModel::registerAgency($data, $files);
 		} catch (Throwable $exception) {
 			return [['general' => 'Création de l’espace agence impossible pour le moment.'], null];
 		}

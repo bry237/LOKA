@@ -39,6 +39,11 @@ $statusTones = ['ACTIVE' => 'actif', 'PENDING' => 'attente', 'SUSPENDED' => 'sus
 $subStatusLabels = ['ACTIVE' => 'Actif', 'EXPIRED' => 'Expiré', 'CANCELLED' => 'Annulé'];
 $subStatusTones = ['ACTIVE' => 'actif', 'EXPIRED' => 'suspendu', 'CANCELLED' => 'inactif'];
 
+$documents = $detail['documents'] ?? [];
+$docTypeLabels = ['PIECE_IDENTITE' => "Pièce d'identité du responsable", 'JUSTIFICATIF_IMMATRICULATION' => "Justificatif d'immatriculation", 'AUTRE' => 'Autre document'];
+$docStatusLabels = ['EN_ATTENTE' => 'En attente', 'VALIDE' => 'Validé', 'REJETE' => 'Rejeté'];
+$docStatusTones = ['EN_ATTENTE' => 'attente', 'VALIDE' => 'actif', 'REJETE' => 'suspendu'];
+
 $nextStatus = $agence['statut'] === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
 $actionLabel = match ($agence['statut']) {
 	'ACTIVE' => 'Suspendre',
@@ -156,6 +161,59 @@ if (!$isModal) require dirname(__DIR__, 3) . '/layouts/header.php';
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Documents de vérification</div></div>
+      <?php if (!$documents): ?>
+        <p class="empty-note">Aucun document soumis.</p>
+      <?php else: ?>
+        <div class="document-list">
+          <?php foreach ($documents as $doc): ?>
+            <div class="document-item">
+              <div class="document-main">
+                <div class="document-title">
+                  <?= htmlspecialchars($docTypeLabels[$doc['type']] ?? $doc['type'], ENT_QUOTES, 'UTF-8') ?>
+                  <span class="status-badge <?= $docStatusTones[$doc['statut_verification']] ?? '' ?>"><?= htmlspecialchars($docStatusLabels[$doc['statut_verification']] ?? $doc['statut_verification'], ENT_QUOTES, 'UTF-8') ?></span>
+                </div>
+                <div class="document-sub"><?= htmlspecialchars($doc['nom_original'], ENT_QUOTES, 'UTF-8') ?> · <?= (new DateTimeImmutable($doc['created_at']))->format('d/m/Y H:i') ?></div>
+                <?php if ($doc['analyse_ia_resume']): ?>
+                  <p class="document-ia-summary"><?= htmlspecialchars($doc['analyse_ia_resume'], ENT_QUOTES, 'UTF-8') ?></p>
+                <?php endif; ?>
+                <?php if (!empty($doc['analyse_ia_alertes'])): ?>
+                  <ul class="document-ia-alerts">
+                    <?php foreach ($doc['analyse_ia_alertes'] as $alerte): ?>
+                      <li><?= htmlspecialchars($alerte, ENT_QUOTES, 'UTF-8') ?></li>
+                    <?php endforeach; ?>
+                  </ul>
+                <?php endif; ?>
+                <?php if ($doc['statut_verification'] === 'REJETE' && $doc['motif_rejet']): ?>
+                  <p class="document-ia-summary">Motif du rejet : <?= htmlspecialchars($doc['motif_rejet'], ENT_QUOTES, 'UTF-8') ?></p>
+                <?php endif; ?>
+              </div>
+              <div class="document-actions">
+                <a class="btn btn-sm" href="document-telecharger.php?id=<?= (int) $doc['id_document_agence'] ?>" target="_blank" rel="noopener">Télécharger</a>
+                <?php if ($doc['statut_verification'] === 'EN_ATTENTE'): ?>
+                  <form class="inline-form" method="post" action="valider-document.php">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="id" value="<?= (int) $doc['id_document_agence'] ?>">
+                    <input type="hidden" name="agence_id" value="<?= (int) $agence['id_agence'] ?>">
+                    <input type="hidden" name="statut" value="VALIDE">
+                    <button type="submit" class="btn btn-sm btn-success">Valider</button>
+                  </form>
+                  <form class="inline-form" method="post" action="valider-document.php">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="id" value="<?= (int) $doc['id_document_agence'] ?>">
+                    <input type="hidden" name="agence_id" value="<?= (int) $agence['id_agence'] ?>">
+                    <input type="hidden" name="statut" value="REJETE">
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Rejeter ce document ?');">Rejeter</button>
+                  </form>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
     </div>
 <?php
 if (!$isModal) require dirname(__DIR__, 3) . '/layouts/footer.php';

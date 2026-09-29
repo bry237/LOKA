@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/core/Database.php';
 require_once dirname(__DIR__, 2) . '/core/Logger.php';
+require_once dirname(__DIR__, 2) . '/core/FileUpload.php';
+require_once dirname(__DIR__, 2) . '/core/ClaudeVisionAnalyzer.php';
+require_once dirname(__DIR__) . '/administration/agences/DocumentAgenceModel.php';
 
 final class AuthModel
 {
@@ -70,7 +73,7 @@ final class AuthModel
 		], false);
 	}
 
-	public static function registerAgency(array $data): int
+	public static function registerAgency(array $data, array $files = []): int
 	{
 		$db = Database::connection();
 		$db->beginTransaction();
@@ -105,10 +108,38 @@ final class AuthModel
 			]);
 
 			$db->commit();
+
+			self::storeAgencyDocument($agencyId, 'PIECE_IDENTITE', $files['piece_identite_responsable'] ?? null, trim($data['prenom'] . ' ' . $data['nom']));
+			self::storeAgencyDocument($agencyId, 'JUSTIFICATIF_IMMATRICULATION', $files['justificatif_agence'] ?? null, $data['agence_nom']);
+
 			return $userId;
 		} catch (Throwable $exception) {
 			if ($db->inTransaction()) $db->rollBack();
 			throw $exception;
+		}
+	}
+
+	private static function storeAgencyDocument(int $agencyId, string $type, ?array $file, string $expectedName): void
+	{
+		if (!$file) {
+			return;
+		}
+		try {
+			$storage = require dirname(__DIR__, 2) . '/config/storage.php';
+			$destinationDir = rtrim($storage['agence_documents_path'], '/\\') . '/agence-' . $agencyId;
+			$uploadResult = FileUpload::store($file, $destinationDir, ['image/jpeg', 'image/png', 'application/pdf'], 5 * 1024 * 1024);
+			$documentId = DocumentAgenceModel::create($agencyId, $type, $uploadResult);
+
+			$analysis = ClaudeVisionAnalyzer::analyze(
+				$destinationDir . DIRECTORY_SEPARATOR . $uploadResult['stored_name'],
+				$uploadResult['mime_type'],
+				$type,
+				$expectedName
+			);
+			DocumentAgenceModel::saveAnalysis($documentId, $analysis);
+		} catch (Throwable $exception) {
+			// Le compte agence existe déjà à ce stade : une erreur de stockage/analyse ne doit pas
+			// faire échouer l'inscription, l'admin verra simplement "aucun document" en revue.
 		}
 	}
 

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/AgenceModel.php';
 require_once __DIR__ . '/AgenceValidator.php';
+require_once __DIR__ . '/DocumentAgenceModel.php';
 require_once dirname(__DIR__, 3) . '/core/Auth.php';
 require_once dirname(__DIR__, 3) . '/core/Logger.php';
 
@@ -26,7 +27,40 @@ final class AgenceController
 
 	public static function detail(int $id): ?array
 	{
-		return AgenceModel::detail($id);
+		$detail = AgenceModel::detail($id);
+		if ($detail) {
+			$detail['documents'] = DocumentAgenceModel::listForAgence($id);
+		}
+		return $detail;
+	}
+
+	/**
+	 * @return string|null Message d'erreur, ou null si l'opération a réussi.
+	 */
+	public static function setDocumentStatus(int $idDocument, string $statut, ?string $motif = null): ?string
+	{
+		if (!in_array($statut, ['VALIDE', 'REJETE'], true)) {
+			return 'Statut invalide.';
+		}
+		$document = DocumentAgenceModel::find($idDocument);
+		if (!$document) {
+			return 'Document introuvable.';
+		}
+
+		$currentUser = Auth::user();
+		DocumentAgenceModel::setStatus($idDocument, $statut, $currentUser['id_utilisateur'] ?? null, $motif);
+
+		Logger::audit(
+			'UPDATE',
+			'document_agence',
+			$idDocument,
+			$currentUser['id_utilisateur'] ?? null,
+			$document['id_agence'],
+			['statut_verification' => $document['statut_verification']],
+			['statut_verification' => $statut]
+		);
+
+		return null;
 	}
 
 	public static function forEdit(int $id): ?array

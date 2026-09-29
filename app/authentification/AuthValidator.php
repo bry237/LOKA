@@ -64,7 +64,10 @@ final class AuthValidator
 		return [$errors, $data];
 	}
 
-	public static function agencyRegistration(array $input): array
+	private const MAX_DOCUMENT_BYTES = 5 * 1024 * 1024;
+	private const ALLOWED_DOCUMENT_MIMES = ['image/jpeg', 'image/png', 'application/pdf'];
+
+	public static function agencyRegistration(array $input, array $files = []): array
 	{
 		$data = [
 			'agence_nom' => trim((string) ($input['agency_name'] ?? '')),
@@ -89,7 +92,30 @@ final class AuthValidator
 		]);
 		if (!filter_var($data['agence_email'], FILTER_VALIDATE_EMAIL)) $errors['agency_email'] = 'Email professionnel invalide.';
 		self::validateCommonAccount($data, $input, $errors, 'password', 'manager_password_confirm');
+		self::requireDocument($files, 'piece_identite_responsable', 'La pièce d’identité du responsable', $errors);
+		self::requireDocument($files, 'justificatif_agence', 'Le justificatif d’immatriculation de l’agence', $errors);
 		return [$errors, $data];
+	}
+
+	private static function requireDocument(array $files, string $field, string $label, array &$errors): void
+	{
+		$file = $files[$field] ?? null;
+		if (!is_array($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+			$errors[$field] = "$label est requis.";
+			return;
+		}
+		if ($file['error'] !== UPLOAD_ERR_OK) {
+			$errors[$field] = "$label n’a pas pu être envoyé.";
+			return;
+		}
+		if ((int) $file['size'] > self::MAX_DOCUMENT_BYTES) {
+			$errors[$field] = "$label dépasse la taille maximale autorisée (5 Mo).";
+			return;
+		}
+		$finfo = new finfo(FILEINFO_MIME_TYPE);
+		if (!in_array($finfo->file($file['tmp_name']), self::ALLOWED_DOCUMENT_MIMES, true)) {
+			$errors[$field] = "$label doit être une image (JPEG/PNG) ou un PDF.";
+		}
 	}
 
 	private static function required(array $data, array $labels): array
