@@ -11,7 +11,10 @@ final class MonAgenceController
 			'agency' => MonAgenceModel::agency($idAgence),
 			'subscription' => MonAgenceModel::subscription($idAgence),
 			'kpis' => MonAgenceModel::kpis($idAgence),
-			'activity' => MonAgenceModel::recentActivity($idAgence, 6),
+			'portfolio' => MonAgenceModel::propertyPortfolio($idAgence),
+			'contractsToWatch' => MonAgenceModel::contractsToWatch($idAgence, 5),
+			'todayTasks' => MonAgenceModel::todayTasks($idAgence),
+			'activity' => MonAgenceModel::recentActivity($idAgence, 8),
 		];
 	}
 }

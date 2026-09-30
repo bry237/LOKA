@@ -16,22 +16,54 @@ $extraHead = '<link rel="stylesheet" href="dashboard.css">';
 
 require dirname(__DIR__, 3) . '/layouts/header.php';
 ?>
-    <!-- Agence & abonnement -->
-    <div class="agency-row">
-      <div class="panel agency-card" id="agencyCard"></div>
-      <div class="panel subscription-card" id="subscriptionCard"></div>
-    </div>
-
     <!-- KPI -->
     <div class="kpi-grid" id="kpiGrid"></div>
 
-    <!-- Activité récente -->
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">Activité récente</div>
+    <div class="dashboard-grid">
+      <!-- Colonne principale -->
+      <div class="dashboard-main">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">État du parc immobilier</div>
+          </div>
+          <div id="portfolioBlock"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Contrats à surveiller</div>
+          </div>
+          <p class="panel-sub">Contrats actifs arrivant à échéance sous 30 jours</p>
+          <div class="watch-list" id="contractsWatchList"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Activité récente</div>
+          </div>
+          <p class="panel-sub">Dernières entrées du journal d'audit de votre agence</p>
+          <div class="activity-list" id="activityList"></div>
+        </div>
       </div>
-      <p style="font-size:11.5px;color:#8AA0A0;margin:0 18px 6px;">Dernières entrées du journal d'audit de votre agence</p>
-      <div class="activity-list" id="activityList"></div>
+
+      <!-- Rail latéral -->
+      <div class="dashboard-rail">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">À traiter aujourd'hui</div>
+          </div>
+          <div class="watch-list" id="todayTasksList"></div>
+        </div>
+
+        <div class="panel subscription-card" id="subscriptionCard"></div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Actions rapides</div>
+          </div>
+          <div class="quick-actions" id="quickActions"></div>
+        </div>
+      </div>
     </div>
 <?php
 $extraScripts = '<script src="dashboard.js"></script>';

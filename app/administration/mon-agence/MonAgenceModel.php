@@ -36,10 +36,207 @@ final class MonAgenceModel
 	public static function kpis(int $idAgence): array
 	{
 		$db = Database::connection();
+		$interventionsEnCours = self::openInterventionsCount($db, $idAgence);
 		return [
-			self::countKpi($db, 'utilisateur', $idAgence, 'Utilisateurs', 'users', 'teal'),
-			self::countKpi($db, 'bien', $idAgence, 'Biens', 'home', 'amber'),
+			self::countKpi($db, 'utilisateur', $idAgence, 'Équipe', 'users', 'teal'),
+			self::countKpi($db, 'bien', $idAgence, 'Biens', 'home', 'blue'),
 			self::activeContractsKpi($db, $idAgence),
+			self::countKpi($db, 'locataire', $idAgence, 'Locataires', 'key', 'amber'),
+			self::monthlyRevenueKpi($db, $idAgence),
+			[
+				'label' => 'Interventions en cours',
+				'value' => number_format($interventionsEnCours, 0, ',', ' '),
+				'icon' => 'tool',
+				'tone' => $interventionsEnCours > 0 ? 'red' : 'teal',
+			],
+		];
+	}
+
+	/** Répartition du parc immobilier par statut, scopée à l'agence. */
+	public static function propertyPortfolio(int $idAgence): array
+	{
+		$db = Database::connection();
+		$stmt = $db->prepare(
+			'SELECT statut, COUNT(*) AS total FROM bien
+			 WHERE id_agence = :id_agence AND deleted_at IS NULL
+			 GROUP BY statut'
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		$rows = $stmt->fetchAll();
+
+		$byStatut = [];
+		$total = 0;
+		foreach ($rows as $row) {
+			$byStatut[$row['statut']] = (int) $row['total'];
+			$total += (int) $row['total'];
+		}
+
+		$definitions = [
+			'AVAILABLE' => ['label' => 'Disponibles', 'tone' => 'green'],
+			'OCCUPIED' => ['label' => 'Occupés', 'tone' => 'teal'],
+			'MAINTENANCE' => ['label' => 'En maintenance', 'tone' => 'amber'],
+			'CREATED' => ['label' => 'À publier', 'tone' => 'blue'],
+			'ARCHIVED' => ['label' => 'Archivés', 'tone' => 'gray'],
+		];
+
+		$segments = [];
+		foreach ($definitions as $statut => $meta) {
+			$count = $byStatut[$statut] ?? 0;
+			if ($count === 0) {
+				continue;
+			}
+			$segments[] = [
+				'statut' => $statut,
+				'label' => $meta['label'],
+				'tone' => $meta['tone'],
+				'count' => $count,
+				'pct' => $total > 0 ? round($count / $total * 100) : 0,
+			];
+		}
+
+		return ['total' => $total, 'segments' => $segments];
+	}
+
+	/** Contrats actifs dont l'échéance approche (30 jours), triés par urgence. */
+	public static function contractsToWatch(int $idAgence, int $limit = 5): array
+	{
+		$db = Database::connection();
+		$stmt = $db->prepare(
+			"SELECT c.numero, c.date_fin, b.titre AS bien_titre,
+				(SELECT CONCAT(l.prenom, ' ', l.nom)
+				 FROM contrat_locataire cl
+				 INNER JOIN locataire l ON l.id_locataire = cl.id_locataire
+				 WHERE cl.id_contrat = c.id_contrat
+				 ORDER BY cl.titulaire_principal DESC LIMIT 1) AS locataire_nom
+			 FROM contrat c
+			 INNER JOIN bien b ON b.id_bien = c.id_bien
+			 WHERE c.id_agence = :id_agence AND c.statut = 'ACTIVE' AND c.date_fin IS NOT NULL
+				AND c.date_fin <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+			 ORDER BY c.date_fin ASC
+			 LIMIT :limit"
+		);
+		$stmt->bindValue(':id_agence', $idAgence, PDO::PARAM_INT);
+		$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+		$stmt->execute();
+
+		$today = new DateTimeImmutable('today');
+		return array_map(static function (array $row) use ($today): array {
+			$dateFin = new DateTimeImmutable($row['date_fin']);
+			$daysLeft = (int) $today->diff($dateFin)->format('%r%a');
+			return [
+				'numero' => $row['numero'],
+				'bien' => $row['bien_titre'],
+				'locataire' => $row['locataire_nom'] ?? '—',
+				'date_fin' => $dateFin->format('d/m/Y'),
+				'days_left' => $daysLeft,
+				'tone' => $daysLeft <= 7 ? 'red' : 'amber',
+			];
+		}, $stmt->fetchAll());
+	}
+
+	/** Éléments nécessitant une action de l'agence aujourd'hui (agrégat multi-sources). */
+	public static function todayTasks(int $idAgence): array
+	{
+		$db = Database::connection();
+		$tasks = [];
+
+		$stmt = $db->prepare(
+			"SELECT COUNT(*) FROM echeance e
+			 INNER JOIN contrat c ON c.id_contrat = e.id_contrat
+			 WHERE c.id_agence = :id_agence
+				AND (e.statut = 'LATE' OR (e.statut IN ('PENDING', 'PARTIAL') AND e.date_echeance < CURDATE()))"
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		if (($count = (int) $stmt->fetchColumn()) > 0) {
+			$tasks[] = [
+				'icon' => 'alert',
+				'tone' => 'red',
+				'title' => $count > 1 ? "{$count} échéances de loyer en retard" : '1 échéance de loyer en retard',
+				'sub' => 'Paiements attendus non reçus',
+				'count' => $count,
+			];
+		}
+
+		$stmt = $db->prepare(
+			"SELECT COUNT(*) FROM intervention
+			 WHERE id_agence = :id_agence AND priorite IN ('HIGH', 'URGENT')
+				AND statut NOT IN ('RESOLVED', 'CLOSED', 'CANCELLED')"
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		if (($count = (int) $stmt->fetchColumn()) > 0) {
+			$tasks[] = [
+				'icon' => 'tool',
+				'tone' => 'amber',
+				'title' => $count > 1 ? "{$count} interventions prioritaires" : '1 intervention prioritaire',
+				'sub' => 'Priorité haute ou urgente, non résolues',
+				'count' => $count,
+			];
+		}
+
+		$stmt = $db->prepare(
+			"SELECT COUNT(*) FROM contrat
+			 WHERE id_agence = :id_agence AND statut = 'ACTIVE' AND date_fin IS NOT NULL
+				AND date_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)"
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		if (($count = (int) $stmt->fetchColumn()) > 0) {
+			$tasks[] = [
+				'icon' => 'calendar',
+				'tone' => 'blue',
+				'title' => $count > 1 ? "{$count} contrats à renouveler sous 7 jours" : '1 contrat à renouveler sous 7 jours',
+				'sub' => 'Décision de renouvellement attendue',
+				'count' => $count,
+			];
+		}
+
+		return $tasks;
+	}
+
+	/** Compteurs légers utilisés pour les badges de la sidebar. */
+	public static function navBadges(int $idAgence): array
+	{
+		$db = Database::connection();
+		return [
+			'contrats' => self::contractsExpiringSoonCount($db, $idAgence),
+			'interventions' => self::openInterventionsCount($db, $idAgence),
+		];
+	}
+
+	private static function contractsExpiringSoonCount(PDO $db, int $idAgence): int
+	{
+		$stmt = $db->prepare(
+			"SELECT COUNT(*) FROM contrat
+			 WHERE id_agence = :id_agence AND statut = 'ACTIVE' AND date_fin IS NOT NULL
+				AND date_fin <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)"
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		return (int) $stmt->fetchColumn();
+	}
+
+	private static function openInterventionsCount(PDO $db, int $idAgence): int
+	{
+		$stmt = $db->prepare(
+			"SELECT COUNT(*) FROM intervention
+			 WHERE id_agence = :id_agence AND statut IN ('OPEN', 'ASSIGNED', 'IN_PROGRESS', 'WAITING')"
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		return (int) $stmt->fetchColumn();
+	}
+
+	private static function monthlyRevenueKpi(PDO $db, int $idAgence): array
+	{
+		$stmt = $db->prepare(
+			"SELECT COALESCE(SUM(p.montant), 0) FROM paiement p
+			 INNER JOIN contrat c ON c.id_contrat = p.id_contrat
+			 WHERE c.id_agence = :id_agence AND p.statut = 'PAID'
+				AND MONTH(p.date_paiement) = MONTH(CURDATE()) AND YEAR(p.date_paiement) = YEAR(CURDATE())"
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		return [
+			'label' => 'Revenus du mois',
+			'value' => number_format((float) $stmt->fetchColumn(), 0, ',', ' ') . ' €',
+			'icon' => 'trending',
+			'tone' => 'green',
 		];
 	}
 
