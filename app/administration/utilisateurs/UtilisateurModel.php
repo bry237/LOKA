@@ -15,7 +15,7 @@ final class UtilisateurModel
 	public static function find(int $id): ?array
 	{
 		$stmt = Database::connection()->prepare(
-			'SELECT id_utilisateur, nom, prenom, email, statut, id_role, id_agence
+			'SELECT id_utilisateur, nom, prenom, email, telephone, telephone_verifie, statut, id_role, id_agence
 			 FROM utilisateur WHERE id_utilisateur = :id AND deleted_at IS NULL LIMIT 1'
 		);
 		$stmt->execute(['id' => $id]);
@@ -41,7 +41,7 @@ final class UtilisateurModel
 		$offset = ($page - 1) * self::PAGE_SIZE;
 
 		$stmt = $db->prepare(
-			"SELECT u.id_utilisateur, u.nom, u.prenom, u.email, u.telephone, u.statut, u.derniere_connexion, u.created_at, u.id_role,
+			"SELECT u.id_utilisateur, u.nom, u.prenom, u.email, u.telephone, u.telephone_verifie, u.statut, u.derniere_connexion, u.created_at, u.id_role,
 					r.nom AS role_nom, a.nom AS agence_nom
 			 FROM utilisateur u
 			 INNER JOIN role r ON r.id_role = u.id_role
@@ -67,7 +67,7 @@ final class UtilisateurModel
 	public static function detail(int $id): ?array
 	{
 		$stmt = Database::connection()->prepare(
-			'SELECT u.id_utilisateur, u.nom, u.prenom, u.email, u.telephone, u.statut, u.derniere_connexion,
+			'SELECT u.id_utilisateur, u.nom, u.prenom, u.email, u.telephone, u.telephone_verifie, u.statut, u.derniere_connexion,
 					u.created_at, u.updated_at, u.id_role, u.id_agence,
 					r.nom AS role_nom, a.nom AS agence_nom
 			 FROM utilisateur u

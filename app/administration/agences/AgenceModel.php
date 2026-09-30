@@ -83,7 +83,7 @@ final class AgenceModel
 		}
 
 		$adminStmt = $db->prepare(
-			'SELECT id_utilisateur, nom, prenom, email, telephone, statut, derniere_connexion
+			'SELECT id_utilisateur, nom, prenom, email, telephone, telephone_verifie, statut, derniere_connexion
 			 FROM utilisateur
 			 WHERE id_agence = :id AND id_role = 2 AND deleted_at IS NULL
 			 ORDER BY id_utilisateur LIMIT 1'
@@ -119,6 +119,22 @@ final class AgenceModel
 			'subscription' => $history[0] ?? null,
 			'history' => $history,
 		];
+	}
+
+	/**
+	 * @return array{id_utilisateur: int, telephone: ?string}|null
+	 */
+	public static function findAdminContact(int $idAgence): ?array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT id_utilisateur, telephone
+			 FROM utilisateur
+			 WHERE id_agence = :id AND id_role = 2 AND deleted_at IS NULL
+			 ORDER BY id_utilisateur LIMIT 1'
+		);
+		$stmt->execute(['id' => $idAgence]);
+		$row = $stmt->fetch();
+		return $row ?: null;
 	}
 
 	public static function setStatus(int $id, string $status): void

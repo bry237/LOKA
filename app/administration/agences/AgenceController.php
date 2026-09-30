@@ -6,6 +6,7 @@ require_once __DIR__ . '/AgenceValidator.php';
 require_once __DIR__ . '/DocumentAgenceModel.php';
 require_once dirname(__DIR__, 3) . '/core/Auth.php';
 require_once dirname(__DIR__, 3) . '/core/Logger.php';
+require_once dirname(__DIR__, 3) . '/core/SmsSender.php';
 
 final class AgenceController
 {
@@ -145,6 +146,7 @@ final class AgenceController
 			return 'Agence introuvable.';
 		}
 
+		$wasPending = $target['statut'] === 'PENDING';
 		AgenceModel::setStatus($id, $status);
 
 		$currentUser = Auth::user();
@@ -158,6 +160,19 @@ final class AgenceController
 			['statut' => $status]
 		);
 
+		if ($wasPending && $status === 'ACTIVE') {
+			self::notifyAgencyValidated($id);
+		}
+
 		return null;
+	}
+
+	private static function notifyAgencyValidated(int $idAgence): void
+	{
+		$admin = AgenceModel::findAdminContact($idAgence);
+		if (!$admin || !$admin['telephone']) {
+			return;
+		}
+		SmsSender::send((int) $admin['id_utilisateur'], $admin['telephone'], 'Votre agence LOKA est validée, vous pouvez vous connecter.');
 	}
 }

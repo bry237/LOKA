@@ -71,6 +71,9 @@ legend { padding: 0 8px; color: var(--heading); font: 600 22px var(--font-displa
 .field input::placeholder { color: var(--gray); }
 .field input:focus { border-color: var(--primary-light); background: var(--white); box-shadow: 0 0 0 4px rgba(239,251,250,.9); }
 .field small, .fieldset-help { color: var(--gray); font-size: 11px; line-height: 1.5; }
+.phone-group { display: flex; gap: 8px; }
+.phone-group select { flex: 0 0 auto; width: auto; max-width: 150px; min-height: 46px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 11px; outline: 0; color: var(--heading); background: rgba(255,255,255,.9); }
+.phone-group input { flex: 1 1 auto; min-width: 0; }
 .fieldset-help { margin: -5px 0 16px; }
 .project-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .project-option { position: relative; display: block; cursor: pointer; }

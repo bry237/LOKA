@@ -141,6 +141,7 @@ if (!$isModal) require dirname(__DIR__, 3) . '/layouts/header.php';
               <div class="info-row"><span class="info-label">Nom</span><span class="info-value"><?= htmlspecialchars($admin['prenom'] . ' ' . $admin['nom'], ENT_QUOTES, 'UTF-8') ?></span></div>
               <div class="info-row"><span class="info-label">Email</span><span class="info-value"><?= htmlspecialchars($admin['email'], ENT_QUOTES, 'UTF-8') ?></span></div>
               <div class="info-row"><span class="info-label">Téléphone</span><span class="info-value"><?= htmlspecialchars($admin['telephone'] ?? '—', ENT_QUOTES, 'UTF-8') ?></span></div>
+              <div class="info-row"><span class="info-label">Vérification</span><span class="status-badge <?= $admin['telephone_verifie'] ? 'actif' : 'attente' ?>"><?= $admin['telephone_verifie'] ? 'Téléphone vérifié' : 'Téléphone non vérifié' ?></span></div>
               <div class="info-row"><span class="info-label">Statut</span><span class="status-badge <?= $statusTones[$admin['statut']] ?? ($admin['statut'] === 'ACTIVE' ? 'actif' : 'suspendu') ?>"><?= $admin['statut'] === 'ACTIVE' ? 'Actif' : $admin['statut'] ?></span></div>
               <div class="info-row"><span class="info-label">Dernière connexion</span><span class="info-value"><?= $admin['derniere_connexion'] ? (new DateTimeImmutable($admin['derniere_connexion']))->format('d/m/Y H:i') : 'Jamais connecté' ?></span></div>
             </div>

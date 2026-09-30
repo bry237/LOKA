@@ -24,9 +24,11 @@ final class ClaudeVisionAnalyzer
 			return ['resume' => null, 'alertes' => [], 'erreur' => $apiKey === ''];
 		}
 
-		$label = $documentType === 'PIECE_IDENTITE'
-			? "une pièce d'identité du responsable déclaré \"{$expectedName}\""
-			: "un justificatif d'immatriculation d'agence (Kbis/SIRET)";
+		$label = match ($documentType) {
+			'PIECE_IDENTITE' => "une pièce d'identité déclarée au nom de \"{$expectedName}\"",
+			'JUSTIFICATIF_DOMICILE' => "un justificatif de domicile récent (facture, quittance de loyer...) au nom de \"{$expectedName}\"",
+			default => "un justificatif d'immatriculation d'agence (Kbis/SIRET)",
+		};
 
 		$prompt = "Ce document doit être {$label}. Réponds UNIQUEMENT avec un objet JSON strict de la forme "
 			. '{"type_detecte": string, "resume": string, "alertes": string[]}. '

@@ -3,13 +3,15 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/AuthController.php';
 
+$phoneCountryCodes = require dirname(__DIR__, 2) . '/layouts/phone-country-codes.php';
+
 $activePanel = ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form'] ?? '') === 'register') ? 'register' : 'login';
 $csrfToken = Auth::csrfToken();
 $errors = [];
 $successMessage = null;
 
 if (isset($_GET['registered'])) {
-	$successMessage = 'Votre compte a été créé. Vous pouvez maintenant vous connecter.';
+	$successMessage = 'Votre compte a été créé et votre numéro vérifié. Il sera activé après validation par notre équipe.';
 }
 if (isset($_GET['logout'])) {
 	$successMessage = 'Vous êtes maintenant déconnecté.';
@@ -19,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	if ($activePanel === 'login') {
 		[$errors, $redirect] = AuthController::handleLogin($_POST);
 	} else {
-		[$errors, $redirect] = AuthController::handleRegistration($_POST);
+		[$errors, $redirect] = AuthController::handleRegistration($_POST, $_FILES);
 	}
 	if ($redirect !== null) {
 		header('Location: ' . $redirect);
@@ -80,16 +82,17 @@ if ($message === null && $errors) {
 			<section class="form-panel<?= $activePanel === 'register' ? ' is-active' : '' ?>" id="register-panel"<?= $activePanel !== 'register' ? ' hidden' : '' ?> role="tabpanel">
 				<header class="form-heading"><p class="eyebrow">Inscription locataire</p><h1>Créer votre compte</h1><p>Renseignez vos informations pour commencer.</p></header>
 				<?php if ($activePanel === 'register' && $message !== null): ?><p class="form-message form-message--error" id="register-message" role="alert"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></p><?php else: ?><p class="form-message form-message--error" id="register-message" role="alert" hidden></p><?php endif; ?>
-				<form class="auth-form" id="register-form" method="post" action="connexion.php" novalidate>
+				<form class="auth-form" id="register-form" method="post" action="connexion.php" enctype="multipart/form-data" novalidate>
 					<input type="hidden" name="form" value="register">
 					<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
 					<div class="form-grid">
 					<div class="field"><label for="register-last-name">Nom</label><input id="register-last-name" name="last_name" autocomplete="family-name" required></div><div class="field"><label for="register-first-name">Prénom</label><input id="register-first-name" name="first_name" autocomplete="given-name" required></div>
-					<div class="field"><label for="register-email">Email</label><input id="register-email" name="email" type="email" autocomplete="email" placeholder="vous@exemple.com" required></div><div class="field"><label for="register-phone">Téléphone</label><input id="register-phone" name="phone" type="tel" autocomplete="tel" required></div>
+					<div class="field"><label for="register-email">Email</label><input id="register-email" name="email" type="email" autocomplete="email" placeholder="vous@exemple.com" required></div><div class="field"><label for="register-phone">Téléphone</label><div class="phone-group"><select id="register-phone-code" name="phone_country_code"><?php foreach ($phoneCountryCodes as $code => $label): ?><option value="<?= htmlspecialchars($code, ENT_QUOTES, 'UTF-8') ?>"<?= $code === '+33' ? ' selected' : '' ?>><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select><input id="register-phone" name="phone" type="tel" autocomplete="tel" required></div></div>
 					<div class="field"><label for="register-address">Adresse</label><input id="register-address" name="address" autocomplete="street-address" required></div><div class="field"><label for="register-postal-code">Code postal</label><input id="register-postal-code" name="postal_code" inputmode="numeric" autocomplete="postal-code" required></div>
 					<div class="field"><label for="register-city">Ville</label><input id="register-city" name="city" autocomplete="address-level2" required></div><div class="field"><label for="register-country">Pays</label><input id="register-country" name="country" value="France" autocomplete="country-name" required></div>
 					<div class="field"><label for="register-birth-date">Date de naissance</label><input id="register-birth-date" name="birth_date" type="date" autocomplete="bday" required></div><div class="field"><label for="register-profession">Profession</label><input id="register-profession" name="profession" autocomplete="organization-title" required></div>
 					<div class="field"><label for="register-income">Revenu mensuel</label><select id="register-income" name="monthly_income" required><option value="">Sélectionner une fourchette</option><option>Moins de 1 000 €</option><option>1 000 € à 1 499 €</option><option>1 500 € à 2 499 €</option><option>2 500 € à 3 499 €</option><option>3 500 € à 4 999 €</option><option>5 000 € et plus</option></select></div><div class="field"><label for="register-status">Statut</label><select id="register-status" disabled><option>Actif</option></select></div>
+					<div class="field"><label for="register-id-document">Pièce d’identité</label><input id="register-id-document" name="piece_identite" type="file" accept="image/jpeg,image/png,application/pdf" required></div><div class="field"><label for="register-address-document">Justificatif de domicile</label><input id="register-address-document" name="justificatif_domicile" type="file" accept="image/jpeg,image/png,application/pdf" required></div>
 					<div class="field"><label for="register-password">Mot de passe</label><div class="password-field"><input id="register-password" name="password" type="password" autocomplete="new-password" placeholder="8 caractères minimum" minlength="8" required><button class="password-toggle" type="button" data-password="register-password" aria-label="Afficher le mot de passe">Voir</button></div><div class="strength" aria-hidden="true"><i></i><i></i><i></i><i></i></div></div><div class="field"><label for="register-password-confirm">Confirmation du mot de passe</label><div class="password-field"><input id="register-password-confirm" name="password_confirm" type="password" autocomplete="new-password" required><button class="password-toggle" type="button" data-password="register-password-confirm" aria-label="Afficher le mot de passe">Voir</button></div></div>
 					</div>
 					<label class="check check--terms"><input type="checkbox" name="terms" required><span></span>J’accepte les <a href="#">conditions d’utilisation</a> de LOKA</label>

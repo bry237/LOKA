@@ -25,12 +25,12 @@ final class Auth
 		return is_string($token) && hash_equals((string) ($_SESSION[self::CSRF_KEY] ?? ''), $token);
 	}
 
-	public static function login(string $email, string $password): ?array
+	public static function findByCredentials(string $email, string $password): ?array
 	{
 		$db = Database::connection();
 		$stmt = $db->prepare(
-			"SELECT u.id_utilisateur, u.id_agence, u.nom, u.prenom, u.email, u.mot_de_passe,
-					u.statut AS statut_utilisateur, r.id_role, r.nom AS role_nom
+			"SELECT u.id_utilisateur, u.id_agence, u.nom, u.prenom, u.email, u.mot_de_passe, u.telephone,
+					u.telephone_verifie, u.statut AS statut_utilisateur, r.id_role, r.nom AS role_nom
 			 FROM utilisateur u
 			 INNER JOIN role r ON r.id_role = u.id_role
 			 WHERE LOWER(u.email) = LOWER(:email)
@@ -40,10 +40,16 @@ final class Auth
 		$stmt->execute(['email' => $email]);
 		$user = $stmt->fetch();
 
-		if (!$user || $user['statut_utilisateur'] !== 'ACTIVE' || !password_verify($password, $user['mot_de_passe'])) {
+		if (!$user || !password_verify($password, $user['mot_de_passe'])) {
 			return null;
 		}
 
+		return $user;
+	}
+
+	public static function createSession(array $user): array
+	{
+		$db = Database::connection();
 		Session::regenerate();
 		$token = bin2hex(random_bytes(32));
 		$expiration = (new DateTimeImmutable('+8 hours'))->format('Y-m-d H:i:s');

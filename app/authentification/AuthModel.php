@@ -6,6 +6,7 @@ require_once dirname(__DIR__, 2) . '/core/Logger.php';
 require_once dirname(__DIR__, 2) . '/core/FileUpload.php';
 require_once dirname(__DIR__, 2) . '/core/ClaudeVisionAnalyzer.php';
 require_once dirname(__DIR__) . '/administration/agences/DocumentAgenceModel.php';
+require_once dirname(__DIR__) . '/administration/utilisateurs/DocumentUtilisateurModel.php';
 
 final class AuthModel
 {
@@ -16,7 +17,7 @@ final class AuthModel
 		return (bool) $stmt->fetchColumn();
 	}
 
-	public static function registerTenant(array $data): int
+	public static function registerTenant(array $data, array $files = []): int
 	{
 		$db = Database::connection();
 		$db->beginTransaction();
@@ -27,8 +28,8 @@ final class AuthModel
 			}
 
 			$userStmt = $db->prepare(
-				'INSERT INTO utilisateur (id_agence, id_role, nom, prenom, email, mot_de_passe, telephone, statut)
-				 VALUES (NULL, :id_role, :nom, :prenom, :email, :mot_de_passe, :telephone, \'ACTIVE\')'
+				'INSERT INTO utilisateur (id_agence, id_role, nom, prenom, email, mot_de_passe, telephone, indicatif_pays, statut)
+				 VALUES (NULL, :id_role, :nom, :prenom, :email, :mot_de_passe, :telephone, :indicatif_pays, \'PENDING\')'
 			);
 			$userStmt->execute([
 				'id_role' => $role,
@@ -37,19 +38,21 @@ final class AuthModel
 				'email' => $data['email'],
 				'mot_de_passe' => password_hash($data['password'], PASSWORD_DEFAULT),
 				'telephone' => $data['telephone'],
+				'indicatif_pays' => $data['indicatif_pays'] ?? null,
 			]);
 			$userId = (int) $db->lastInsertId();
 
 			$tenantStmt = $db->prepare(
-				'INSERT INTO locataire (id_utilisateur, id_agence, nom, prenom, email, telephone, adresse, code_postal, ville, pays,
+				'INSERT INTO locataire (id_utilisateur, id_agence, nom, prenom, email, telephone, indicatif_pays, adresse, code_postal, ville, pays,
 					date_naissance, profession, revenu_mensuel_fourchette, statut)
-				 VALUES (:id_utilisateur, NULL, :nom, :prenom, :email, :telephone, :adresse, :code_postal, :ville, :pays,
+				 VALUES (:id_utilisateur, NULL, :nom, :prenom, :email, :telephone, :indicatif_pays, :adresse, :code_postal, :ville, :pays,
 					:date_naissance, :profession, :revenu_mensuel_fourchette, \'ACTIVE\')'
 			);
 			$tenantStmt->execute([
 				'id_utilisateur' => $userId,
 				'nom' => $data['nom'], 'prenom' => $data['prenom'], 'email' => $data['email'],
-				'telephone' => $data['telephone'], 'adresse' => $data['adresse'], 'code_postal' => $data['code_postal'],
+				'telephone' => $data['telephone'], 'indicatif_pays' => $data['indicatif_pays'] ?? null,
+				'adresse' => $data['adresse'], 'code_postal' => $data['code_postal'],
 				'ville' => $data['ville'], 'pays' => $data['pays'], 'date_naissance' => $data['date_naissance'],
 				'profession' => $data['profession'], 'revenu_mensuel_fourchette' => $data['revenu_mensuel_fourchette'],
 			]);
@@ -59,18 +62,29 @@ final class AuthModel
 			]);
 
 			$db->commit();
+
+			$fullName = trim($data['prenom'] . ' ' . $data['nom']);
+			self::storeUserDocument($userId, 'PIECE_IDENTITE', $files['piece_identite'] ?? null, $fullName);
+			self::storeUserDocument($userId, 'JUSTIFICATIF_DOMICILE', $files['justificatif_domicile'] ?? null, $fullName);
+
 			return $userId;
 		} catch (Throwable $exception) {
-			$db->rollBack();
+			if ($db->inTransaction()) $db->rollBack();
 			throw $exception;
 		}
 	}
 
-	public static function registerProprietor(array $data): int
+	public static function registerProprietor(array $data, array $files = []): int
 	{
-		return self::registerProfile($data, 'Proprietaire', 'proprietaire', [
-			'nom', 'prenom', 'email', 'telephone', 'adresse', 'code_postal', 'ville', 'pays', 'date_naissance', 'projet'
-		], false);
+		$userId = self::registerProfile($data, 'Proprietaire', 'proprietaire', [
+			'nom', 'prenom', 'email', 'telephone', 'indicatif_pays', 'adresse', 'code_postal', 'ville', 'pays', 'date_naissance', 'projet'
+		], false, 'PENDING');
+
+		$fullName = trim($data['prenom'] . ' ' . $data['nom']);
+		self::storeUserDocument($userId, 'PIECE_IDENTITE', $files['piece_identite'] ?? null, $fullName);
+		self::storeUserDocument($userId, 'JUSTIFICATIF_DOMICILE', $files['justificatif_domicile'] ?? null, $fullName);
+
+		return $userId;
 	}
 
 	public static function registerAgency(array $data, array $files = []): int
@@ -80,11 +94,12 @@ final class AuthModel
 		try {
 			$role = self::roleId($db, 'Administrateur agence');
 			$agency = $db->prepare(
-				'INSERT INTO agence (nom, email, telephone, adresse, ville, code_postal, pays, statut)
-				 VALUES (:nom, :email, :telephone, :adresse, :ville, :code_postal, :pays, \'PENDING\')'
+				'INSERT INTO agence (nom, email, telephone, indicatif_pays, adresse, ville, code_postal, pays, statut)
+				 VALUES (:nom, :email, :telephone, :indicatif_pays, :adresse, :ville, :code_postal, :pays, \'PENDING\')'
 			);
 			$agency->execute([
 				'nom' => $data['agence_nom'], 'email' => $data['agence_email'], 'telephone' => $data['agence_telephone'],
+				'indicatif_pays' => $data['agence_indicatif_pays'] ?? null,
 				'adresse' => $data['agence_adresse'], 'ville' => $data['agence_ville'],
 				'code_postal' => $data['agence_code_postal'], 'pays' => $data['agence_pays'],
 			]);
@@ -143,13 +158,37 @@ final class AuthModel
 		}
 	}
 
-	private static function registerProfile(array $data, string $roleName, string $table, array $profileFields, bool $hasStatus = true): int
+	private static function storeUserDocument(int $userId, string $type, ?array $file, string $expectedName): void
+	{
+		if (!$file) {
+			return;
+		}
+		try {
+			$storage = require dirname(__DIR__, 2) . '/config/storage.php';
+			$destinationDir = rtrim($storage['utilisateur_documents_path'], '/\\') . '/utilisateur-' . $userId;
+			$uploadResult = FileUpload::store($file, $destinationDir, ['image/jpeg', 'image/png', 'application/pdf'], 5 * 1024 * 1024);
+			$documentId = DocumentUtilisateurModel::create($userId, $type, $uploadResult);
+
+			$analysis = ClaudeVisionAnalyzer::analyze(
+				$destinationDir . DIRECTORY_SEPARATOR . $uploadResult['stored_name'],
+				$uploadResult['mime_type'],
+				$type,
+				$expectedName
+			);
+			DocumentUtilisateurModel::saveAnalysis($documentId, $analysis);
+		} catch (Throwable $exception) {
+			// Le compte existe déjà à ce stade : une erreur de stockage/analyse ne doit pas
+			// faire échouer l'inscription, l'admin verra simplement "aucun document" en revue.
+		}
+	}
+
+	private static function registerProfile(array $data, string $roleName, string $table, array $profileFields, bool $hasStatus = true, string $statut = 'ACTIVE'): int
 	{
 		$db = Database::connection();
 		$db->beginTransaction();
 		try {
 			$role = self::roleId($db, $roleName);
-			$userId = self::insertUser($db, $role, $data, null);
+			$userId = self::insertUser($db, $role, $data, null, $statut);
 			$columns = implode(', ', $profileFields);
 			$parameters = implode(', ', array_map(static fn (string $field): string => ':' . $field, $profileFields));
 			$statusColumns = $hasStatus ? ', statut' : '';
@@ -180,16 +219,16 @@ final class AuthModel
 		return (int) $role;
 	}
 
-	private static function insertUser(PDO $db, int $roleId, array $data, ?int $agencyId): int
+	private static function insertUser(PDO $db, int $roleId, array $data, ?int $agencyId, string $statut = 'ACTIVE'): int
 	{
 		$stmt = $db->prepare(
-			'INSERT INTO utilisateur (id_agence, id_role, nom, prenom, email, mot_de_passe, telephone, statut)
-			 VALUES (:id_agence, :id_role, :nom, :prenom, :email, :mot_de_passe, :telephone, \'ACTIVE\')'
+			'INSERT INTO utilisateur (id_agence, id_role, nom, prenom, email, mot_de_passe, telephone, indicatif_pays, statut)
+			 VALUES (:id_agence, :id_role, :nom, :prenom, :email, :mot_de_passe, :telephone, :indicatif_pays, :statut)'
 		);
 		$stmt->execute([
 			'id_agence' => $agencyId, 'id_role' => $roleId, 'nom' => $data['nom'], 'prenom' => $data['prenom'],
 			'email' => $data['email'], 'mot_de_passe' => password_hash($data['password'], PASSWORD_DEFAULT),
-			'telephone' => $data['telephone'],
+			'telephone' => $data['telephone'], 'indicatif_pays' => $data['indicatif_pays'] ?? null, 'statut' => $statut,
 		]);
 		return (int) $db->lastInsertId();
 	}

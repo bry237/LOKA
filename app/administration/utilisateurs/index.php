@@ -37,8 +37,8 @@ $paginationUrl = static function (int $page) use ($filters): string {
 	]));
 };
 
-$statusLabels = ['ACTIVE' => 'Actif', 'INACTIVE' => 'Inactif', 'LOCKED' => 'Verrouillé'];
-$statusTones = ['ACTIVE' => 'actif', 'INACTIVE' => 'inactif', 'LOCKED' => 'suspendu'];
+$statusLabels = ['ACTIVE' => 'Actif', 'PENDING' => 'En attente', 'INACTIVE' => 'Inactif', 'LOCKED' => 'Verrouillé'];
+$statusTones = ['ACTIVE' => 'actif', 'PENDING' => 'attente', 'INACTIVE' => 'inactif', 'LOCKED' => 'suspendu'];
 $hasFilters = $filters['q'] !== '' || $filters['role'] !== '' || $filters['status'] !== '';
 
 require dirname(__DIR__, 3) . '/layouts/header.php';
@@ -70,6 +70,7 @@ require dirname(__DIR__, 3) . '/layouts/header.php';
         <select class="filter-select" name="status">
           <option value="">Tous les statuts</option>
           <option value="ACTIVE"<?= $filters['status'] === 'ACTIVE' ? ' selected' : '' ?>>Actif</option>
+          <option value="PENDING"<?= $filters['status'] === 'PENDING' ? ' selected' : '' ?>>En attente</option>
           <option value="INACTIVE"<?= $filters['status'] === 'INACTIVE' ? ' selected' : '' ?>>Inactif</option>
           <option value="LOCKED"<?= $filters['status'] === 'LOCKED' ? ' selected' : '' ?>>Verrouillé</option>
         </select>

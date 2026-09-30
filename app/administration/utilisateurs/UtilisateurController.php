@@ -2,8 +2,10 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/UtilisateurModel.php';
+require_once __DIR__ . '/DocumentUtilisateurModel.php';
 require_once dirname(__DIR__, 3) . '/core/Auth.php';
 require_once dirname(__DIR__, 3) . '/core/Logger.php';
+require_once dirname(__DIR__, 3) . '/core/SmsSender.php';
 
 final class UtilisateurController
 {
@@ -25,7 +27,40 @@ final class UtilisateurController
 
 	public static function detail(int $id): ?array
 	{
-		return UtilisateurModel::detail($id);
+		$detail = UtilisateurModel::detail($id);
+		if ($detail) {
+			$detail['documents'] = DocumentUtilisateurModel::listForUtilisateur($id);
+		}
+		return $detail;
+	}
+
+	/**
+	 * @return string|null Message d'erreur, ou null si l'opération a réussi.
+	 */
+	public static function setDocumentStatus(int $idDocument, string $statut, ?string $motif = null): ?string
+	{
+		if (!in_array($statut, ['VALIDE', 'REJETE'], true)) {
+			return 'Statut invalide.';
+		}
+		$document = DocumentUtilisateurModel::find($idDocument);
+		if (!$document) {
+			return 'Document introuvable.';
+		}
+
+		$currentUser = Auth::user();
+		DocumentUtilisateurModel::setStatus($idDocument, $statut, $currentUser['id_utilisateur'] ?? null, $motif);
+
+		Logger::audit(
+			'UPDATE',
+			'document_utilisateur',
+			$idDocument,
+			$currentUser['id_utilisateur'] ?? null,
+			$currentUser['id_agence'] ?? null,
+			['statut_verification' => $document['statut_verification']],
+			['statut_verification' => $statut]
+		);
+
+		return null;
 	}
 
 	/**
@@ -44,6 +79,7 @@ final class UtilisateurController
 			return 'Utilisateur introuvable.';
 		}
 
+		$wasPending = $target['statut'] === 'PENDING';
 		UtilisateurModel::setStatus($id, $status);
 
 		Logger::audit(
@@ -55,6 +91,10 @@ final class UtilisateurController
 			['statut' => $target['statut']],
 			['statut' => $status]
 		);
+
+		if ($wasPending && $status === 'ACTIVE' && $target['telephone']) {
+			SmsSender::send($id, $target['telephone'], 'Votre compte LOKA est validé, vous pouvez vous connecter.');
+		}
 
 		return null;
 	}

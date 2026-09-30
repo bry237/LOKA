@@ -20,7 +20,7 @@ try {
 
 	$type = (string) ($_POST['account_type'] ?? '');
 	[$errors, $redirect] = match ($type) {
-		'proprietor' => AuthController::handleProprietorRegistration($_POST),
+		'proprietor' => AuthController::handleProprietorRegistration($_POST, $_FILES),
 		'agency' => AuthController::handleAgencyRegistration($_POST, $_FILES),
 		default => [['general' => 'Type de compte invalide.'], null],
 	};

@@ -7,4 +7,5 @@ declare(strict_types=1);
  */
 return [
 	'agence_documents_path' => getenv('LOKA_STORAGE_PATH') ?: dirname(__DIR__, 3) . '/loka-storage/documents-agence',
+	'utilisateur_documents_path' => getenv('LOKA_STORAGE_PATH_UTILISATEUR') ?: dirname(__DIR__, 3) . '/loka-storage/documents-utilisateur',
 ];
