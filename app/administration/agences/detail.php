@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 3) . '/core/Authorization.php';
 require_once __DIR__ . '/AgenceController.php';
+require_once dirname(__DIR__) . '/abonnements/AbonnementModel.php';
 
 $currentUser = Authorization::requireRole('Administrateur plateforme');
 
@@ -38,6 +39,7 @@ $statusLabels = ['ACTIVE' => 'Actif', 'PENDING' => 'En attente', 'SUSPENDED' => 
 $statusTones = ['ACTIVE' => 'actif', 'PENDING' => 'attente', 'SUSPENDED' => 'suspendu'];
 $subStatusLabels = ['ACTIVE' => 'Actif', 'EXPIRED' => 'Expiré', 'CANCELLED' => 'Annulé'];
 $subStatusTones = ['ACTIVE' => 'actif', 'EXPIRED' => 'suspendu', 'CANCELLED' => 'inactif'];
+$availablePlans = AbonnementModel::activePlans();
 
 $documents = $detail['documents'] ?? [];
 $docTypeLabels = ['PIECE_IDENTITE' => "Pièce d'identité du responsable", 'JUSTIFICATIF_IMMATRICULATION' => "Justificatif d'immatriculation", 'AUTRE' => 'Autre document'];
@@ -105,7 +107,20 @@ if (!$isModal) require dirname(__DIR__, 3) . '/layouts/header.php';
         </div>
 
         <div class="panel">
-          <div class="panel-header"><div class="panel-title">Historique des abonnements</div></div>
+          <div class="panel-header">
+            <div class="panel-title">Historique des abonnements</div>
+            <form class="inline-form" method="post" action="changer-plan.php">
+              <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+              <input type="hidden" name="id" value="<?= (int) $agence['id_agence'] ?>">
+              <input type="hidden" name="redirect" value="<?= htmlspecialchars($redirectTarget, ENT_QUOTES, 'UTF-8') ?>">
+              <select name="id_abonnement" class="filter-select" style="margin-right:6px;">
+                <?php foreach ($availablePlans as $plan): ?>
+                  <option value="<?= (int) $plan['id_abonnement'] ?>"<?= ($subscription['plan_nom'] ?? null) === $plan['nom'] ? ' selected' : '' ?>><?= htmlspecialchars($plan['nom'], ENT_QUOTES, 'UTF-8') ?> (<?= number_format((float) $plan['prix_mensuel'], 2, ',', ' ') ?> €)</option>
+                <?php endforeach; ?>
+              </select>
+              <button type="submit" class="btn btn-sm">Changer de plan</button>
+            </form>
+          </div>
           <?php if (!$history): ?>
             <p class="empty-note">Aucun abonnement souscrit pour le moment.</p>
           <?php else: ?>

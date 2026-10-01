@@ -192,6 +192,94 @@ final class MonAgenceModel
 		return $tasks;
 	}
 
+	/* --------------------------------------------------------------
+	 * Équipe (membres de l'agence) et affectation de responsables aux biens
+	 * -------------------------------------------------------------- */
+
+	private const TEAM_ROLE_IDS = [2, 3, 4, 7]; // Administrateur agence, Gestionnaire immobilier, Comptable, Technicien
+
+	/** Rôles proposables lors de l'invitation d'un membre d'équipe. */
+	public static function teamRoles(): array
+	{
+		$db = Database::connection();
+		$placeholders = implode(',', self::TEAM_ROLE_IDS);
+		return $db->query("SELECT id_role, nom FROM role WHERE id_role IN ({$placeholders}) ORDER BY id_role")->fetchAll();
+	}
+
+	public static function team(int $idAgence): array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT u.id_utilisateur, u.nom, u.prenom, u.email, u.telephone, u.statut, u.created_at, r.nom AS role_nom
+			 FROM utilisateur u
+			 INNER JOIN role r ON r.id_role = u.id_role
+			 WHERE u.id_agence = :id_agence AND u.deleted_at IS NULL
+			 ORDER BY u.created_at ASC'
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		return $stmt->fetchAll();
+	}
+
+	/**
+	 * @param array{nom: string, prenom: string, email: string, telephone: string, id_role: int} $data
+	 * @return array{id_utilisateur: int, mot_de_passe_temporaire: string}
+	 */
+	public static function inviteMember(int $idAgence, array $data): array
+	{
+		$tempPassword = bin2hex(random_bytes(5));
+		$stmt = Database::connection()->prepare(
+			'INSERT INTO utilisateur (id_agence, id_role, nom, prenom, email, mot_de_passe, telephone, statut)
+			 VALUES (:id_agence, :id_role, :nom, :prenom, :email, :mot_de_passe, :telephone, \'ACTIVE\')'
+		);
+		$stmt->execute([
+			'id_agence' => $idAgence,
+			'id_role' => $data['id_role'],
+			'nom' => $data['nom'],
+			'prenom' => $data['prenom'],
+			'email' => $data['email'],
+			'mot_de_passe' => password_hash($tempPassword, PASSWORD_DEFAULT),
+			'telephone' => $data['telephone'],
+		]);
+
+		return [
+			'id_utilisateur' => (int) Database::connection()->lastInsertId(),
+			'mot_de_passe_temporaire' => $tempPassword,
+		];
+	}
+
+	public static function emailExists(string $email): bool
+	{
+		$stmt = Database::connection()->prepare('SELECT 1 FROM utilisateur WHERE LOWER(email) = LOWER(:email) LIMIT 1');
+		$stmt->execute(['email' => $email]);
+		return (bool) $stmt->fetchColumn();
+	}
+
+	/** Biens de l'agence avec leur éventuel responsable, pour l'écran d'affectation. */
+	public static function biensForAssignment(int $idAgence): array
+	{
+		$stmt = Database::connection()->prepare(
+			"SELECT b.id_bien, b.reference, b.titre, b.statut, b.id_responsable,
+					CONCAT(u.prenom, ' ', u.nom) AS responsable_nom
+			 FROM bien b
+			 LEFT JOIN utilisateur u ON u.id_utilisateur = b.id_responsable
+			 WHERE b.id_agence = :id_agence AND b.deleted_at IS NULL
+			 ORDER BY b.reference ASC"
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		return $stmt->fetchAll();
+	}
+
+	/**
+	 * @return bool false si le bien n'appartient pas à l'agence (protection contre une affectation croisée).
+	 */
+	public static function assignResponsable(int $idAgence, int $idBien, ?int $idResponsable): bool
+	{
+		$stmt = Database::connection()->prepare(
+			'UPDATE bien SET id_responsable = :id_responsable WHERE id_bien = :id_bien AND id_agence = :id_agence'
+		);
+		$stmt->execute(['id_responsable' => $idResponsable, 'id_bien' => $idBien, 'id_agence' => $idAgence]);
+		return $stmt->rowCount() > 0;
+	}
+
 	/** Compteurs légers utilisés pour les badges de la sidebar. */
 	public static function navBadges(int $idAgence): array
 	{

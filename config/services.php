@@ -10,6 +10,13 @@ return [
 		'api_key' => getenv('ANTHROPIC_API_KEY') ?: '',
 		'model' => getenv('ANTHROPIC_MODEL') ?: 'claude-sonnet-5',
 	],
+	'stripe' => [
+		// Clés de test (sk_test_.../pk_test_...) depuis le dashboard Stripe. whsec_... fourni par
+		// `stripe listen` (CLI) en local, ou par la configuration du webhook en production.
+		'secret_key' => getenv('STRIPE_SECRET_KEY') ?: '',
+		'publishable_key' => getenv('STRIPE_PUBLISHABLE_KEY') ?: '',
+		'webhook_secret' => getenv('STRIPE_WEBHOOK_SECRET') ?: '',
+	],
 	'sms' => [
 		// 'log' (par défaut) : aucun envoi réel, écrit le SMS en base (table notification) et dans les logs.
 		// 'twilio' : envoi réel via l'API Twilio, nécessite TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN/TWILIO_FROM_NUMBER.

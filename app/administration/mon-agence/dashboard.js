@@ -56,6 +56,7 @@ function renderSubscription(){
       <div><span class="lbl">Limite utilisateurs</span><span class="val">${limiteUsers}</span></div>
       <div><span class="lbl">Limite biens</span><span class="val">${limiteBiens}</span></div>
     </div>
+    <div class="form-actions"><a class="btn btn-sm" href="abonnement.php">Changer de plan</a></div>
   `;
 }
 
@@ -170,11 +171,16 @@ const QUICK_ACTIONS = [
   { icon:'home', label:'Ajouter un bien', module:'Biens' },
   { icon:'user', label:'Ajouter un locataire', module:'Locataires' },
   { icon:'card', label:'Créer un contrat', module:'Contrats' },
-  { icon:'users', label:'Inviter un collaborateur', module:'Équipe' },
+  { icon:'users', label:'Inviter un collaborateur', href:'equipe.php' },
 ];
 function renderQuickActions(){
   const el = document.getElementById('quickActions');
-  el.innerHTML = QUICK_ACTIONS.map(a => `
+  el.innerHTML = QUICK_ACTIONS.map(a => a.href ? `
+    <a class="quick-action" href="${a.href}">
+      <div class="quick-action-icon">${ICONS[a.icon]}</div>
+      <div class="quick-action-label">${a.label}</div>
+    </a>
+  ` : `
     <div class="quick-action disabled" title="Disponible avec le module ${a.module}">
       <div class="quick-action-icon">${ICONS[a.icon]}</div>
       <div class="quick-action-label">${a.label}</div>

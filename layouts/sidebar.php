@@ -36,7 +36,7 @@ $navActive = static fn (string $page): string => $activeNav === $page ? ' active
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
         Biens
       </a></li>
-      <li class="nav-item"><a class="nav-link<?= $navActive('Abonnements') ?>" data-page="Abonnements">
+      <li class="nav-item"><a class="nav-link<?= $navActive('Abonnements') ?>" href="../abonnements/index.php">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
         Abonnements
       </a></li>

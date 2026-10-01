@@ -65,7 +65,7 @@ final class AgenceModel
 	public static function findFull(int $id): ?array
 	{
 		$stmt = Database::connection()->prepare(
-			'SELECT id_agence, nom, email, telephone, adresse, ville, code_postal, pays, statut, created_at, updated_at
+			'SELECT id_agence, nom, email, telephone, adresse, ville, code_postal, pays, statut, stripe_customer_id, created_at, updated_at
 			 FROM agence WHERE id_agence = :id AND deleted_at IS NULL LIMIT 1'
 		);
 		$stmt->execute(['id' => $id]);
@@ -141,6 +141,12 @@ final class AgenceModel
 	{
 		$stmt = Database::connection()->prepare('UPDATE agence SET statut = :statut WHERE id_agence = :id');
 		$stmt->execute(['statut' => $status, 'id' => $id]);
+	}
+
+	public static function setStripeCustomerId(int $id, string $stripeCustomerId): void
+	{
+		$stmt = Database::connection()->prepare('UPDATE agence SET stripe_customer_id = :stripe_customer_id WHERE id_agence = :id');
+		$stmt->execute(['stripe_customer_id' => $stripeCustomerId, 'id' => $id]);
 	}
 
 	public static function emailExists(string $email, ?int $excludeId = null): bool

@@ -364,6 +364,9 @@
   .status-badge.suspendu,.status-badge.locked{background:#FCE9E9;color:var(--danger);}
   .status-badge.inactif,.status-badge.inactive{background:#EDF1F1;color:var(--text);}
   .status-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;}
+  .cell-price{font-size:14px;font-weight:700;color:var(--heading);font-variant-numeric:tabular-nums;}
+  .cell-limit{font-variant-numeric:tabular-nums;color:var(--text);}
+  .cell-limit.unlimited{color:#8AA0A0;font-style:italic;}
 
   .document-list{padding:4px 18px 18px;display:flex;flex-direction:column;gap:14px;}
   .document-item{

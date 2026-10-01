@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/AgenceModel.php';
 require_once __DIR__ . '/AgenceValidator.php';
 require_once __DIR__ . '/DocumentAgenceModel.php';
+require_once dirname(__DIR__) . '/abonnements/AbonnementModel.php';
 require_once dirname(__DIR__, 3) . '/core/Auth.php';
 require_once dirname(__DIR__, 3) . '/core/Logger.php';
 require_once dirname(__DIR__, 3) . '/core/SmsSender.php';
@@ -163,6 +164,40 @@ final class AgenceController
 		if ($wasPending && $status === 'ACTIVE') {
 			self::notifyAgencyValidated($id);
 		}
+
+		return null;
+	}
+
+	/**
+	 * Affectation manuelle d'un plan à une agence, sans paiement (support, offre gratuite).
+	 * Le changement de plan payant en self-service passe par Stripe Checkout
+	 * (voir AbonnementController::startCheckout), pas par cette action.
+	 *
+	 * @return string|null Message d'erreur, ou null si l'opération a réussi.
+	 */
+	public static function assignPlan(int $id, int $idAbonnement): ?string
+	{
+		$target = AgenceModel::find($id);
+		if (!$target) {
+			return 'Agence introuvable.';
+		}
+		$plan = AbonnementModel::find($idAbonnement);
+		if (!$plan) {
+			return 'Plan introuvable.';
+		}
+
+		AbonnementModel::assignToAgence($id, $idAbonnement);
+
+		$currentUser = Auth::user();
+		Logger::audit(
+			'UPDATE',
+			'agence_abonnement',
+			$id,
+			$currentUser['id_utilisateur'] ?? null,
+			$id,
+			null,
+			['id_abonnement' => $idAbonnement, 'plan' => $plan['nom']]
+		);
 
 		return null;
 	}
