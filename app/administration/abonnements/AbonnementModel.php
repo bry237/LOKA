@@ -161,4 +161,20 @@ final class AbonnementModel
 		$stmt = Database::connection()->prepare("UPDATE facture_abonnement SET statut = 'FAILED' WHERE id_facture = :id");
 		$stmt->execute(['id' => $idFacture]);
 	}
+
+	public static function findFacture(int $id): ?array
+	{
+		$stmt = Database::connection()->prepare('SELECT * FROM facture_abonnement WHERE id_facture = :id LIMIT 1');
+		$stmt->execute(['id' => $id]);
+		$row = $stmt->fetch();
+		return $row ?: null;
+	}
+
+	public static function findFactureBySessionId(string $sessionId): ?array
+	{
+		$stmt = Database::connection()->prepare('SELECT * FROM facture_abonnement WHERE stripe_checkout_session_id = :session_id LIMIT 1');
+		$stmt->execute(['session_id' => $sessionId]);
+		$row = $stmt->fetch();
+		return $row ?: null;
+	}
 }

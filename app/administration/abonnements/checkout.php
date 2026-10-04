@@ -23,10 +23,12 @@ if (!$agence) {
 // Stripe exige des URLs absolues (schéma + hôte) pour success_url/cancel_url.
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $baseUrl = $scheme . '://' . $_SERVER['HTTP_HOST'] . '/LOKA/app/administration/mon-agence/abonnement.php';
+// {CHECKOUT_SESSION_ID} est substitué par Stripe : permet de confirmer le paiement
+// directement via l'API au retour, sans dépendre du webhook (voir confirmCheckoutSession).
 [$error, $checkoutUrl] = AbonnementController::startCheckout(
 	$agence,
 	$idAbonnement,
-	$baseUrl . '?success=1',
+	$baseUrl . '?success=1&session_id={CHECKOUT_SESSION_ID}',
 	$baseUrl . '?cancel=1'
 );
 

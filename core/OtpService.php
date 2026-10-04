@@ -16,7 +16,7 @@ final class OtpService
 	private const RESEND_COOLDOWN_SECONDS = 60;
 
 	/**
-	 * @return array{ok: bool, error: ?string, retry_after: ?int, demo_code: ?string}
+	 * @return array{ok: bool, error: ?string, retry_after: ?int}
 	 */
 	public static function generateAndSend(int $idUtilisateur, string $telephoneE164): array
 	{
@@ -30,7 +30,7 @@ final class OtpService
 		if ($lastCreatedAt) {
 			$elapsed = time() - (new DateTimeImmutable((string) $lastCreatedAt))->getTimestamp();
 			if ($elapsed < self::RESEND_COOLDOWN_SECONDS) {
-				return ['ok' => false, 'error' => 'COOLDOWN', 'retry_after' => self::RESEND_COOLDOWN_SECONDS - $elapsed, 'demo_code' => null];
+				return ['ok' => false, 'error' => 'COOLDOWN', 'retry_after' => self::RESEND_COOLDOWN_SECONDS - $elapsed];
 			}
 		}
 
@@ -48,14 +48,14 @@ final class OtpService
 			'date_expiration' => $expiration,
 		]);
 
-		$message = "Bienvenue sur LOKA. Votre code de vérification est {$code} (valable " . self::TTL_MINUTES
-			. ' min). Une fois validé, votre demande sera examinée par notre équipe avant activation.';
-		$config = require dirname(__DIR__) . '/config/services.php';
-		$isDemo = ($config['sms']['provider'] ?? 'log') === 'log';
+		// Message volontairement neutre : ce même service sert à la fois l'inscription (compte en
+		// attente d'examen) et la vérification au premier login d'un membre invité (compte déjà
+		// actif) — mentionner l'un ou l'autre cas ici serait faux pour la moitié des destinataires.
+		$message = "Votre code de vérification LOKA est {$code}. Il expire dans " . self::TTL_MINUTES . ' minutes.';
 
 		SmsSender::send($idUtilisateur, $telephoneE164, $message);
 
-		return ['ok' => true, 'error' => null, 'retry_after' => null, 'demo_code' => $isDemo ? $code : null];
+		return ['ok' => true, 'error' => null, 'retry_after' => null];
 	}
 
 	/**

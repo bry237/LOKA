@@ -6,6 +6,7 @@ require_once dirname(__DIR__, 3) . '/core/Auth.php';
 require_once dirname(__DIR__, 3) . '/core/Logger.php';
 require_once dirname(__DIR__, 3) . '/core/SmsSender.php';
 require_once dirname(__DIR__, 3) . '/core/SubscriptionLimiter.php';
+require_once dirname(__DIR__, 3) . '/core/Phone.php';
 
 final class MonAgenceController
 {
@@ -37,15 +38,19 @@ final class MonAgenceController
 	}
 
 	/**
-	 * @return array<string,string> Erreurs de validation (dont '_global' pour la limite de plan), vide si succès.
+	 * Validation partagée invitation/modification : nom, prénom, email (unicité hors le membre
+	 * lui-même en cas de modification), téléphone normalisé en E.164, rôle autorisé pour une agence.
+	 *
+	 * @return array{0: array<string,string>, 1: array{nom:string,prenom:string,email:string,telephone:string,id_role:int}}
 	 */
-	public static function invite(int $idAgence, array $input): array
+	private static function validateMemberInput(array $input, ?int $excludeIdUtilisateur = null): array
 	{
 		$data = [
 			'nom' => trim((string) ($input['nom'] ?? '')),
 			'prenom' => trim((string) ($input['prenom'] ?? '')),
 			'email' => trim((string) ($input['email'] ?? '')),
 			'telephone' => trim((string) ($input['telephone'] ?? '')),
+			'indicatif_pays' => trim((string) ($input['indicatif_pays'] ?? '+33')),
 			'id_role' => (int) ($input['id_role'] ?? 0),
 		];
 
@@ -55,12 +60,34 @@ final class MonAgenceController
 		}
 		if ($data['email'] !== '' && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
 			$errors['email'] = 'Adresse email invalide.';
-		} elseif ($data['email'] !== '' && MonAgenceModel::emailExists($data['email'])) {
+		} elseif ($data['email'] !== '' && MonAgenceModel::emailExists($data['email'], $excludeIdUtilisateur)) {
 			$errors['email'] = 'Cet email est déjà utilisé.';
+		}
+		if (!isset($errors['telephone'])) {
+			// Numéro normalisé en E.164 (indicatif + national) : indispensable pour que le SMS
+			// d'invitation et, surtout, l'OTP de vérification au premier login (voir
+			// AuthController::handleLogin) partent vers le bon pays plutôt qu'un numéro local
+			// incomplet envoyé tel quel au provider SMS.
+			$e164 = Phone::toE164($data['indicatif_pays'], $data['telephone']);
+			if ($e164 === null) {
+				$errors['telephone'] = 'Numéro de téléphone invalide.';
+			} else {
+				$data['telephone'] = $e164;
+			}
 		}
 		if (!in_array($data['id_role'], self::INVITABLE_ROLE_IDS, true)) {
 			$errors['id_role'] = 'Rôle invalide.';
 		}
+
+		return [$errors, $data];
+	}
+
+	/**
+	 * @return array<string,string> Erreurs de validation (dont '_global' pour la limite de plan), vide si succès.
+	 */
+	public static function invite(int $idAgence, array $input): array
+	{
+		[$errors, $data] = self::validateMemberInput($input);
 		if ($errors) {
 			return $errors;
 		}
@@ -91,6 +118,71 @@ final class MonAgenceController
 		}
 
 		return [];
+	}
+
+	public static function memberDetail(int $idAgence, int $idUtilisateur): ?array
+	{
+		return MonAgenceModel::findMember($idAgence, $idUtilisateur);
+	}
+
+	/**
+	 * @return array<string,string> Erreurs de validation (dont '_global'), vide si succès.
+	 */
+	public static function updateMember(int $idAgence, int $idUtilisateur, array $input): array
+	{
+		$existing = MonAgenceModel::findMember($idAgence, $idUtilisateur);
+		if (!$existing) {
+			return ['_global' => 'Membre introuvable.'];
+		}
+
+		[$errors, $data] = self::validateMemberInput($input, $idUtilisateur);
+		if ($errors) {
+			return $errors;
+		}
+
+		MonAgenceModel::updateMember($idAgence, $idUtilisateur, $data);
+
+		$currentUser = Auth::user();
+		Logger::audit(
+			'UPDATE',
+			'utilisateur',
+			$idUtilisateur,
+			$currentUser['id_utilisateur'] ?? null,
+			$idAgence,
+			['nom' => $existing['nom'], 'prenom' => $existing['prenom'], 'email' => $existing['email'], 'telephone' => $existing['telephone'], 'id_role' => $existing['id_role']],
+			$data
+		);
+
+		return [];
+	}
+
+	/**
+	 * @return string|null Message d'erreur, ou null si l'opération a réussi.
+	 */
+	public static function deleteMember(int $idAgence, int $idUtilisateur, int $currentUserId): ?string
+	{
+		if ($idUtilisateur === $currentUserId) {
+			return 'Vous ne pouvez pas retirer votre propre compte de l’équipe.';
+		}
+
+		$existing = MonAgenceModel::findMember($idAgence, $idUtilisateur);
+		if (!$existing) {
+			return 'Membre introuvable.';
+		}
+
+		MonAgenceModel::deleteMember($idAgence, $idUtilisateur);
+
+		Logger::audit(
+			'DELETE',
+			'utilisateur',
+			$idUtilisateur,
+			$currentUserId,
+			$idAgence,
+			['nom' => $existing['nom'], 'prenom' => $existing['prenom'], 'email' => $existing['email']],
+			null
+		);
+
+		return null;
 	}
 
 	/**

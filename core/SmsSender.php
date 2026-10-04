@@ -43,6 +43,19 @@ final class SmsSender
 			default => ['envoye' => true, 'erreur' => null],
 		};
 
+		// Le numéro et l'éventuelle erreur du provider ne sont volontairement pas stockés dans la
+		// table `notification` (visible par l'agence) mais uniquement dans le journal serveur :
+		// c'est ce qui permet de diagnostiquer un échec silencieux (ex. compte Vonage en mode
+		// test, qui n'accepte que des numéros whitelistés) sans exposer de numéro de tiers.
+		error_log(sprintf(
+			'[SMS:%s] provider=%s destinataire=%s utilisateur=#%d%s',
+			$result['envoye'] ? 'sent' : 'failed',
+			$provider,
+			$toE164,
+			$idUtilisateur,
+			$result['erreur'] ? ' erreur="' . $result['erreur'] . '"' : ''
+		));
+
 		self::logNotification($idUtilisateur, $message, $result['envoye']);
 
 		return ['envoye' => $result['envoye'], 'provider' => $provider, 'erreur' => $result['erreur']];
@@ -133,7 +146,6 @@ final class SmsSender
 				'message' => $message,
 				'statut' => $envoye ? 'SENT' : 'FAILED',
 			]);
-			error_log(sprintf('[SMS:%s] utilisateur #%d : %s', $envoye ? 'sent' : 'failed', $idUtilisateur, $message));
 		} catch (Throwable $exception) {
 			error_log('[SMS] Impossible de journaliser la notification : ' . $exception->getMessage());
 		}

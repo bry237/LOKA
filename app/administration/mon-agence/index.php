@@ -8,7 +8,7 @@ $pageTitle = 'Mon agence';
 $activeNav = 'Dashboard';
 $sidebarFile = 'sidebar-agence.php';
 $greetingTitle = 'Bonjour, ' . $currentUser['prenom'];
-$greetingSubtitle = "Voici un aperçu de l'activité de votre agence.";
+$greetingSubtitle = "L'essentiel de l'activité de votre agence, en un coup d'œil.";
 $profileName = trim($currentUser['prenom'] . ' ' . $currentUser['nom']);
 $profileRole = $currentUser['role_nom'];
 $profileInitials = mb_strtoupper(mb_substr($currentUser['prenom'], 0, 1) . mb_substr($currentUser['nom'], 0, 1));
@@ -40,8 +40,9 @@ require dirname(__DIR__, 3) . '/layouts/header.php';
         <div class="panel">
           <div class="panel-header">
             <div class="panel-title">Activité récente</div>
+            <span class="panel-link disabled" title="Bientôt disponible">Voir tout</span>
           </div>
-          <p class="panel-sub">Dernières entrées du journal d'audit de votre agence</p>
+          <p class="panel-sub">Les derniers événements marquants de votre agence</p>
           <div class="activity-list" id="activityList"></div>
         </div>
       </div>

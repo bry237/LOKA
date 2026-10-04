@@ -15,7 +15,7 @@ $userId = (int) $pending['id_utilisateur'];
 $telephone = (string) $pending['telephone'];
 $csrfToken = Auth::csrfToken();
 $error = null;
-$demoCode = $pending['demo_code'] ?? null;
+$resent = false;
 $cooldownSeconds = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -26,9 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		if (!$result['ok'] && $result['error'] === 'COOLDOWN') {
 			$cooldownSeconds = $result['retry_after'];
 			$error = 'Merci de patienter avant de redemander un code.';
-		} elseif ($result['demo_code'] !== null) {
-			$demoCode = $result['demo_code'];
-			$_SESSION['loka_pending_verification']['demo_code'] = $demoCode;
+		} else {
+			$resent = true;
 		}
 	} else {
 		$code = trim((string) ($_POST['code'] ?? ''));
@@ -71,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					<h1>Confirmez votre numéro</h1>
 					<p>Saisissez le code à 6 chiffres envoyé par SMS au <?= htmlspecialchars($telephone, ENT_QUOTES, 'UTF-8') ?>.</p>
 				</header>
-				<?php if ($demoCode !== null): ?><p class="form-message form-message--demo" role="status">Mode démo — code : <?= htmlspecialchars($demoCode, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+				<?php if ($resent): ?><p class="form-message form-message--info" role="status">Un nouveau code vous a été envoyé par SMS.</p><?php endif; ?>
 				<?php if ($error !== null): ?><p class="form-message form-message--error" role="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
 				<form class="auth-form" method="post" action="verification-code.php" novalidate>
 					<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">

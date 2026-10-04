@@ -183,6 +183,9 @@ final class AbonnementController
 
 	/**
 	 * Traite un événement webhook Stripe déjà vérifié (signature) et décodé.
+	 * Idempotent : une facture déjà marquée PAID est ignorée, pour pouvoir être rejouée sans
+	 * risque par la confirmation au retour de Checkout (voir confirmCheckoutSession) ou par
+	 * Stripe lui-même (qui réessaie un webhook non acquitté).
 	 */
 	public static function handleWebhookEvent(array $event): void
 	{
@@ -195,6 +198,10 @@ final class AbonnementController
 		}
 
 		if ($type === 'checkout.session.completed') {
+			$facture = AbonnementModel::findFacture($idFacture);
+			if (!$facture || $facture['statut'] === 'PAID') {
+				return;
+			}
 			$idAgence = (int) ($metadata['id_agence'] ?? 0);
 			$idAbonnement = (int) ($metadata['id_abonnement'] ?? 0);
 			if (!$idAgence || !$idAbonnement) {
@@ -209,5 +216,38 @@ final class AbonnementController
 		} elseif ($type === 'checkout.session.expired') {
 			AbonnementModel::markFactureFailed($idFacture);
 		}
+	}
+
+	/**
+	 * Confirme une session Checkout directement auprès de l'API Stripe au retour sur
+	 * success_url, en secours du webhook : en local (XAMPP), Stripe ne peut pas appeler
+	 * notre webhook sur localhost sans `stripe listen`, donc le paiement passait côté Stripe
+	 * sans jamais affecter le plan en base. Réutilise handleWebhookEvent (idempotent) pour que
+	 * le traitement reste identique, que ce soit le webhook ou ce retour qui arrive en premier.
+	 *
+	 * @return 'confirmed'|'already'|'pending'|'unknown'
+	 */
+	public static function confirmCheckoutSession(string $sessionId): string
+	{
+		$facture = AbonnementModel::findFactureBySessionId($sessionId);
+		if (!$facture) {
+			return 'unknown';
+		}
+		if ($facture['statut'] === 'PAID') {
+			return 'already';
+		}
+
+		try {
+			$session = StripeClient::retrieveCheckoutSession($sessionId);
+		} catch (Throwable $exception) {
+			return 'pending';
+		}
+
+		if (($session['payment_status'] ?? '') !== 'paid') {
+			return 'pending';
+		}
+
+		self::handleWebhookEvent(['type' => 'checkout.session.completed', 'data' => ['object' => $session]]);
+		return 'confirmed';
 	}
 }

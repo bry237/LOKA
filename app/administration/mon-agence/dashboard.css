@@ -5,6 +5,14 @@
      vit dans layouts/admin.css.
      ========================================================= */
 
+  :root{
+    --seg-green:var(--success);
+    --seg-teal:var(--primary);
+    --seg-amber:var(--warning);
+    --seg-blue:var(--blue);
+    --seg-gray:#B9C8C8;
+  }
+
   .panel-sub{font-size:11.5px;color:#8AA0A0;margin:0 18px 6px;}
 
   /* KPI cards */
@@ -39,6 +47,11 @@
   .kpi-icon.red{background:#FCE9E9;color:var(--danger);}
   .kpi-value{font-size:21px;font-weight:800;color:var(--heading);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .kpi-label{font-size:12px;color:var(--text);}
+  .kpi-sub{
+    margin-top:7px;padding-top:7px;border-top:1px solid var(--border);
+    font-size:10.8px;font-weight:600;color:#8AA0A0;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
 
   /* Main dashboard layout: contenu principal + rail latéral */
   .dashboard-grid{
@@ -49,28 +62,49 @@
   }
   .dashboard-main,.dashboard-rail{display:flex;flex-direction:column;gap:16px;min-width:0;}
 
-  /* État du parc immobilier */
-  .portfolio-block{padding:6px 18px 18px;}
-  .portfolio-bar{
-    display:flex;width:100%;height:10px;border-radius:100px;overflow:hidden;
-    background:#EEF3F3;margin-bottom:14px;
+  /* État du parc immobilier : donut + légende */
+  .portfolio-block{display:flex;align-items:center;gap:24px;padding:8px 18px 20px;flex-wrap:wrap;}
+  .portfolio-donut{
+    position:relative;width:106px;height:106px;border-radius:50%;flex-shrink:0;
   }
-  .portfolio-seg{display:block;height:100%;}
-  .portfolio-seg.green{background:var(--success);}
-  .portfolio-seg.teal{background:var(--primary);}
-  .portfolio-seg.amber{background:var(--warning);}
-  .portfolio-seg.blue{background:var(--blue);}
-  .portfolio-seg.gray{background:#B9C8C8;}
-  .portfolio-legend{display:flex;flex-direction:column;gap:8px;}
-  .portfolio-legend .donut-legend-row{font-size:12.5px;color:var(--text);}
-  .portfolio-legend .donut-legend-row b{color:var(--heading);}
-  .dot-legend{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:8px;}
+  .portfolio-donut-hole{
+    position:absolute;inset:15px;border-radius:50%;background:var(--white);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    box-shadow:inset 0 0 0 1px var(--border);
+  }
+  .portfolio-donut-total{font-size:20px;font-weight:800;color:var(--heading);line-height:1;}
+  .portfolio-donut-label{font-size:10px;color:#8AA0A0;margin-top:2px;}
+  .portfolio-legend{flex:1;min-width:170px;display:flex;flex-direction:column;gap:10px;}
+  .portfolio-legend .donut-legend-row{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--text);}
+  .portfolio-legend .donut-legend-row b{color:var(--heading);font-weight:700;}
+  .portfolio-legend .donut-legend-row em{color:#8AA0A0;font-style:normal;}
+  .portfolio-legend .lg{display:flex;align-items:center;min-width:0;}
+  .dot-legend{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:8px;flex-shrink:0;}
   .dot-legend.tone-green{background:var(--success);}
   .dot-legend.tone-teal{background:var(--primary);}
   .dot-legend.tone-amber{background:var(--warning);}
   .dot-legend.tone-blue{background:var(--blue);}
   .dot-legend.tone-gray{background:#B9C8C8;}
-  .portfolio-total{font-size:11.5px;color:#8AA0A0;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+
+  /* États vides : parc immobilier sans bien, listes sans données */
+  .empty-state{
+    display:flex;flex-direction:column;align-items:center;text-align:center;
+    padding:30px 22px 26px;
+  }
+  .empty-state-icon{
+    width:44px;height:44px;border-radius:13px;flex-shrink:0;
+    background:#F1F6F6;color:var(--primary);
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:12px;
+  }
+  .empty-state-icon svg{width:20px;height:20px;}
+  .empty-state-icon.sm{width:34px;height:34px;border-radius:10px;margin-bottom:8px;}
+  .empty-state-icon.sm svg{width:15px;height:15px;}
+  .empty-state h4{margin:0;font-size:14px;font-weight:700;color:var(--heading);}
+  .empty-state p{margin:5px 0 0;font-size:12.5px;color:#8AA0A0;max-width:280px;line-height:1.5;}
+  .empty-state .empty-state-cta{margin-top:16px;gap:8px;cursor:default;}
+  .empty-state .empty-state-cta svg{width:14px;height:14px;}
+  .empty-state-compact{padding:20px 18px;}
 
   /* Watch-style lists (Contrats à surveiller / À traiter aujourd'hui) */
   .watch-list{padding:8px 18px 16px;display:flex;flex-direction:column;gap:10px;}
@@ -79,7 +113,9 @@
     padding:11px 12px;
     border:1px solid var(--border);
     border-radius:11px;
+    transition:border-color .18s ease,background .18s ease;
   }
+  .watch-item:hover{border-color:#c3dddd;background:#FBFDFD;}
   .watch-item.all-clear{background:#FBFDFD;}
   .watch-icon{
     width:32px;height:32px;border-radius:9px;flex-shrink:0;
@@ -91,44 +127,62 @@
   .watch-icon.red{background:#FCE9E9;color:var(--danger);}
   .watch-icon.blue{background:#E5F0FB;color:var(--blue);}
   .watch-icon.green{background:#E7F7ED;color:var(--success);}
-  .watch-title{font-size:12.8px;font-weight:600;color:var(--heading);}
-  .watch-sub{font-size:11px;color:#8AA0A0;margin-top:1px;}
+  .watch-main{flex:1;min-width:0;}
+  .watch-title{font-size:12.8px;font-weight:600;color:var(--heading);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .watch-dot{color:#C3D0D0;margin:0 1px;}
+  .watch-sub{font-size:11px;color:#8AA0A0;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .watch-days{
     margin-left:auto;flex-shrink:0;
     font-size:11px;font-weight:700;padding:4px 9px;border-radius:100px;
+    background:#EDF1F1;color:var(--text);
   }
   .watch-days.amber{background:#FDF1DC;color:var(--warning);}
   .watch-days.red{background:#FCE9E9;color:var(--danger);}
+  .watch-days.blue{background:#E5F0FB;color:var(--blue);}
+  .watch-days.green{background:#E7F7ED;color:var(--success);}
+  .watch-days.teal{background:#E3F4F4;color:var(--primary);}
 
   /* Actions rapides */
   .quick-actions{padding:8px 18px 18px;display:flex;flex-direction:column;gap:8px;}
   .quick-action{
     display:flex;align-items:center;gap:11px;
     padding:10px 12px;border:1px solid var(--border);border-radius:11px;
+    transition:border-color .18s ease,background .18s ease,transform .18s ease;
   }
-  .quick-action.disabled{opacity:.75;cursor:default;}
+  a.quick-action:hover{border-color:#b8d9d9;background:#FBFDFD;transform:translateX(2px);}
+  a.quick-action:hover .quick-action-icon{background:var(--primary);color:#fff;}
+  .quick-action.disabled{opacity:.7;cursor:default;}
   .quick-action-icon{
     width:30px;height:30px;border-radius:9px;flex-shrink:0;
     background:#F1F6F6;color:var(--primary);
     display:flex;align-items:center;justify-content:center;
+    transition:background .18s ease,color .18s ease;
   }
   .quick-action-icon svg{width:14px;height:14px;}
   .quick-action-label{font-size:12.5px;font-weight:600;color:var(--heading);flex:1;}
+  .quick-action-arrow{flex-shrink:0;color:#B9C8C8;display:flex;}
+  .quick-action-arrow svg{width:14px;height:14px;}
   .nav-soon.light{
     color:#8AA0A0;background:#F1F6F6;border:1px solid var(--border);
     font-size:9.5px;font-weight:700;letter-spacing:.03em;
     padding:2px 7px;border-radius:100px;flex-shrink:0;
   }
 
-  /* Subscription card (rail) */
-  .agency-details{padding:4px 18px 18px;display:flex;flex-direction:column;gap:10px;}
-  .agency-details > div{display:flex;justify-content:space-between;font-size:13px;}
-  .agency-details .lbl{color:var(--text);}
-  .agency-details .val{color:var(--heading);font-weight:600;}
+  /* Subscription card (rail) — plan actuel, usage, gestion */
+  .subscription-card-head{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+    padding:16px 18px 2px;
+  }
+  .subscription-plan-name{font-family:Georgia,serif;font-size:17px;font-weight:700;color:var(--heading);margin-top:2px;}
+  .subscription-usage{padding:14px 18px 4px;display:flex;flex-direction:column;gap:12px;}
+  .subscription-meter-head{display:flex;justify-content:space-between;font-size:11.5px;color:var(--text);margin-bottom:6px;}
+  .subscription-meter-head span:last-child{font-weight:700;color:var(--heading);font-variant-numeric:tabular-nums;}
+  .subscription-card-foot{padding:14px 18px 18px;}
+  .subscription-card-foot .btn{width:100%;justify-content:center;}
 
   .plan-badge{
     display:inline-block;padding:4px 10px;border-radius:100px;
-    font-size:11.5px;font-weight:700;
+    font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;
   }
   .plan-badge.gratuit{background:#EDF1F1;color:var(--text);}
   .plan-badge.pro{background:#E3F4F4;color:var(--primary);}
@@ -156,16 +210,43 @@
   .activity-title{font-size:13px;font-weight:600;color:var(--heading);margin-bottom:2px;}
   .activity-sub{font-size:12px;color:var(--text);}
   .activity-time{font-size:11px;color:#96ABAB;white-space:nowrap;margin-left:auto;padding-left:10px;}
-  .activity-main{display:flex;flex-direction:column;min-width:0;}
+  .activity-main{display:flex;flex-direction:column;min-width:0;flex:1;}
   .activity-row{display:flex;width:100%;}
 
-  /* ---------------- Page "Abonnement" : jauges d'usage + cartes de formules ---------------- */
-  .usage-summary{
-    display:flex;gap:28px;flex-wrap:wrap;
-    padding:18px 20px;margin-bottom:22px;
-    background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);
-    box-shadow:var(--shadow-card);
+  /* ---------------- Page "Abonnement" : vue d'ensemble, jauges d'usage, cartes de formules ---------------- */
+  .subscription-overview{padding:24px 26px 26px;margin-bottom:28px;}
+  .subscription-overview-top{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;
+    padding-bottom:22px;margin-bottom:22px;border-bottom:1px solid var(--border);
   }
+  .subscription-overview-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8AA0A0;}
+  .subscription-overview-name{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    font-family:Georgia,serif;font-size:23px;font-weight:700;color:var(--heading);margin-top:5px;
+  }
+  .plan-current-badge{
+    display:inline-flex;align-items:center;gap:5px;
+    background:#E3F4F4;color:var(--dark);
+    font-size:10.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;
+    padding:4px 10px 4px 8px;border-radius:100px;
+  }
+  .plan-current-badge svg{width:11px;height:11px;}
+  .subscription-overview-price{text-align:right;}
+  .subscription-overview-price .amount{font-size:25px;font-weight:800;color:var(--heading);font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+  .subscription-overview-price .period{font-size:12.5px;color:var(--text);margin-left:2px;}
+  .subscription-overview-usage{display:flex;gap:32px;flex-wrap:wrap;}
+  .subscription-overview-usage .usage-meter{flex:1;min-width:200px;}
+
+  .plans-heading{margin:0 0 16px;}
+  .plans-heading h2{margin:0;font-family:Georgia,serif;font-size:18px;font-weight:700;color:var(--heading);}
+  .plans-heading p{margin:4px 0 0;font-size:12.5px;color:#8AA0A0;}
+
+  .plans-secure-note{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    margin:22px 0 0;font-size:12px;color:#8AA0A0;
+  }
+  .plans-secure-note svg{width:13px;height:13px;flex-shrink:0;}
+
   .usage-meter{flex:1;min-width:200px;}
   .usage-meter-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
   .usage-meter-label{font-size:12px;color:var(--text);}
@@ -187,6 +268,7 @@
   .plan-card.premium{border-top-color:var(--violet);}
   .plan-card.current{box-shadow:0 0 0 1px var(--primary),var(--shadow-card);}
   .plan-card-eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--violet);padding:14px 22px 0;}
+  .plan-card-eyebrow.current{color:var(--primary);}
   .plan-card-head{padding:16px 22px 0;}
   .plan-card-head.no-eyebrow{padding-top:20px;}
   .plan-card-name{font-family:Georgia,serif;font-size:19px;font-weight:700;color:var(--heading);}
@@ -196,12 +278,9 @@
   .plan-card-price .period{font-size:13px;color:var(--text);}
   .plan-card-features{list-style:none;margin:16px 0 0;padding:16px 22px;display:flex;flex-direction:column;gap:11px;flex:1;border-top:1px solid var(--border);}
   .plan-card-features li{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text);}
-  .plan-card-features li.muted{color:#A7B6B6;}
   .plan-card-features svg{width:15px;height:15px;flex-shrink:0;margin-top:1px;color:var(--success);}
-  .plan-card-features li.muted svg{color:#C3D0D0;}
   .plan-card-foot{padding:16px 22px 22px;}
   .plan-card-foot .btn{width:100%;justify-content:center;}
-  .plan-card-foot .plan-cta-note{display:block;text-align:center;font-size:11px;color:#8AA0A0;margin-top:8px;}
   .plan-current-tag{
     display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px 0;
     border-radius:var(--radius-md);background:#E3F4F4;color:var(--dark);font-size:13px;font-weight:700;
@@ -216,6 +295,7 @@
   }
   @media (max-width:700px){
     .kpi-grid{grid-template-columns:repeat(2,1fr);}
+    .portfolio-block{justify-content:center;}
   }
   @media (max-width:420px){
     .kpi-grid{grid-template-columns:1fr;}

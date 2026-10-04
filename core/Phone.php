@@ -27,4 +27,23 @@ final class Phone
 		$e164 = $countryCode . $digits;
 		return preg_match('/^\+[1-9]\d{6,14}$/', $e164) ? $e164 : null;
 	}
+
+	/**
+	 * Opération inverse de toE164() : retrouve l'indicatif (parmi la liste de codes proposée) et le
+	 * numéro national, pour pré-remplir un formulaire d'édition à partir d'un numéro déjà stocké.
+	 *
+	 * @param array<string,string> $knownCountryCodes indicatif => libellé (ex. layouts/phone-country-codes.php)
+	 * @return array{0: string, 1: string} [indicatif, numéro national]
+	 */
+	public static function splitE164(string $e164, array $knownCountryCodes): array
+	{
+		$codes = array_keys($knownCountryCodes);
+		usort($codes, static fn (string $a, string $b): int => strlen($b) <=> strlen($a));
+		foreach ($codes as $code) {
+			if (str_starts_with($e164, $code)) {
+				return [$code, substr($e164, strlen($code))];
+			}
+		}
+		return ['+33', ltrim($e164, '+')];
+	}
 }

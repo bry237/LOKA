@@ -3,29 +3,13 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 3) . '/core/Authorization.php';
 require_once __DIR__ . '/MonAgenceController.php';
+require_once __DIR__ . '/team-presentation.php';
 
 $currentUser = Authorization::requireRole('Administrateur agence');
 $idAgence = (int) $currentUser['id_agence'];
 
-$errors = [];
-$values = ['nom' => '', 'prenom' => '', 'email' => '', 'telephone' => '', 'id_role' => ''];
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-	if (!Auth::verifyCsrf($_POST['csrf_token'] ?? null)) {
-		http_response_code(400);
-		exit('Requête invalide.');
-	}
-	$values = array_merge($values, array_intersect_key($_POST, $values));
-	$errors = MonAgenceController::invite($idAgence, $_POST);
-	if (!$errors) {
-		header('Location: equipe.php?success=' . urlencode('Membre invité. Ses identifiants lui ont été envoyés par SMS.'));
-		exit;
-	}
-}
-
 $team = MonAgenceController::team($idAgence);
 $members = $team['members'];
-$roles = $team['roles'];
 $usage = $team['usage'];
 $canInvite = $usage['limitUsers'] === null || $usage['users'] < $usage['limitUsers'];
 
@@ -37,97 +21,109 @@ $greetingSubtitle = 'Gérez les membres de votre agence et leurs rôles.';
 $profileName = trim($currentUser['prenom'] . ' ' . $currentUser['nom']);
 $profileRole = $currentUser['role_nom'];
 $profileInitials = mb_strtoupper(mb_substr($currentUser['prenom'], 0, 1) . mb_substr($currentUser['nom'], 0, 1));
+$extraHead = '<link rel="stylesheet" href="dashboard.css"><link rel="stylesheet" href="equipe.css">';
 
-$csrfToken = Auth::csrfToken();
 $statusLabels = ['ACTIVE' => 'Actif', 'PENDING' => 'En attente', 'INACTIVE' => 'Inactif', 'LOCKED' => 'Verrouillé'];
 $statusTones = ['ACTIVE' => 'actif', 'PENDING' => 'attente', 'INACTIVE' => 'inactif', 'LOCKED' => 'suspendu'];
+
+// Rôles affichables pour une agence (cf. MonAgenceModel::TEAM_ROLE_IDS) : chacun a sa couleur et
+// son icône dédiées, réutilisées pour l'avatar, le badge de rôle et les cartes de répartition.
+$roleMeta = teamRoleMeta();
+$roleCounts = array_fill_keys(array_keys($roleMeta), 0);
+foreach ($members as $m) {
+	if (isset($roleCounts[$m['role_nom']])) {
+		$roleCounts[$m['role_nom']]++;
+	}
+}
+
+$icons = teamIcons();
 
 require dirname(__DIR__, 3) . '/layouts/header.php';
 ?>
     <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;">
       <div>
         <h1>Équipe</h1>
-        <p><?= $usage['users'] ?> membre<?= $usage['users'] > 1 ? 's' : '' ?> sur <?= $usage['limitUsers'] ?? 'illimité' ?> (plan actuel) ·
-          <a href="biens-assignation.php">Affecter des responsables aux biens →</a></p>
+        <p><?= $usage['users'] ?> membre<?= $usage['users'] > 1 ? 's' : '' ?> sur <?= $usage['limitUsers'] ?? 'illimité' ?> (plan actuel) · <a href="biens-assignation.php">Affectation des biens →</a></p>
       </div>
+      <?php if ($canInvite): ?>
+        <a class="btn btn-primary" href="equipe-inviter.php" data-modal><?= $icons['users'] ?>+ Inviter un membre</a>
+      <?php else: ?>
+        <span class="btn disabled" title="Limite d’utilisateurs de votre plan atteinte"><?= $icons['users'] ?>+ Inviter un membre</span>
+      <?php endif; ?>
     </div>
 
     <?php if (isset($_GET['success'])): ?>
       <div class="feedback success"><?= htmlspecialchars((string) $_GET['success'], ENT_QUOTES, 'UTF-8') ?></div>
     <?php endif; ?>
-    <?php if (!empty($errors['_global'])): ?>
-      <div class="feedback error"><?= htmlspecialchars($errors['_global'], ENT_QUOTES, 'UTF-8') ?></div>
-    <?php endif; ?>
 
-    <div class="panel">
-      <div class="panel-header"><div class="panel-title">Inviter un membre</div></div>
-      <?php if (!$canInvite): ?>
-        <p class="empty-note" style="padding:0 18px 18px;">Limite d’utilisateurs de votre plan atteinte (<?= $usage['users'] ?>/<?= $usage['limitUsers'] ?>). <a href="abonnement.php">Changez de plan</a> pour inviter davantage de membres.</p>
-      <?php else: ?>
-        <form method="post" action="equipe.php">
-          <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-          <div class="form-grid">
-            <div class="form-field">
-              <label for="prenom">Prénom</label>
-              <input type="text" id="prenom" name="prenom" value="<?= htmlspecialchars($values['prenom'], ENT_QUOTES, 'UTF-8') ?>">
-              <?php if (!empty($errors['prenom'])): ?><span class="field-error"><?= htmlspecialchars($errors['prenom'], ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
-            </div>
-            <div class="form-field">
-              <label for="nom">Nom</label>
-              <input type="text" id="nom" name="nom" value="<?= htmlspecialchars($values['nom'], ENT_QUOTES, 'UTF-8') ?>">
-              <?php if (!empty($errors['nom'])): ?><span class="field-error"><?= htmlspecialchars($errors['nom'], ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
-            </div>
-            <div class="form-field">
-              <label for="email">Email</label>
-              <input type="email" id="email" name="email" value="<?= htmlspecialchars($values['email'], ENT_QUOTES, 'UTF-8') ?>">
-              <?php if (!empty($errors['email'])): ?><span class="field-error"><?= htmlspecialchars($errors['email'], ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
-            </div>
-            <div class="form-field">
-              <label for="telephone">Téléphone</label>
-              <input type="text" id="telephone" name="telephone" value="<?= htmlspecialchars($values['telephone'], ENT_QUOTES, 'UTF-8') ?>">
-              <?php if (!empty($errors['telephone'])): ?><span class="field-error"><?= htmlspecialchars($errors['telephone'], ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
-            </div>
-            <div class="form-field span-2">
-              <label for="id_role">Rôle</label>
-              <select id="id_role" name="id_role">
-                <option value="">— Choisir —</option>
-                <?php foreach ($roles as $role): ?>
-                  <option value="<?= (int) $role['id_role'] ?>"<?= $values['id_role'] == $role['id_role'] ? ' selected' : '' ?>><?= htmlspecialchars($role['nom'], ENT_QUOTES, 'UTF-8') ?></option>
-                <?php endforeach; ?>
-              </select>
-              <?php if (!empty($errors['id_role'])): ?><span class="field-error"><?= htmlspecialchars($errors['id_role'], ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Inviter</button>
-          </div>
-        </form>
-      <?php endif; ?>
+    <!-- Équipe de l'agence : répartition par rôle -->
+    <div class="team-stats">
+      <div class="team-stat-card total">
+        <div class="team-stat-value"><?= $usage['users'] ?></div>
+        <div class="team-stat-label">Membre<?= $usage['users'] > 1 ? 's' : '' ?> au total</div>
+        <div class="team-stat-sub"><?= $usage['limitUsers'] !== null ? ('sur ' . $usage['limitUsers'] . ' autorisés') : 'plan illimité' ?></div>
+      </div>
+      <?php foreach ($roleMeta as $roleName => $meta): ?>
+        <div class="team-stat-card">
+          <div class="team-stat-icon <?= $meta['tone'] ?>"><?= $icons[$meta['icon']] ?></div>
+          <div class="team-stat-value"><?= $roleCounts[$roleName] ?></div>
+          <div class="team-stat-label"><?= htmlspecialchars($meta['short'], ENT_QUOTES, 'UTF-8') ?></div>
+        </div>
+      <?php endforeach; ?>
     </div>
 
     <div class="panel table-panel">
       <div class="panel-header"><div class="panel-title">Membres de l’équipe</div></div>
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr><th>NOM</th><th>EMAIL</th><th>RÔLE</th><th>STATUT</th><th>DEPUIS</th></tr>
-          </thead>
-          <tbody>
-            <?php if (!$members): ?>
-              <tr class="empty-row"><td colspan="5">Aucun membre pour le moment.</td></tr>
-            <?php endif; ?>
-            <?php foreach ($members as $m): ?>
-              <tr>
-                <td><?= htmlspecialchars($m['prenom'] . ' ' . $m['nom'], ENT_QUOTES, 'UTF-8') ?></td>
-                <td><?= htmlspecialchars($m['email'], ENT_QUOTES, 'UTF-8') ?></td>
-                <td><?= htmlspecialchars($m['role_nom'], ENT_QUOTES, 'UTF-8') ?></td>
-                <td><span class="status-badge <?= $statusTones[$m['statut']] ?? '' ?>"><?= htmlspecialchars($statusLabels[$m['statut']] ?? $m['statut'], ENT_QUOTES, 'UTF-8') ?></span></td>
-                <td><?= (new DateTimeImmutable($m['created_at']))->format('d/m/Y') ?></td>
-              </tr>
-            <?php endforeach; ?>
-          </tbody>
-        </table>
-      </div>
+      <?php if (!$members): ?>
+        <div class="empty-state">
+          <div class="empty-state-icon"><?= $icons['users'] ?></div>
+          <h4>Votre équipe est encore vide</h4>
+          <p>Invitez vos premiers collaborateurs pour commencer à répartir le travail.</p>
+          <?php if ($canInvite): ?>
+            <a class="btn btn-primary" href="equipe-inviter.php" data-modal style="margin-top:16px;"><?= $icons['users'] ?>Inviter un membre</a>
+          <?php endif; ?>
+        </div>
+      <?php else: ?>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th>MEMBRE</th><th>EMAIL</th><th>RÔLE</th><th>STATUT</th><th>DEPUIS</th><th></th></tr>
+            </thead>
+            <tbody>
+              <?php foreach ($members as $m): ?>
+                <?php
+                  $tone = $roleMeta[$m['role_nom']]['tone'] ?? 'teal';
+                  $initials = mb_strtoupper(mb_substr($m['prenom'], 0, 1) . mb_substr($m['nom'], 0, 1));
+                ?>
+                <tr>
+                  <td>
+                    <div class="cell">
+                      <div class="cell-avatar role-<?= $tone ?>"><?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?></div>
+                      <div class="cell-title"><?= htmlspecialchars($m['prenom'] . ' ' . $m['nom'], ENT_QUOTES, 'UTF-8') ?></div>
+                    </div>
+                  </td>
+                  <td><?= htmlspecialchars($m['email'], ENT_QUOTES, 'UTF-8') ?></td>
+                  <td><span class="role-badge <?= $tone ?>"><?= htmlspecialchars($m['role_nom'], ENT_QUOTES, 'UTF-8') ?></span></td>
+                  <td><span class="status-badge <?= $statusTones[$m['statut']] ?? '' ?>"><?= htmlspecialchars($statusLabels[$m['statut']] ?? $m['statut'], ENT_QUOTES, 'UTF-8') ?></span></td>
+                  <td class="cell-sub"><?= (new DateTimeImmutable($m['created_at']))->format('d/m/Y') ?></td>
+                  <td>
+                    <div class="row-actions">
+                      <a class="consult-link" href="equipe-detail.php?id=<?= (int) $m['id_utilisateur'] ?>" data-modal>
+                        Consulter
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+                      </a>
+                      <button type="button" class="icon-action" data-copy-email="<?= htmlspecialchars($m['email'], ENT_QUOTES, 'UTF-8') ?>" title="Copier l’email">
+                        <?= $icons['copy'] ?>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      <?php endif; ?>
     </div>
 <?php
+$extraScripts = '<script src="equipe.js"></script>';
 require dirname(__DIR__, 3) . '/layouts/footer.php';

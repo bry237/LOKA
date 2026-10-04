@@ -39,7 +39,7 @@ $navSoonBadge = static function (string $label, string $svg, int $count, string 
 		. $badge . '</span></li>';
 };
 ?>
-  <aside class="sidebar" id="sidebar">
+  <aside class="sidebar sidebar-agence" id="sidebar">
     <div class="brand">
       <div class="brand-mark">LK</div>
       <div class="brand-name">LOKA</div>

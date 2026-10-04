@@ -2,6 +2,10 @@
 /* =========================================================
    Données du dashboard "Mon agence" — chargées depuis data.php
    (JSON), voir MonAgenceModel.php pour les requêtes réelles.
+   Ce fichier ne fait que de la présentation : toute donnée
+   dérivée (usage d'abonnement, répartition du parc...) est
+   recalculée ici à partir de ce que data.php renvoie déjà,
+   sans appel supplémentaire ni logique métier.
    ========================================================= */
 
 let DATA = null;
@@ -28,10 +32,42 @@ const ICONS = {
   edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
   x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
   shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.8 8 11 4.6-2.2 8-6 8-11V5l-8-3Z"/></svg>',
-  arrow:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>'
+  arrow:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>',
+  inbox:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></svg>',
 };
 
 const STATUS_LABELS = { ACTIVE:'Actif', PENDING:'En attente', SUSPENDED:'Suspendu' };
+
+/* ---------------- Helpers ---------------- */
+
+/** Lit la valeur numérique brute d'un KPI déjà formaté ("1 234" -> 1234). */
+function kpiRawValue(label){
+  const k = DATA.kpis.find(item => item.label === label);
+  if(!k) return null;
+  const n = parseInt(String(k.value).replace(/[^\d-]/g, ''), 10);
+  return Number.isNaN(n) ? null : n;
+}
+
+/**
+ * Information secondaire d'un KPI, dérivée d'autres blocs déjà chargés (jamais d'appel réseau
+ * supplémentaire). Retourne null quand rien de pertinent n'est disponible : on n'affiche jamais
+ * une ligne vide ou inventée.
+ */
+function kpiSecondary(k){
+  if(k.label === 'Biens' && DATA.portfolio && DATA.portfolio.total){
+    const dispo = DATA.portfolio.segments.find(s => s.statut === 'AVAILABLE');
+    if(dispo && dispo.count > 0) return dispo.count + ' disponible' + (dispo.count > 1 ? 's' : '');
+  }
+  if(k.label === 'Contrats actifs' && DATA.contractsToWatch && DATA.contractsToWatch.length){
+    const n = DATA.contractsToWatch.length;
+    return n + ' à échéance sous 30 j';
+  }
+  if(k.label === 'Interventions en cours'){
+    const n = kpiRawValue('Interventions en cours');
+    if(n > 0) return 'Nécessite une action';
+  }
+  return null;
+}
 
 /* ---------------- Render: subscription widget ---------------- */
 function renderSubscription(){
@@ -44,56 +80,107 @@ function renderSubscription(){
     `;
     return;
   }
-  const limiteUsers = s.limite_utilisateurs ?? 'Illimité';
-  const limiteBiens = s.limite_biens ?? 'Illimité';
+
+  const usersUsed = kpiRawValue('Équipe') ?? 0;
+  const biensUsed = kpiRawValue('Biens') ?? 0;
+  const usersLimit = s.limite_utilisateurs;
+  const biensLimit = s.limite_biens;
+
+  const meter = (used, limit) => {
+    if(limit === null || limit === undefined){
+      return { pct:6, tone:'', label: used + ' · illimité' };
+    }
+    const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 100;
+    const tone = pct >= 100 ? 'full' : (pct >= 80 ? 'warn' : '');
+    return { pct: Math.max(pct, 4), tone, label: used + ' / ' + limit };
+  };
+  const usersMeter = meter(usersUsed, usersLimit);
+  const biensMeter = meter(biensUsed, biensLimit);
+  const planSlug = s.nom.toLowerCase();
+
   el.innerHTML = `
-    <div class="panel-header">
-      <div class="panel-title">Abonnement</div>
-      <span class="plan-badge ${s.nom.toLowerCase()}">${s.nom}</span>
+    <div class="subscription-card-head">
+      <div>
+        <div class="panel-title">Abonnement</div>
+        <div class="subscription-plan-name">${s.nom}</div>
+      </div>
+      <span class="plan-badge ${planSlug}">${Number(s.prix_mensuel) > 0 ? Number(s.prix_mensuel).toFixed(2) + ' €/mois' : 'Gratuit'}</span>
     </div>
-    <div class="agency-details">
-      <div><span class="lbl">Prix mensuel</span><span class="val">${Number(s.prix_mensuel).toFixed(2)} €</span></div>
-      <div><span class="lbl">Limite utilisateurs</span><span class="val">${limiteUsers}</span></div>
-      <div><span class="lbl">Limite biens</span><span class="val">${limiteBiens}</span></div>
+    <div class="subscription-usage">
+      <div class="subscription-meter">
+        <div class="subscription-meter-head"><span>Utilisateurs</span><span>${usersMeter.label}</span></div>
+        <div class="usage-meter-track"><div class="usage-meter-fill ${usersMeter.tone}" style="width:${usersMeter.pct}%;"></div></div>
+      </div>
+      <div class="subscription-meter">
+        <div class="subscription-meter-head"><span>Biens</span><span>${biensMeter.label}</span></div>
+        <div class="usage-meter-track"><div class="usage-meter-fill ${biensMeter.tone}" style="width:${biensMeter.pct}%;"></div></div>
+      </div>
     </div>
-    <div class="form-actions"><a class="btn btn-sm" href="abonnement.php">Changer de plan</a></div>
+    <div class="subscription-card-foot">
+      <a class="btn btn-primary" href="abonnement.php">Gérer mon abonnement</a>
+    </div>
   `;
 }
 
 /* ---------------- Render: KPIs ---------------- */
 function renderKpis(){
   const grid = document.getElementById('kpiGrid');
-  grid.innerHTML = DATA.kpis.map(k => `
-    <div class="kpi-card">
-      <div class="kpi-top">
-        <div class="kpi-icon ${k.tone}">${ICONS[k.icon]}</div>
+  grid.innerHTML = DATA.kpis.map(k => {
+    const sub = kpiSecondary(k);
+    return `
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon ${k.tone}">${ICONS[k.icon]}</div>
+        </div>
+        <div class="kpi-value">${k.value}</div>
+        <div class="kpi-label">${k.label}</div>
+        ${sub ? `<div class="kpi-sub">${sub}</div>` : ''}
       </div>
-      <div class="kpi-value">${k.value}</div>
-      <div class="kpi-label">${k.label}</div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 /* ---------------- Render: État du parc immobilier ---------------- */
 function renderPortfolio(){
   const el = document.getElementById('portfolioBlock');
   const p = DATA.portfolio;
+
   if(!p || !p.total){
-    el.innerHTML = `<p class="empty-note">Aucun bien enregistré pour le moment. La répartition par statut apparaîtra ici dès l'ajout de votre premier bien.</p>`;
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">${ICONS.home}</div>
+        <h4>Votre portefeuille est encore vide</h4>
+        <p>Ajoutez votre premier bien pour commencer à gérer votre patrimoine.</p>
+        <span class="btn empty-state-cta" title="Bientôt disponible">${ICONS.plus}Ajouter un bien<span class="nav-soon light">Bientôt</span></span>
+      </div>
+    `;
     return;
   }
-  const bar = p.segments.map(s => `<span class="portfolio-seg ${s.tone}" style="width:${s.pct}%" title="${s.label} — ${s.count}"></span>`).join('');
+
+  let cursor = 0;
+  const stops = p.segments.map((s, i) => {
+    const from = cursor;
+    const isLast = i === p.segments.length - 1;
+    cursor = isLast ? 100 : cursor + s.pct;
+    return `var(--seg-${s.tone}) ${from}% ${cursor}%`;
+  }).join(', ');
+
   const legend = p.segments.map(s => `
     <div class="donut-legend-row">
       <span class="lg"><i class="dot-legend tone-${s.tone}"></i>${s.label}</span>
-      <span><b>${s.count}</b> (${s.pct}%)</span>
+      <span><b>${s.count}</b> <em>(${s.pct}%)</em></span>
     </div>
   `).join('');
+
   el.innerHTML = `
     <div class="portfolio-block">
-      <div class="portfolio-bar">${bar}</div>
+      <div class="portfolio-donut" style="background:conic-gradient(${stops});">
+        <div class="portfolio-donut-hole">
+          <span class="portfolio-donut-total">${p.total}</span>
+          <span class="portfolio-donut-label">bien${p.total > 1 ? 's' : ''}</span>
+        </div>
+      </div>
       <div class="portfolio-legend">${legend}</div>
-      <div class="portfolio-total">${p.total} bien${p.total > 1 ? 's' : ''} au total</div>
     </div>
   `;
 }
@@ -103,15 +190,20 @@ function renderContractsToWatch(){
   const list = document.getElementById('contractsWatchList');
   const items = DATA.contractsToWatch;
   if(!items.length){
-    list.innerHTML = `<p class="empty-note">Aucun contrat n'arrive à échéance dans les 30 prochains jours.</p>`;
+    list.innerHTML = `
+      <div class="empty-state empty-state-compact">
+        <div class="empty-state-icon sm">${ICONS.calendar}</div>
+        <p>Aucun contrat n'arrive à échéance dans les 30 prochains jours.</p>
+      </div>
+    `;
     return;
   }
   list.innerHTML = items.map(c => `
     <div class="watch-item">
       <div class="watch-icon ${c.tone}">${ICONS.calendar}</div>
-      <div>
-        <div class="watch-title">${c.bien} — ${c.locataire}</div>
-        <div class="watch-sub">Contrat ${c.numero} · échéance le ${c.date_fin}</div>
+      <div class="watch-main">
+        <div class="watch-title">${c.bien} <span class="watch-dot">·</span> ${c.locataire}</div>
+        <div class="watch-sub">Contrat ${c.numero} — échéance le ${c.date_fin}</div>
       </div>
       <div class="watch-days ${c.tone}">${c.days_left <= 0 ? 'Échu' : c.days_left + ' j'}</div>
     </div>
@@ -126,7 +218,7 @@ function renderTodayTasks(){
     list.innerHTML = `
       <div class="watch-item all-clear">
         <div class="watch-icon green">${ICONS.check}</div>
-        <div>
+        <div class="watch-main">
           <div class="watch-title">Rien à signaler</div>
           <div class="watch-sub">Aucune action urgente aujourd'hui</div>
         </div>
@@ -137,25 +229,34 @@ function renderTodayTasks(){
   list.innerHTML = tasks.map(t => `
     <div class="watch-item">
       <div class="watch-icon ${t.tone}">${ICONS[t.icon]}</div>
-      <div>
+      <div class="watch-main">
         <div class="watch-title">${t.title}</div>
         <div class="watch-sub">${t.sub}</div>
       </div>
+      ${t.count ? `<div class="watch-days ${t.tone}">${t.count}</div>` : ''}
     </div>
   `).join('');
 }
 
 /* ---------------- Render: Activity ---------------- */
+/* Les connexions/déconnexions (icône "shield") sont du bruit répétitif : on les masque pour ne
+   garder que les événements métier (biens, locataires, contrats, paiements, interventions...). */
 function renderActivity(){
   const list = document.getElementById('activityList');
-  if(!DATA.activity.length){
-    list.innerHTML = '<p class="empty-note">Aucune activité pour le moment.</p>';
+  const items = (DATA.activity || []).filter(a => a.icon !== 'shield');
+  if(!items.length){
+    list.innerHTML = `
+      <div class="empty-state empty-state-compact">
+        <div class="empty-state-icon sm">${ICONS.inbox}</div>
+        <p>Aucune activité métier récente.</p>
+      </div>
+    `;
     return;
   }
-  list.innerHTML = DATA.activity.map(a => `
+  list.innerHTML = items.map(a => `
     <div class="activity-item">
       <div class="activity-icon ${a.tone}">${ICONS[a.icon]}</div>
-      <div class="activity-main" style="flex:1;min-width:0;">
+      <div class="activity-main">
         <div class="activity-row">
           <div class="activity-title">${a.title}</div>
           <div class="activity-time">${a.time}</div>
@@ -179,6 +280,7 @@ function renderQuickActions(){
     <a class="quick-action" href="${a.href}">
       <div class="quick-action-icon">${ICONS[a.icon]}</div>
       <div class="quick-action-label">${a.label}</div>
+      <div class="quick-action-arrow">${ICONS.arrow}</div>
     </a>
   ` : `
     <div class="quick-action disabled" title="Disponible avec le module ${a.module}">

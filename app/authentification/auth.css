@@ -44,7 +44,6 @@ input:not([type="checkbox"]):focus, select:focus { border-color: var(--primary-l
 .phone-group { display: flex; gap: 8px; }
 .phone-group select { flex: 0 0 auto; width: auto; max-width: 150px; }
 .phone-group input { flex: 1 1 auto; min-width: 0; }
-.form-message--demo { color: var(--primary-dark); background: var(--primary-pale); border-radius: var(--radius); padding: 10px 13px; font-size: 13px; font-weight: 700; }
 .password-field { position: relative; }
 .password-field input { padding-right: 55px; }
 .password-toggle { position: absolute; top: 50%; right: 7px; transform: translateY(-50%); padding: 6px; border: 0; border-radius: 7px; color: var(--primary-dark); background: transparent; font-size: 12px; font-weight: 700; }

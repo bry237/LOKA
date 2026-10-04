@@ -79,12 +79,11 @@ final class AuthController
 	private static function startPhoneVerification(int $userId, string $telephoneE164): string
 	{
 		Session::start();
-		$result = OtpService::generateAndSend($userId, $telephoneE164);
+		OtpService::generateAndSend($userId, $telephoneE164);
 		$_SESSION['loka_pending_verification'] = [
 			'id_utilisateur' => $userId,
 			'telephone' => $telephoneE164,
 			'expires_at' => time() + 900,
-			'demo_code' => $result['demo_code'] ?? null,
 		];
 		return 'verification-code.php';
 	}

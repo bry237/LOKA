@@ -56,6 +56,18 @@ final class StripeClient
 	}
 
 	/**
+	 * Relit une session Checkout auprès de Stripe (ex. au retour sur success_url), pour
+	 * confirmer un paiement sans dépendre de la réception du webhook (indispensable en local,
+	 * où Stripe ne peut pas joindre une URL localhost sans `stripe listen`).
+	 *
+	 * @return array<string,mixed>
+	 */
+	public static function retrieveCheckoutSession(string $sessionId): array
+	{
+		return self::request('GET', '/checkout/sessions/' . urlencode($sessionId), []);
+	}
+
+	/**
 	 * Vérifie manuellement la signature du header `Stripe-Signature` (format `t=...,v1=...`),
 	 * sans dépendance au SDK officiel.
 	 */
@@ -93,14 +105,23 @@ final class StripeClient
 			throw new RuntimeException('Clé Stripe non configurée (STRIPE_SECRET_KEY).');
 		}
 
-		$ch = curl_init(self::BASE . $path);
-		curl_setopt_array($ch, [
+		$url = self::BASE . $path;
+		$options = [
 			CURLOPT_CUSTOMREQUEST => $method,
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_TIMEOUT => 20,
 			CURLOPT_USERPWD => $secretKey . ':',
-			CURLOPT_POSTFIELDS => http_build_query($params),
-		]);
+		];
+		if ($method === 'GET') {
+			if ($params) {
+				$url .= '?' . http_build_query($params);
+			}
+		} else {
+			$options[CURLOPT_POSTFIELDS] = http_build_query($params);
+		}
+
+		$ch = curl_init($url);
+		curl_setopt_array($ch, $options);
 		$response = curl_exec($ch);
 		$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		curl_close($ch);

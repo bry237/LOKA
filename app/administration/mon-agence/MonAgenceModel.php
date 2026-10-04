@@ -246,11 +246,71 @@ final class MonAgenceModel
 		];
 	}
 
-	public static function emailExists(string $email): bool
+	public static function emailExists(string $email, ?int $excludeIdUtilisateur = null): bool
 	{
-		$stmt = Database::connection()->prepare('SELECT 1 FROM utilisateur WHERE LOWER(email) = LOWER(:email) LIMIT 1');
-		$stmt->execute(['email' => $email]);
+		$sql = 'SELECT 1 FROM utilisateur WHERE LOWER(email) = LOWER(:email)';
+		$params = ['email' => $email];
+		if ($excludeIdUtilisateur !== null) {
+			$sql .= ' AND id_utilisateur != :exclude_id';
+			$params['exclude_id'] = $excludeIdUtilisateur;
+		}
+		$stmt = Database::connection()->prepare($sql . ' LIMIT 1');
+		$stmt->execute($params);
 		return (bool) $stmt->fetchColumn();
+	}
+
+	/** Un membre de l'équipe, scopé à l'agence (jamais d'accès inter-agence par id deviné). */
+	public static function findMember(int $idAgence, int $idUtilisateur): ?array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT u.id_utilisateur, u.nom, u.prenom, u.email, u.telephone, u.statut, u.id_role,
+					u.telephone_verifie, u.created_at, u.updated_at, r.nom AS role_nom
+			 FROM utilisateur u
+			 INNER JOIN role r ON r.id_role = u.id_role
+			 WHERE u.id_utilisateur = :id_utilisateur AND u.id_agence = :id_agence AND u.deleted_at IS NULL
+			 LIMIT 1'
+		);
+		$stmt->execute(['id_utilisateur' => $idUtilisateur, 'id_agence' => $idAgence]);
+		$row = $stmt->fetch();
+		return $row ?: null;
+	}
+
+	/**
+	 * @param array{nom: string, prenom: string, email: string, telephone: string, id_role: int} $data
+	 * @return bool false si le membre n'appartient pas à l'agence (protection contre une modification croisée).
+	 */
+	public static function updateMember(int $idAgence, int $idUtilisateur, array $data): bool
+	{
+		$stmt = Database::connection()->prepare(
+			'UPDATE utilisateur SET nom = :nom, prenom = :prenom, email = :email, telephone = :telephone, id_role = :id_role
+			 WHERE id_utilisateur = :id_utilisateur AND id_agence = :id_agence AND deleted_at IS NULL'
+		);
+		$stmt->execute([
+			'nom' => $data['nom'],
+			'prenom' => $data['prenom'],
+			'email' => $data['email'],
+			'telephone' => $data['telephone'],
+			'id_role' => $data['id_role'],
+			'id_utilisateur' => $idUtilisateur,
+			'id_agence' => $idAgence,
+		]);
+		return $stmt->rowCount() > 0;
+	}
+
+	/**
+	 * Suppression douce (comme `agence`/`bien`) : l'historique (audit, factures...) reste cohérent,
+	 * le membre disparaît simplement de l'équipe et ne peut plus se connecter.
+	 *
+	 * @return bool false si le membre n'appartient pas à l'agence.
+	 */
+	public static function deleteMember(int $idAgence, int $idUtilisateur): bool
+	{
+		$stmt = Database::connection()->prepare(
+			"UPDATE utilisateur SET deleted_at = NOW(), statut = 'INACTIVE'
+			 WHERE id_utilisateur = :id_utilisateur AND id_agence = :id_agence AND deleted_at IS NULL"
+		);
+		$stmt->execute(['id_utilisateur' => $idUtilisateur, 'id_agence' => $idAgence]);
+		return $stmt->rowCount() > 0;
 	}
 
 	/** Biens de l'agence avec leur éventuel responsable, pour l'écran d'affectation. */
