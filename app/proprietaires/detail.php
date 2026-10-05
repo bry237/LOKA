@@ -1,299 +1,1961 @@
 <?php
 declare(strict_types=1);
 
-session_start();
+require_once dirname(__DIR__, 2) . '/core/Authorization.php';
+require_once dirname(__DIR__, 2) . '/core/Database.php';
 
-$db = require dirname(__DIR__,2).'/config/database.php';
+$user = Authorization::requireRole('Proprietaire');
 
-$pdo = new PDO(
-    "mysql:host={$db['host']};port={$db['port']};dbname={$db['name']};charset={$db['charset']}",
-    $db['user'],
-    $db['password'],
-    [
-        PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC
-    ]
-);
+$pdo = Database::connection();
 
-$idUtilisateur=1;
-$idBien=(int)($_GET['id']??1);
+$idUtilisateur = (int) $user['id_utilisateur'];
 
-$sql="
-SELECT
-b.id_bien,
-b.reference,
-b.titre,
-b.surface,
-b.nombre_pieces AS nb_pieces,
-b.loyer,
-b.charges,
-b.statut,
 
-tb.nom AS type_bien,
+/*
+|--------------------------------------------------------------------------
+| Fonction d'échappement HTML
+|--------------------------------------------------------------------------
+*/
 
- a.ligne1,
- a.ligne2,
- a.ville,
- a.code_postal,
- a.region,
- a.pays,
-
-p.nom AS proprietaire_nom,
-p.prenom AS proprietaire_prenom
-
-FROM bien b
-
-JOIN bien_proprietaire bp
-ON bp.id_bien=b.id_bien
-
-JOIN proprietaire p
-ON p.id_proprietaire=bp.id_proprietaire
-
-JOIN adresse a
-ON a.id_adresse=b.id_adresse
-
-JOIN type_bien tb
-ON tb.id_type_bien=b.id_type_bien
-
-WHERE b.id_bien=?
-LIMIT 1
-";
-
-$stmt=$pdo->prepare($sql);
-$stmt->execute([$idBien]);
-
-$bien=$stmt->fetch();
-
-if(!$bien){
-die("Bien introuvable.");
+function e(?string $value): string
+{
+    return htmlspecialchars(
+        $value ?? '',
+        ENT_QUOTES,
+        'UTF-8'
+    );
 }
 
-$sql="
-SELECT
-l.nom,
-l.prenom,
-c.date_debut,
-c.date_fin,
-c.statut
 
-FROM contrat c
+/*
+|--------------------------------------------------------------------------
+| Fonction pour construire l'URL d'une image
+|--------------------------------------------------------------------------
+*/
 
-JOIN locataire l
-ON l.id_locataire=c.id_locataire
+function imageUrl(?string $image): string
+{
+    if (!$image) {
+        return '';
+    }
 
-WHERE c.id_bien=?
-AND c.statut='ACTIF'
-LIMIT 1
-";
+    /*
+    | Si c'est déjà une URL complète
+    */
 
-$stmt=$pdo->prepare($sql);
+    if (
+        str_starts_with($image, 'http://')
+        || str_starts_with($image, 'https://')
+        || str_starts_with($image, 'data:')
+    ) {
+        return $image;
+    }
+
+    /*
+    | Sinon l'image est stockée dans le projet LOKA
+    */
+
+    return '/LOKA/' . ltrim($image, '/');
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Récupération du propriétaire connecté
+|--------------------------------------------------------------------------
+*/
+
+$stmt = $pdo->prepare("
+    SELECT p.id_proprietaire
+    FROM proprietaire p
+    INNER JOIN utilisateur u
+        ON u.email = p.email
+    WHERE u.id_utilisateur = ?
+    LIMIT 1
+");
+
+$stmt->execute([$idUtilisateur]);
+
+$idProprietaire = (int) $stmt->fetchColumn();
+
+if (!$idProprietaire) {
+
+    http_response_code(403);
+
+    exit('Propriétaire introuvable.');
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Récupération de l'identifiant du bien
+|--------------------------------------------------------------------------
+*/
+
+$idBien = filter_input(
+    INPUT_GET,
+    'id',
+    FILTER_VALIDATE_INT
+);
+
+if (!$idBien) {
+
+    http_response_code(400);
+
+    exit('Bien invalide.');
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Récupération du bien
+|--------------------------------------------------------------------------
+*/
+
+$stmt = $pdo->prepare("
+    SELECT
+        b.id_bien,
+        b.id_agence,
+        b.id_type_bien,
+        b.id_adresse,
+        b.reference,
+        b.titre,
+        b.image_url,
+        b.surface,
+        b.nombre_pieces,
+        b.etage,
+        b.loyer,
+        b.charges,
+        b.caution,
+        b.statut,
+        b.description,
+        b.created_at,
+        b.updated_at,
+        b.balcon,
+        b.terrasse,
+        b.jardin,
+        b.piscine,
+        b.ascenseur,
+        b.meuble,
+        b.exposition,
+        b.chauffage,
+        b.chauffage_sol,
+        b.climatisation,
+        b.acces_pmr,
+        b.etat_bien,
+        b.classe_energetique,
+        b.type_vendeur,
+
+        tb.nom AS type_bien,
+
+        a.ligne1,
+        a.code_postal,
+        a.ville,
+        a.region,
+        a.pays
+
+    FROM bien b
+
+    INNER JOIN bien_proprietaire bp
+        ON bp.id_bien = b.id_bien
+
+    LEFT JOIN type_bien tb
+        ON tb.id_type_bien = b.id_type_bien
+
+    LEFT JOIN adresse a
+        ON a.id_adresse = b.id_adresse
+
+    WHERE b.id_bien = ?
+      AND bp.id_proprietaire = ?
+      AND b.deleted_at IS NULL
+
+    LIMIT 1
+");
+
+$stmt->execute([
+    $idBien,
+    $idProprietaire
+]);
+
+$bien = $stmt->fetch(PDO::FETCH_ASSOC);
+
+
+if (!$bien) {
+
+    http_response_code(404);
+
+    exit('Bien introuvable ou accès refusé.');
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Récupération des photos
+|--------------------------------------------------------------------------
+|
+| Les photos viennent de la table bien_image.
+|
+*/
+
+$stmt = $pdo->prepare("
+    SELECT
+        id_image,
+        id_bien,
+        image_url,
+        est_principale,
+        ordre
+
+    FROM bien_image
+
+    WHERE id_bien = ?
+
+    ORDER BY
+        est_principale DESC,
+        ordre ASC,
+        id_image ASC
+");
+
 $stmt->execute([$idBien]);
 
-$contrat=$stmt->fetch();
+$images = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+
+/*
+|--------------------------------------------------------------------------
+| Compatibilité avec l'ancienne image_url
+|--------------------------------------------------------------------------
+|
+| Si aucune image n'est encore présente dans bien_image,
+| on utilise l'image enregistrée dans bien.image_url.
+|
+*/
+
+if (empty($images) && !empty($bien['image_url'])) {
+
+    $images[] = [
+        'id_image' => 0,
+        'id_bien' => $idBien,
+        'image_url' => $bien['image_url'],
+        'est_principale' => 1,
+        'ordre' => 1
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Statut du bien
+|--------------------------------------------------------------------------
+*/
+
+$statuts = [
+    'CREATED' => 'Créé',
+    'AVAILABLE' => 'Disponible',
+    'OCCUPIED' => 'Occupé',
+    'MAINTENANCE' => 'Maintenance',
+    'ARCHIVED' => 'Archivé'
+];
+
+$statutLabel =
+    $statuts[$bien['statut']]
+    ?? $bien['statut'];
+
+
+/*
+|--------------------------------------------------------------------------
+| Calcul du montant total
+|--------------------------------------------------------------------------
+*/
+
+$loyer = (float) $bien['loyer'];
+
+$charges = (float) $bien['charges'];
+
+$totalMensuel = $loyer + $charges;
+
+
+/*
+|--------------------------------------------------------------------------
+| Adresse complète
+|--------------------------------------------------------------------------
+*/
+
+$adresseComplete = trim(
+    ($bien['ligne1'] ?? '')
+    . ' '
+    . ($bien['code_postal'] ?? '')
+    . ' '
+    . ($bien['ville'] ?? '')
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| Message de succès
+|--------------------------------------------------------------------------
+*/
+
+$success = isset($_GET['success']);
+
 ?>
+
 <!DOCTYPE html>
+
 <html lang="fr">
+
 <head>
 
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-<title><?= htmlspecialchars($bien['titre']) ?> | LOKA</title>
+    <title>
+        <?= e($bien['titre']) ?> - LOKA
+    </title>
 
-<link rel="stylesheet" href="proprietaire.css">
 
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link
+        rel="stylesheet"
+        href="proprietaire.css"
+    >
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+
+    <!-- =====================================================
+         CSS DE LA GALERIE
+    ====================================================== -->
+
+    <style>
+
+        /* =====================================================
+           GALERIE
+        ===================================================== */
+
+        .property-gallery{
+            width:100%;
+            margin-bottom:30px;
+        }
+
+
+        .gallery-container{
+            position:relative;
+
+            width:100%;
+            height:430px;
+
+            overflow:hidden;
+
+            border-radius:22px;
+
+            background:#E8F7F7;
+
+            box-shadow:
+                0 12px 30px rgba(0,0,0,.10);
+        }
+
+
+        .gallery-slide{
+            position:absolute;
+
+            inset:0;
+
+            width:100%;
+            height:100%;
+
+            display:none;
+        }
+
+
+        .gallery-slide.active{
+            display:block;
+        }
+
+
+        .gallery-slide img{
+            width:100%;
+            height:100%;
+
+            object-fit:cover;
+
+            display:block;
+        }
+
+
+        /* =====================================================
+           BOUTONS PRECEDENT / SUIVANT
+        ===================================================== */
+
+        .gallery-arrow{
+            position:absolute;
+
+            top:50%;
+
+            transform:translateY(-50%);
+
+            width:56px;
+            height:56px;
+
+            border:none;
+
+            border-radius:50%;
+
+            background:rgba(255,255,255,.96);
+
+            color:#172525;
+
+            display:flex;
+
+            align-items:center;
+            justify-content:center;
+
+            font-size:20px;
+
+            cursor:pointer;
+
+            box-shadow:
+                0 6px 18px rgba(0,0,0,.15);
+
+            z-index:10;
+
+            transition:
+                background .2s ease,
+                color .2s ease,
+                transform .2s ease;
+        }
+
+
+        .gallery-arrow:hover{
+            background:#0F8B8D;
+
+            color:#FFFFFF;
+
+            transform:
+                translateY(-50%)
+                scale(1.05);
+        }
+
+
+        .gallery-prev{
+            left:18px;
+        }
+
+
+        .gallery-next{
+            right:18px;
+        }
+
+
+        /* =====================================================
+           COEUR / FAVORI
+        ===================================================== */
+
+        .gallery-favorite{
+            position:absolute;
+
+            top:18px;
+            right:18px;
+
+            width:48px;
+            height:48px;
+
+            border:none;
+
+            border-radius:50%;
+
+            background:#FFFFFF;
+
+            color:#475656;
+
+            display:flex;
+
+            align-items:center;
+            justify-content:center;
+
+            font-size:19px;
+
+            cursor:pointer;
+
+            z-index:10;
+
+            box-shadow:
+                0 6px 18px rgba(0,0,0,.12);
+        }
+
+
+        .gallery-favorite:hover{
+            color:#0F8B8D;
+        }
+
+
+        /* =====================================================
+           POINTS
+        ===================================================== */
+
+        .gallery-dots{
+            position:absolute;
+
+            bottom:18px;
+            left:50%;
+
+            transform:translateX(-50%);
+
+            display:flex;
+
+            align-items:center;
+
+            gap:9px;
+
+            z-index:10;
+
+            padding:7px 12px;
+
+            border-radius:20px;
+
+            background:rgba(0,0,0,.12);
+        }
+
+
+        .gallery-dot{
+            width:9px;
+            height:9px;
+
+            border:none;
+
+            border-radius:50%;
+
+            padding:0;
+
+            background:rgba(255,255,255,.65);
+
+            cursor:pointer;
+
+            transition:
+                width .2s ease,
+                background .2s ease;
+        }
+
+
+        .gallery-dot.active{
+            width:30px;
+
+            border-radius:10px;
+
+            background:#FFFFFF;
+        }
+
+
+        /* =====================================================
+           COMPTEUR
+        ===================================================== */
+
+        .gallery-counter{
+            position:absolute;
+
+            top:18px;
+            left:18px;
+
+            background:rgba(0,0,0,.45);
+
+            color:#FFFFFF;
+
+            padding:7px 12px;
+
+            border-radius:20px;
+
+            font-size:13px;
+
+            font-weight:600;
+
+            z-index:10;
+        }
+
+
+        /* =====================================================
+           AUCUNE IMAGE
+        ===================================================== */
+
+        .gallery-no-image{
+            width:100%;
+            height:430px;
+
+            display:flex;
+
+            flex-direction:column;
+
+            align-items:center;
+
+            justify-content:center;
+
+            gap:12px;
+
+            border-radius:22px;
+
+            background:#E8F7F7;
+
+            color:#0F8B8D;
+        }
+
+
+        .gallery-no-image i{
+            font-size:60px;
+        }
+
+
+        .gallery-no-image span{
+            color:#64748B;
+
+            font-size:15px;
+        }
+
+
+        /* =====================================================
+           HEADER DETAIL
+        ===================================================== */
+
+        .detail-header{
+            display:flex;
+
+            justify-content:space-between;
+
+            align-items:flex-start;
+
+            gap:20px;
+
+            margin-bottom:25px;
+        }
+
+
+        .detail-title h1{
+            margin:0 0 8px;
+
+            font-size:34px;
+
+            color:#172525;
+        }
+
+
+        .detail-title p{
+            margin:0;
+
+            color:#64748B;
+        }
+
+
+        .detail-status{
+            flex-shrink:0;
+
+            background:#E8F7F7;
+
+            color:#0F8B8D;
+
+            padding:10px 18px;
+
+            border-radius:999px;
+
+            font-weight:700;
+        }
+
+
+        /* =====================================================
+           CARTES D'INFORMATIONS
+        ===================================================== */
+
+        .detail-info-grid{
+            display:grid;
+
+            grid-template-columns:
+                repeat(2, minmax(0,1fr));
+
+            gap:22px;
+
+            margin-bottom:25px;
+        }
+
+
+        .detail-card{
+            background:#FFFFFF;
+
+            padding:25px;
+
+            border-radius:20px;
+
+            box-shadow:
+                0 8px 24px rgba(0,0,0,.06);
+        }
+
+
+        .detail-card h3{
+            margin:0 0 18px;
+
+            color:#172525;
+
+            font-size:19px;
+        }
+
+
+        .detail-info-item{
+            display:flex;
+
+            justify-content:space-between;
+
+            gap:20px;
+
+            padding:12px 0;
+
+            border-bottom:1px solid #ECECEC;
+        }
+
+
+        .detail-info-item:last-child{
+            border-bottom:none;
+        }
+
+
+        .detail-info-item span:first-child{
+            color:#64748B;
+        }
+
+
+        .detail-info-item strong{
+            color:#172525;
+
+            text-align:right;
+        }
+
+
+        .detail-total{
+            font-size:30px;
+
+            font-weight:800;
+
+            color:#0F8B8D;
+
+            margin-top:15px;
+        }
+
+
+        .detail-total-label{
+            color:#64748B;
+
+            font-size:14px;
+        }
+
+
+        /* =====================================================
+           DESCRIPTION
+        ===================================================== */
+
+        .detail-description{
+            background:#FFFFFF;
+
+            padding:25px;
+
+            border-radius:20px;
+
+            box-shadow:
+                0 8px 24px rgba(0,0,0,.06);
+
+            margin-bottom:25px;
+        }
+
+
+        .detail-description h3{
+            margin:0 0 15px;
+
+            color:#172525;
+        }
+
+
+        .detail-description p{
+            color:#64748B;
+
+            line-height:1.7;
+
+            margin:0;
+        }
+
+
+        /* =====================================================
+           ACTIONS
+        ===================================================== */
+
+        .detail-actions{
+            display:flex;
+
+            justify-content:flex-end;
+
+            gap:12px;
+
+            margin-top:30px;
+
+            margin-bottom:30px;
+        }
+
+
+        .detail-action{
+            display:inline-flex;
+
+            align-items:center;
+
+            justify-content:center;
+
+            gap:8px;
+
+            padding:13px 20px;
+
+            border-radius:12px;
+
+            text-decoration:none;
+
+            font-weight:600;
+
+            transition:.2s ease;
+        }
+
+
+        .detail-action-primary{
+            background:#0F8B8D;
+
+            color:#FFFFFF;
+        }
+
+
+        .detail-action-primary:hover{
+            background:#075E63;
+        }
+
+
+        .detail-action-danger{
+            background:#FFFFFF;
+
+            color:#DC2626;
+
+            border:2px solid #DC2626;
+        }
+
+
+        .detail-action-danger:hover{
+            background:#DC2626;
+
+            color:#FFFFFF;
+        }
+
+
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @media(max-width:768px){
+
+            .gallery-container{
+                height:300px;
+
+                border-radius:18px;
+            }
+
+
+            .gallery-no-image{
+                height:300px;
+            }
+
+
+            .gallery-arrow{
+                width:45px;
+                height:45px;
+
+                font-size:16px;
+            }
+
+
+            .gallery-prev{
+                left:10px;
+            }
+
+
+            .gallery-next{
+                right:10px;
+            }
+
+
+            .gallery-favorite{
+                top:10px;
+                right:10px;
+
+                width:42px;
+                height:42px;
+            }
+
+
+            .gallery-counter{
+                top:10px;
+                left:10px;
+            }
+
+
+            .detail-header{
+                flex-direction:column;
+            }
+
+
+            .detail-title h1{
+                font-size:28px;
+            }
+
+
+            .detail-status{
+                align-self:flex-start;
+            }
+
+
+            .detail-info-grid{
+                grid-template-columns:1fr;
+            }
+
+
+            .detail-actions{
+                flex-direction:column;
+            }
+
+
+            .detail-action{
+                width:100%;
+            }
+
+        }
+
+    </style>
 
 </head>
 
+
 <body>
 
-<div class="dashboard">
 
-<aside class="sidebar">
+<div class="content">
 
-<div class="logo">
-<h2>LOKA</h2>
-<p>Gestion immobilière</p>
+
+    <!-- =====================================================
+         RETOUR
+    ====================================================== -->
+
+    <a
+        href="biens.php"
+        class="back-link"
+    >
+
+        <i class="fa-solid fa-arrow-left"></i>
+
+        Retour à mes biens
+
+    </a>
+
+
+    <!-- =====================================================
+         GALERIE PHOTOS
+    ====================================================== -->
+
+    <section class="property-gallery">
+
+
+        <?php if (!empty($images)): ?>
+
+
+            <div class="gallery-container">
+
+
+                <?php foreach ($images as $index => $image): ?>
+
+                    <div
+                        class="gallery-slide <?= $index === 0 ? 'active' : '' ?>"
+                        data-slide="<?= $index ?>"
+                    >
+
+                        <img
+                            src="<?= e(imageUrl($image['image_url'])) ?>"
+                            alt="<?= e($bien['titre']) ?> - Photo <?= $index + 1 ?>"
+                        >
+
+                    </div>
+
+                <?php endforeach; ?>
+
+
+                <!-- =========================================
+                     COMPTEUR
+                ========================================== -->
+
+                <?php if (count($images) > 1): ?>
+
+                    <div class="gallery-counter">
+
+                        <span id="currentImage">
+                            1
+                        </span>
+
+                        /
+
+                        <?= count($images) ?>
+
+                    </div>
+
+                <?php endif; ?>
+
+
+                <!-- =========================================
+                     FAVORI
+                ========================================== -->
+
+                <button
+                    type="button"
+                    class="gallery-favorite"
+                    title="Ajouter aux favoris"
+                >
+
+                    <i class="fa-regular fa-heart"></i>
+
+                </button>
+
+
+                <!-- =========================================
+                     FLECHE GAUCHE
+                ========================================== -->
+
+                <?php if (count($images) > 1): ?>
+
+                    <button
+                        type="button"
+                        class="gallery-arrow gallery-prev"
+                        id="galleryPrev"
+                        aria-label="Photo précédente"
+                    >
+
+                        <i class="fa-solid fa-chevron-left"></i>
+
+                    </button>
+
+
+                    <!-- =====================================
+                         FLECHE DROITE
+                    ====================================== -->
+
+                    <button
+                        type="button"
+                        class="gallery-arrow gallery-next"
+                        id="galleryNext"
+                        aria-label="Photo suivante"
+                    >
+
+                        <i class="fa-solid fa-chevron-right"></i>
+
+                    </button>
+
+
+                    <!-- =====================================
+                         POINTS
+                    ====================================== -->
+
+                    <div
+                        class="gallery-dots"
+                        id="galleryDots"
+                    >
+
+                        <?php foreach ($images as $index => $image): ?>
+
+                            <button
+                                type="button"
+                                class="gallery-dot <?= $index === 0 ? 'active' : '' ?>"
+                                data-slide="<?= $index ?>"
+                                aria-label="Afficher la photo <?= $index + 1 ?>"
+                            ></button>
+
+                        <?php endforeach; ?>
+
+                    </div>
+
+                <?php endif; ?>
+
+
+            </div>
+
+
+        <?php else: ?>
+
+
+            <!-- =============================================
+                 AUCUNE PHOTO
+            ============================================== -->
+
+            <div class="gallery-no-image">
+
+                <i class="fa-regular fa-image"></i>
+
+                <span>
+                    Aucune photo disponible
+                </span>
+
+            </div>
+
+
+        <?php endif; ?>
+
+
+    </section>
+
+
+    <!-- =====================================================
+         TITRE DU BIEN
+    ====================================================== -->
+
+    <div class="detail-header">
+
+
+        <div class="detail-title">
+
+            <h1>
+                <?= e($bien['titre']) ?>
+            </h1>
+
+            <p>
+                Référence :
+                <strong>
+                    <?= e($bien['reference']) ?>
+                </strong>
+            </p>
+
+        </div>
+
+
+        <div class="detail-status">
+
+            <?= e($statutLabel) ?>
+
+        </div>
+
+
+    </div>
+
+
+    <!-- =====================================================
+         INFORMATIONS
+    ====================================================== -->
+
+    <div class="detail-info-grid">
+
+
+        <!-- =================================================
+             CARTE INFORMATIONS DU BIEN
+        ================================================== -->
+
+        <div class="detail-card">
+
+
+            <h3>
+
+                <i
+                    class="fa-solid fa-house"
+                    style="color:#0F8B8D;margin-right:8px;"
+                ></i>
+
+                Informations du bien
+
+            </h3>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Type
+                </span>
+
+                <strong>
+                    <?= e($bien['type_bien']) ?>
+                </strong>
+
+            </div>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Surface
+                </span>
+
+                <strong>
+                    <?= number_format(
+                        (float)$bien['surface'],
+                        2,
+                        ',',
+                        ' '
+                    ) ?>
+                    m²
+                </strong>
+
+            </div>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Nombre de pièces
+                </span>
+
+                <strong>
+                    <?= (int)$bien['nombre_pieces'] ?>
+                </strong>
+
+            </div>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Étage
+                </span>
+
+                <strong>
+
+                    <?= $bien['etage'] !== null
+                        ? e((string)$bien['etage'])
+                        : '—'
+                    ?>
+
+                </strong>
+
+            </div>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Meublé
+                </span>
+
+                <strong>
+                    <?= e($bien['meuble']) ?>
+                </strong>
+
+            </div>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Exposition
+                </span>
+
+                <strong>
+
+                    <?= $bien['exposition']
+                        ? e($bien['exposition'])
+                        : '—'
+                    ?>
+
+                </strong>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- =================================================
+             CARTE ADRESSE
+        ================================================== -->
+
+        <div class="detail-card">
+
+
+            <h3>
+
+                <i
+                    class="fa-solid fa-location-dot"
+                    style="color:#0F8B8D;margin-right:8px;"
+                ></i>
+
+                Localisation
+
+            </h3>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Adresse
+                </span>
+
+                <strong>
+                    <?= e($bien['ligne1']) ?>
+                </strong>
+
+            </div>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Ville
+                </span>
+
+                <strong>
+                    <?= e($bien['ville']) ?>
+                </strong>
+
+            </div>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Code postal
+                </span>
+
+                <strong>
+                    <?= e($bien['code_postal']) ?>
+                </strong>
+
+            </div>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Région
+                </span>
+
+                <strong>
+
+                    <?= $bien['region']
+                        ? e($bien['region'])
+                        : '—'
+                    ?>
+
+                </strong>
+
+            </div>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Pays
+                </span>
+
+                <strong>
+                    <?= e($bien['pays']) ?>
+                </strong>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- =================================================
+             CARTE FINANCIERE
+        ================================================== -->
+
+        <div class="detail-card">
+
+
+            <h3>
+
+                <i
+                    class="fa-solid fa-coins"
+                    style="color:#0F8B8D;margin-right:8px;"
+                ></i>
+
+                Informations financières
+
+            </h3>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Loyer
+                </span>
+
+                <strong>
+                    <?= number_format(
+                        $loyer,
+                        0,
+                        ',',
+                        ' '
+                    ) ?>
+                    £
+                </strong>
+
+            </div>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Charges
+                </span>
+
+                <strong>
+                    <?= number_format(
+                        $charges,
+                        0,
+                        ',',
+                        ' '
+                    ) ?>
+                    £
+                </strong>
+
+            </div>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Caution
+                </span>
+
+                <strong>
+                    <?= number_format(
+                        (float)$bien['caution'],
+                        0,
+                        ',',
+                        ' '
+                    ) ?>
+                    £
+                </strong>
+
+            </div>
+
+
+            <div class="detail-total-label">
+
+                Total mensuel
+
+            </div>
+
+
+            <div class="detail-total">
+
+                <?= number_format(
+                    $totalMensuel,
+                    0,
+                    ',',
+                    ' '
+                ) ?>
+
+                £
+
+            </div>
+
+
+        </div>
+
+
+        <!-- =================================================
+             CARTE EQUIPEMENTS
+        ================================================== -->
+
+        <div class="detail-card">
+
+
+            <h3>
+
+                <i
+                    class="fa-solid fa-list-check"
+                    style="color:#0F8B8D;margin-right:8px;"
+                ></i>
+
+                Équipements
+
+            </h3>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Balcon
+                </span>
+
+                <strong>
+                    <?= (int)$bien['balcon'] === 1
+                        ? 'Oui'
+                        : 'Non'
+                    ?>
+                </strong>
+
+            </div>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Terrasse
+                </span>
+
+                <strong>
+                    <?= (int)$bien['terrasse'] === 1
+                        ? 'Oui'
+                        : 'Non'
+                    ?>
+                </strong>
+
+            </div>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Jardin
+                </span>
+
+                <strong>
+                    <?= (int)$bien['jardin'] === 1
+                        ? 'Oui'
+                        : 'Non'
+                    ?>
+                </strong>
+
+            </div>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Piscine
+                </span>
+
+                <strong>
+                    <?= (int)$bien['piscine'] === 1
+                        ? 'Oui'
+                        : 'Non'
+                    ?>
+                </strong>
+
+            </div>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Ascenseur
+                </span>
+
+                <strong>
+                    <?= (int)$bien['ascenseur'] === 1
+                        ? 'Oui'
+                        : 'Non'
+                    ?>
+                </strong>
+
+            </div>
+
+
+            <div class="detail-info-item">
+
+                <span>
+                    Climatisation
+                </span>
+
+                <strong>
+                    <?= e($bien['climatisation']) ?>
+                </strong>
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+    <!-- =====================================================
+         DESCRIPTION
+    ====================================================== -->
+
+    <?php if (!empty($bien['description'])): ?>
+
+        <div class="detail-description">
+
+
+            <h3>
+
+                <i
+                    class="fa-solid fa-align-left"
+                    style="color:#0F8B8D;margin-right:8px;"
+                ></i>
+
+                Description
+
+            </h3>
+
+
+            <p>
+                <?= nl2br(e($bien['description'])) ?>
+            </p>
+
+
+        </div>
+
+    <?php endif; ?>
+
+
+    <!-- =====================================================
+         ACTIONS
+    ====================================================== -->
+
+    <div class="detail-actions">
+
+
+        <a
+            href="modifier.php?id=<?= $idBien ?>"
+            class="detail-action detail-action-primary"
+        >
+
+            <i class="fa-solid fa-pen"></i>
+
+            Modifier
+
+        </a>
+
+
+        <a
+            href="supprimer.php?id=<?= $idBien ?>"
+            class="detail-action detail-action-danger"
+            onclick="return confirm('Voulez-vous vraiment supprimer ce bien ?');"
+        >
+
+            <i class="fa-solid fa-trash"></i>
+
+            Supprimer
+
+        </a>
+
+
+    </div>
+
+
 </div>
 
-<nav>
 
-<a href="index.php">
-<i class="fa-solid fa-chart-line"></i>
-Dashboard
-</a>
+<!-- =========================================================
+     JAVASCRIPT GALERIE
+========================================================== -->
 
-<a class="active">
-<i class="fa-solid fa-building"></i>
-Mes biens
-</a>
+<script>
 
-<a>
-<i class="fa-solid fa-file-contract"></i>
-Mes contrats
-</a>
+document.addEventListener('DOMContentLoaded', function () {
 
-<a>
-<i class="fa-solid fa-wallet"></i>
-Mes revenus
-</a>
+    const slides = document.querySelectorAll(
+        '.gallery-slide'
+    );
 
-</nav>
+    const dots = document.querySelectorAll(
+        '.gallery-dot'
+    );
 
-</aside>
+    const prevButton = document.getElementById(
+        'galleryPrev'
+    );
 
-<main class="content">
+    const nextButton = document.getElementById(
+        'galleryNext'
+    );
 
-<a href="index.php" class="back-button">
-<i class="fa-solid fa-arrow-left"></i>
-Retour
-</a>
+    const currentImage = document.getElementById(
+        'currentImage'
+    );
 
-<div class="hero-image">
 
-<AsyncImage query="modern apartment building exterior" aspectRatio="16:9" radius=none/>
+    /*
+    |--------------------------------------------------------------------------
+    | Pas de galerie
+    |--------------------------------------------------------------------------
+    */
 
-</div>
+    if (slides.length === 0) {
+        return;
+    }
 
-<div class="property-header">
 
-<div>
+    /*
+    |--------------------------------------------------------------------------
+    | Position actuelle
+    |--------------------------------------------------------------------------
+    */
 
-<h1><?= htmlspecialchars($bien['titre']) ?></h1>
+    let currentIndex = 0;
 
-<p><?= htmlspecialchars($bien['type_bien']) ?></p>
 
-</div>
+    /*
+    |--------------------------------------------------------------------------
+    | Afficher une image
+    |--------------------------------------------------------------------------
+    */
 
-<span class="badge">
-<?= htmlspecialchars($bien['statut']) ?>
-</span>
+    function showSlide(index) {
 
-</div>
+        /*
+        | Boucle vers la dernière image
+        */
 
-<section class="detail-grid">
+        if (index < 0) {
 
-<div class="panel">
+            index = slides.length - 1;
+        }
 
-<h3>Informations générales</h3>
 
-<div class="info-grid">
+        /*
+        | Boucle vers la première image
+        */
 
-<div>
+        if (index >= slides.length) {
 
-<label>Référence</label>
+            index = 0;
+        }
 
-<strong><?= htmlspecialchars($bien['reference']) ?></strong>
 
-</div>
+        currentIndex = index;
 
-<div>
 
-<label>Surface</label>
+        /*
+        | Toutes les images sont masquées
+        */
 
-<strong><?= htmlspecialchars($bien['surface']) ?> m²</strong>
+        slides.forEach(function (slide) {
 
-</div>
+            slide.classList.remove('active');
 
-<div>
+        });
 
-<label>Pièces</label>
 
-<strong><?= htmlspecialchars($bien['nb_pieces']) ?></strong>
+        /*
+        | Image actuelle
+        */
 
-</div>
+        slides[currentIndex].classList.add(
+            'active'
+        );
 
-<div>
 
-<label>Loyer</label>
+        /*
+        | Mise à jour des points
+        */
 
-<strong><?= number_format($bien['loyer'],0,',',' ') ?> FCFA</strong>
+        dots.forEach(function (dot, dotIndex) {
 
-</div>
+            dot.classList.toggle(
+                'active',
+                dotIndex === currentIndex
+            );
 
-<div>
+        });
 
-<label>Charges</label>
 
-<strong><?= number_format($bien['charges'],0,',',' ') ?> FCFA</strong>
+        /*
+        | Mise à jour du compteur
+        */
 
-</div>
+        if (currentImage) {
 
-</div>
+            currentImage.textContent =
+                currentIndex + 1;
+        }
 
-</div>
+    }
 
-<div class="panel">
 
-<h3>Adresse</h3>
+    /*
+    |--------------------------------------------------------------------------
+    | Flèche précédente
+    |--------------------------------------------------------------------------
+    */
 
-<p><?= htmlspecialchars($bien['ligne1']) ?></p>
+    if (prevButton) {
 
-<?php if(!empty($bien['ligne2'])): ?>
-<p><?= htmlspecialchars($bien['ligne2']) ?></p>
-<?php endif; ?>
+        prevButton.addEventListener(
+            'click',
+            function () {
 
-<p>
-    <?= htmlspecialchars($bien['code_postal']) ?>
-    <?= htmlspecialchars($bien['ville']) ?>
-</p>
+                showSlide(
+                    currentIndex - 1
+                );
 
-<p><?= htmlspecialchars($bien['region']) ?></p>
+            }
+        );
 
-<p><?= htmlspecialchars($bien['pays']) ?></p></div>
+    }
 
-</section>
 
-<section class="panel">
+    /*
+    |--------------------------------------------------------------------------
+    | Flèche suivante
+    |--------------------------------------------------------------------------
+    */
 
-<h3>Contrat actuel</h3>
+    if (nextButton) {
 
-<?php if($contrat): ?>
+        nextButton.addEventListener(
+            'click',
+            function () {
 
-<div class="contract-card">
+                showSlide(
+                    currentIndex + 1
+                );
 
-<h4><?= htmlspecialchars($contrat['prenom'].' '.$contrat['nom']) ?></h4>
+            }
+        );
 
-<p>Début : <?= htmlspecialchars($contrat['date_debut']) ?></p>
+    }
 
-<p>Fin : <?= htmlspecialchars($contrat['date_fin']) ?></p>
 
-<p>Statut : <?= htmlspecialchars($contrat['statut']) ?></p>
+    /*
+    |--------------------------------------------------------------------------
+    | Clic sur les points
+    |--------------------------------------------------------------------------
+    */
 
-</div>
+    dots.forEach(function (dot) {
 
-<?php else: ?>
+        dot.addEventListener(
+            'click',
+            function () {
 
-<p>Aucun contrat actif.</p>
+                const index =
+                    parseInt(
+                        this.dataset.slide,
+                        10
+                    );
 
-<?php endif; ?>
+                showSlide(index);
 
-</section>
+            }
+        );
 
-<section class="panel">
+    });
 
-<h3>Derniers paiements</h3>
 
-<p>Cette section sera reliée au module Paiements.</p>
+    /*
+    |--------------------------------------------------------------------------
+    | Navigation clavier
+    |--------------------------------------------------------------------------
+    */
 
-</section>
+    document.addEventListener(
+        'keydown',
+        function (event) {
 
-<section class="panel">
+            if (event.key === 'ArrowLeft') {
 
-<h3>Interventions</h3>
+                showSlide(
+                    currentIndex - 1
+                );
 
-<p>Cette section affichera les interventions liées au bien.</p>
+            }
 
-</section>
+            if (event.key === 'ArrowRight') {
 
-</main>
+                showSlide(
+                    currentIndex + 1
+                );
 
-</div>
+            }
+
+        }
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Navigation tactile / swipe téléphone
+    |--------------------------------------------------------------------------
+    */
+
+    let touchStartX = 0;
+
+    let touchEndX = 0;
+
+
+    const gallery =
+        document.querySelector(
+            '.gallery-container'
+        );
+
+
+    if (gallery) {
+
+        gallery.addEventListener(
+            'touchstart',
+            function (event) {
+
+                touchStartX =
+                    event.changedTouches[0].screenX;
+
+            },
+            {
+                passive:true
+            }
+        );
+
+
+        gallery.addEventListener(
+            'touchend',
+            function (event) {
+
+                touchEndX =
+                    event.changedTouches[0].screenX;
+
+
+                const difference =
+                    touchStartX - touchEndX;
+
+
+                /*
+                | Swipe vers la gauche
+                */
+
+                if (difference > 50) {
+
+                    showSlide(
+                        currentIndex + 1
+                    );
+
+                }
+
+
+                /*
+                | Swipe vers la droite
+                */
+
+                if (difference < -50) {
+
+                    showSlide(
+                        currentIndex - 1
+                    );
+
+                }
+
+            },
+            {
+                passive:true
+            }
+        );
+
+    }
+
+
+});
+
+</script>
+
 
 </body>
+
 </html>
