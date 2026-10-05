@@ -49,7 +49,7 @@ class RapportModel {
     }
 
     public function overdueReport(int $agencyId): array {
-        $sql = "SELECT b.nom as bien_nom,
+        $sql = "SELECT b.titre as bien_nom,
                        CONCAT(l.prenom, ' ', l.nom) as locataire_nom,
                        c.id as contrat_ref,
                        e.montant_total - COALESCE((SELECT SUM(montant) FROM paiement WHERE id_echeance = e.id AND deleted_at IS NULL), 0) as montant_du,
@@ -97,7 +97,7 @@ class RapportModel {
     }
 
     public function propertyPerformance(int $agencyId): array {
-        $sql = "SELECT b.nom,
+        $sql = "SELECT b.titre,
                        b.statut,
                        COALESCE(SUM(p.montant), 0) as total_revenu
                 FROM bien b

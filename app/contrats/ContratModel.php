@@ -10,7 +10,7 @@ class ContratModel {
     }
 
     public function list(int $agencyId, array $filters = []): array {
-        $sql = "SELECT c.*, b.nom as bien_nom, b.reference as bien_reference
+        $sql = "SELECT c.*, b.titre as bien_nom, b.reference as bien_reference
                 FROM contrat c
                 LEFT JOIN bien b ON c.id_bien = b.id_bien
                 WHERE c.id_agence = :id_agence AND c.deleted_at IS NULL";
@@ -18,7 +18,7 @@ class ContratModel {
         $params = [':id_agence' => $agencyId];
 
         if (!empty($filters['search'])) {
-            $sql .= " AND (c.numero LIKE :search OR b.nom LIKE :search OR b.reference LIKE :search)";
+            $sql .= " AND (c.numero LIKE :search OR b.titre LIKE :search OR b.reference LIKE :search)";
             $params[':search'] = '%' . $filters['search'] . '%';
         }
 
@@ -40,7 +40,7 @@ class ContratModel {
     }
 
     public function find(int $agencyId, int $contractId): ?array {
-        $sql = "SELECT c.*, b.nom as bien_nom, b.reference as bien_reference,
+        $sql = "SELECT c.*, b.titre as bien_nom, b.reference as bien_reference,
                 a.rue as adresse_rue, a.code_postal as adresse_cp, a.ville as adresse_ville
                 FROM contrat c
                 LEFT JOIN bien b ON c.id_bien = b.id_bien

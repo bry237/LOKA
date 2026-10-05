@@ -5,7 +5,7 @@ require_once dirname(__DIR__, 2) . '/core/Authorization.php';
 require_once __DIR__ . '/RapportController.php';
 require_once dirname(__DIR__, 2) . '/core/Database.php';
 
-$user = Authorization::requireRole(['administrateur', 'gestionnaire']);
+$user = Authorization::requireRole('Administrateur plateforme', 'Administrateur agence', 'Gestionnaire immobilier');
 $controller = new RapportController();
 
 $agencyId = $user['id_agence'];

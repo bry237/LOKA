@@ -10,7 +10,7 @@ class DocumentModel
         $db = Database::connection();
         
         $sql = "SELECT d.*, td.nom as type_nom,
-                b.nom as bien_nom, c.numero as contrat_numero, 
+                b.titre as bien_nom, c.numero as contrat_numero, 
                 p.nom as proprietaire_nom, p.prenom as proprietaire_prenom,
                 l.nom as locataire_nom, l.prenom as locataire_prenom,
                 i.titre as intervention_titre
@@ -78,7 +78,7 @@ class DocumentModel
         $db = Database::connection();
         
         $sql = "SELECT d.*, td.nom as type_nom,
-                b.nom as bien_nom, c.numero as contrat_numero, 
+                b.titre as bien_nom, c.numero as contrat_numero, 
                 p.nom as proprietaire_nom, p.prenom as proprietaire_prenom,
                 l.nom as locataire_nom, l.prenom as locataire_prenom,
                 i.titre as intervention_titre

@@ -13,7 +13,7 @@ class MaintenanceModel
 
     public function list(int $agencyId, array $filters = []): array
     {
-        $sql = "SELECT i.*, b.nom as bien_nom, b.reference as bien_reference, l.nom as locataire_nom, l.prenom as locataire_prenom, u_assigne.nom as assigne_nom, u_assigne.prenom as assigne_prenom
+        $sql = "SELECT i.*, b.titre as bien_nom, b.reference as bien_reference, l.nom as locataire_nom, l.prenom as locataire_prenom, u_assigne.nom as assigne_nom, u_assigne.prenom as assigne_prenom
                 FROM intervention i
                 LEFT JOIN bien b ON i.id_bien = b.id_bien
                 LEFT JOIN locataire l ON i.id_locataire = l.id_locataire
@@ -47,7 +47,7 @@ class MaintenanceModel
     public function find(int $agencyId, int $interventionId): ?array
     {
         $sql = "SELECT i.*, 
-                b.nom as bien_nom, b.reference as bien_reference, 
+                b.titre as bien_nom, b.reference as bien_reference, 
                 l.nom as locataire_nom, l.prenom as locataire_prenom, 
                 u_createur.nom as createur_nom, u_createur.prenom as createur_prenom,
                 u_assigne.nom as assigne_nom, u_assigne.prenom as assigne_prenom

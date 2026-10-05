@@ -14,7 +14,7 @@ if ($agencyId < 1) {
 
 $pdo = Database::connection();
 $stmt = $pdo->prepare("
-    SELECT q.*, p.montant, p.date_paiement, c.numero as contrat_numero, b.nom as bien_nom, l.nom as locataire_nom, l.prenom as locataire_prenom
+    SELECT q.*, p.montant, p.date_paiement, c.numero as contrat_numero, b.titre as bien_nom, l.nom as locataire_nom, l.prenom as locataire_prenom
     FROM quittance q
     JOIN paiement p ON q.id_paiement = p.id_paiement
     JOIN contrat c ON p.id_contrat = c.id_contrat

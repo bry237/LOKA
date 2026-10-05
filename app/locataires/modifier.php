@@ -4,7 +4,7 @@ require_once dirname(__DIR__, 2) . '/core/Auth.php';
 require_once __DIR__ . '/LocataireController.php';
 require_once __DIR__ . '/LocataireModel.php';
 
-$user = Authorization::requireRole(['AGENCE_ADMIN', 'GESTIONNAIRE']);
+$user = Authorization::requireRole('Administrateur plateforme', 'Administrateur agence', 'Gestionnaire immobilier');
 $agencyId = $user['id_agence'];
 $id = (int)($_GET['id'] ?? 0);
 

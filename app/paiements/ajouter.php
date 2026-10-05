@@ -5,7 +5,7 @@ require_once dirname(__DIR__, 2) . '/core/Auth.php';
 require_once __DIR__ . '/PaiementController.php';
 require_once __DIR__ . '/PaiementModel.php';
 
-$user = Authorization::requireRole(['ADMIN_AGENCE', 'AGENT']);
+$user = Authorization::requireRole('Administrateur plateforme', 'Administrateur agence', 'Gestionnaire immobilier');
 $agencyId = (int)$user['id_agence'];
 
 $model = new PaiementModel();

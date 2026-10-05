@@ -4,7 +4,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/core/Authorization.php';
 require_once __DIR__ . '/DocumentModel.php';
 
-$user = Authorization::requireRole(['admin', 'gestionnaire']);
+$user = Authorization::requireRole('Administrateur plateforme', 'Administrateur agence', 'Gestionnaire immobilier');
 $agencyId = (int)$user['id_agence'];
 
 $filters = [

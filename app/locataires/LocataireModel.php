@@ -90,7 +90,7 @@ class LocataireModel {
     }
 
     public function contracts(int $agencyId, int $tenantId): array {
-        $sql = "SELECT c.*, b.nom as bien_nom, b.adresse as bien_adresse 
+        $sql = "SELECT c.*, b.titre as bien_nom, b.adresse as bien_adresse 
                 FROM contrat c
                 JOIN contrat_locataire cl ON c.id_contrat = cl.id_contrat
                 JOIN bien b ON c.id_bien = b.id_bien

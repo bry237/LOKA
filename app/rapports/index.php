@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/core/Authorization.php';
 
-$user = Authorization::requireRole(['administrateur', 'gestionnaire']);
+$user = Authorization::requireRole('Administrateur plateforme', 'Administrateur agence', 'Gestionnaire immobilier');
 ?>
 <!doctype html>
 <html lang="fr">

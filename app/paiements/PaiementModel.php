@@ -11,7 +11,7 @@ class PaiementModel {
 
     public function list(int $agencyId, array $filters = []): array {
         $sql = "SELECT p.*, e.periode_debut, e.periode_fin, e.montant_total as echeance_montant, 
-                       c.reference as contrat_reference, b.nom as bien_nom,
+                       c.reference as contrat_reference, b.titre as bien_nom,
                        l.nom as locataire_nom, l.prenom as locataire_prenom
                 FROM paiement p
                 JOIN contrat c ON p.id_contrat = c.id_contrat
@@ -48,7 +48,7 @@ class PaiementModel {
 
     public function find(int $agencyId, int $paymentId): ?array {
         $sql = "SELECT p.*, e.periode_debut, e.periode_fin, e.montant_total as echeance_montant, 
-                       c.reference as contrat_reference, b.nom as bien_nom,
+                       c.reference as contrat_reference, b.titre as bien_nom,
                        l.nom as locataire_nom, l.prenom as locataire_prenom, l.email as locataire_email
                 FROM paiement p
                 JOIN contrat c ON p.id_contrat = c.id_contrat
@@ -139,7 +139,7 @@ class PaiementModel {
     }
 
     public function overdueList(int $agencyId): array {
-        $sql = "SELECT e.*, c.reference as contrat_reference, b.nom as bien_nom,
+        $sql = "SELECT e.*, c.reference as contrat_reference, b.titre as bien_nom,
                        l.nom as locataire_nom, l.prenom as locataire_prenom, l.telephone as locataire_telephone, l.email as locataire_email
                 FROM echeance e
                 JOIN contrat c ON e.id_contrat = c.id_contrat
@@ -210,7 +210,7 @@ class PaiementModel {
     }
 
     public function scheduleList(int $agencyId, array $filters = []): array {
-        $sql = "SELECT e.*, c.reference as contrat_reference, b.nom as bien_nom,
+        $sql = "SELECT e.*, c.reference as contrat_reference, b.titre as bien_nom,
                        l.id_locataire, l.nom as locataire_nom, l.prenom as locataire_prenom
                 FROM echeance e
                 JOIN contrat c ON e.id_contrat = c.id_contrat

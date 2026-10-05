@@ -5,7 +5,7 @@ require_once dirname(__DIR__, 2) . '/core/Auth.php';
 require_once __DIR__ . '/ContratController.php';
 require_once __DIR__ . '/ContratModel.php';
 
-$user = Authorization::requireRole(['AGENCY_ADMIN', 'MANAGER', 'AGENT']);
+$user = Authorization::requireRole('Administrateur plateforme', 'Administrateur agence', 'Gestionnaire immobilier');
 $agencyId = $user['id_agence'];
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
