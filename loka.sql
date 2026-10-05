@@ -44,8 +44,8 @@ CREATE TABLE `abonnement` (
 
 INSERT INTO `abonnement` (`id_abonnement`, `nom`, `description`, `prix_mensuel`, `limite_utilisateurs`, `limite_biens`, `actif`, `created_at`) VALUES
 (1, 'Gratuit', 'Offre de demonstration.', 0.00, 3, 10, 1, '2026-09-14 17:56:42'),
-(2, 'Standard', 'Offre standard.', 9.99, 10, 100, 1, '2026-09-14 17:56:42'),
-(3, 'Professionnel', 'Offre professionnelle.', 19.99, NULL, NULL, 1, '2026-09-14 17:56:42');
+(2, 'Pro', 'Offre standard.', 9.99, 10, 100, 1, '2026-09-14 17:56:42'),
+(3, 'Max', 'Offre professionnelle.', 19.99, NULL, NULL, 1, '2026-09-14 17:56:42');
 
 -- --------------------------------------------------------
 
@@ -79,7 +79,7 @@ CREATE TABLE `agence` (
   `code_postal` varchar(20) DEFAULT NULL,
   `pays` varchar(100) DEFAULT 'France',
   `logo` varchar(500) DEFAULT NULL,
-  `statut` enum('ACTIVE','SUSPENDED') NOT NULL DEFAULT 'ACTIVE',
+  `statut` enum('ACTIVE','SUSPENDED','PENDING') NOT NULL DEFAULT 'ACTIVE',
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `deleted_at` datetime DEFAULT NULL
