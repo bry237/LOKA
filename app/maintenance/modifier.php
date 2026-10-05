@@ -35,7 +35,7 @@ $data = [
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    Auth::verifyCsrf();
+    Auth::verifyCsrf($_POST['csrf_token'] ?? null);
     $data = [
         'titre' => $_POST['titre'] ?? '',
         'description' => $_POST['description'] ?? '',
@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <option value="">Sélectionner un bien...</option>
                                 <?php foreach ($biens as $b): ?>
                                     <option value="<?= $b['id_bien'] ?>" <?= $data['id_bien'] == $b['id_bien'] ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars($b['nom'] . ' (' . $b['reference'] . ')', ENT_QUOTES, 'UTF-8') ?>
+                                        <?= htmlspecialchars($b['titre'] . ' (' . $b['reference'] . ')', ENT_QUOTES, 'UTF-8') ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>

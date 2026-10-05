@@ -122,7 +122,7 @@ foreach($biens as $b) {
                 <h2><?= htmlspecialchars(str_replace('_', ' ', (string)$statut), ENT_QUOTES) ?> (<?= count($liste) ?>)</h2>
                 <ul class="property-list">
                     <?php foreach($liste as $bien): ?>
-                    <li class="property-item"><?= htmlspecialchars($bien['nom'], ENT_QUOTES) ?></li>
+                    <li class="property-item"><?= htmlspecialchars($bien['titre'], ENT_QUOTES) ?></li>
                     <?php endforeach; ?>
                 </ul>
             </div>

@@ -116,7 +116,7 @@ $csrfToken = Auth::csrfToken();
 					<div class="photo-grid">
 <?php foreach ($photos as $photo): ?>
 						<div class="photo">
-							<img src="/LOKA/<?= htmlspecialchars($photo['chemin_stockage'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($photo['nom_fichier'], ENT_QUOTES, 'UTF-8') ?>">
+							<img src="/LOKA/public/<?= htmlspecialchars($photo['chemin_stockage'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($photo['nom_fichier'], ENT_QUOTES, 'UTF-8') ?>">
 							<div class="photo__body">
 <?php if ($photo['est_principale']): ?>
 								<span class="badge badge--available">Photo principale</span>

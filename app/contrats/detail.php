@@ -29,7 +29,7 @@ $errors = [];
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    Auth::verifyCsrf();
+    Auth::verifyCsrf($_POST['csrf_token'] ?? null);
     $action = $_POST['action'] ?? '';
     $controller = new ContratController();
 

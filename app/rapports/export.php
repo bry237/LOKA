@@ -49,7 +49,7 @@ switch ($type) {
         $raw = $controller->getPropertyPerformance($agencyId);
         $headers = ['Bien', 'Statut', 'Revenu total généré'];
         foreach($raw as $r) {
-            $data[] = [$r['nom'], $r['statut'], $r['total_revenu']];
+            $data[] = [$r['bien_nom'], $r['statut'], $r['total_revenu']];
         }
         break;
     case 'fiabilite_locataires':

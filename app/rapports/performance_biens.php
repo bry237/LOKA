@@ -47,7 +47,7 @@ $data = $controller->getPropertyPerformance($agencyId);
                     <tbody>
                         <?php foreach($data as $row): ?>
                         <tr>
-                            <td><?= htmlspecialchars($row['nom'], ENT_QUOTES) ?></td>
+                            <td><?= htmlspecialchars($row['bien_nom'], ENT_QUOTES) ?></td>
                             <td><?= htmlspecialchars(str_replace('_', ' ', $row['statut']), ENT_QUOTES) ?></td>
                             <td><?= number_format((float)$row['total_revenu'], 2, ',', ' ') ?> €</td>
                         </tr>

@@ -57,7 +57,7 @@ $currentPage = 'biens';
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Historique du bien <?= htmlspecialchars($bien['nom'] ?? '', ENT_QUOTES, 'UTF-8') ?> | LOKA</title>
+    <title>Historique du bien <?= htmlspecialchars($bien['titre'] ?? '', ENT_QUOTES, 'UTF-8') ?> | LOKA</title>
     <link rel="stylesheet" href="/LOKA/public/assets/css/global.css">
     <link rel="stylesheet" href="/LOKA/app/biens/bien.css">
 </head>
@@ -68,7 +68,7 @@ $currentPage = 'biens';
         <header class="topbar">
             <div class="topbar-left">
                 <span class="topbar-eyebrow">Biens immobiliers</span>
-                <h1 class="topbar-title">Historique : <?= htmlspecialchars($bien['nom'] ?? '', ENT_QUOTES, 'UTF-8') ?></h1>
+                <h1 class="topbar-title">Historique : <?= htmlspecialchars($bien['titre'] ?? '', ENT_QUOTES, 'UTF-8') ?></h1>
             </div>
         </header>
         <main class="page">

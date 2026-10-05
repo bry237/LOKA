@@ -8,8 +8,7 @@ $user = Authorization::requireRole('Administrateur plateforme', 'Administrateur 
 $agencyId = $user['id_agence'];
 
 require_once dirname(__DIR__) . '/biens/BienModel.php';
-$bienModel = new BienModel();
-$biens = $bienModel->list($agencyId);
+$biens = BienModel::list($agencyId);
 
 $errors = [];
 $input = [
@@ -30,7 +29,7 @@ $input = [
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    Auth::verifyCsrf();
+    Auth::verifyCsrf($_POST['csrf_token'] ?? null);
     $input = array_merge($input, $_POST);
     
     $controller = new ContratController();
@@ -90,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <option value="">-- Sélectionner un bien --</option>
                             <?php foreach ($biens as $b): ?>
                                 <option value="<?= $b['id_bien'] ?>" <?= $input['id_bien'] == $b['id_bien'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($b['reference'] . ' - ' . $b['nom'], ENT_QUOTES, 'UTF-8') ?>
+                                    <?= htmlspecialchars($b['reference'] . ' - ' . $b['titre'], ENT_QUOTES, 'UTF-8') ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
