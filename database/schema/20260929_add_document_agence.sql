@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS document_agence (
+	id_document_agence BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+	id_agence BIGINT(20) UNSIGNED NOT NULL,
+	type ENUM('PIECE_IDENTITE','JUSTIFICATIF_IMMATRICULATION','AUTRE') NOT NULL,
+	nom_original VARCHAR(255) NOT NULL,
+	mime_type VARCHAR(150) DEFAULT NULL,
+	taille_octets BIGINT(20) UNSIGNED DEFAULT NULL,
+	chemin_stockage VARCHAR(500) NOT NULL,
+	statut_verification ENUM('EN_ATTENTE','VALIDE','REJETE') NOT NULL DEFAULT 'EN_ATTENTE',
+	analyse_ia_resume TEXT DEFAULT NULL,
+	analyse_ia_alertes TEXT DEFAULT NULL CHECK (analyse_ia_alertes IS NULL OR json_valid(analyse_ia_alertes)),
+	analyse_ia_date DATETIME DEFAULT NULL,
+	id_utilisateur_validateur BIGINT(20) UNSIGNED DEFAULT NULL,
+	date_validation DATETIME DEFAULT NULL,
+	motif_rejet TEXT DEFAULT NULL,
+	created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (id_document_agence),
+	KEY idx_document_agence_agence (id_agence),
+	CONSTRAINT fk_document_agence_agence FOREIGN KEY (id_agence) REFERENCES agence (id_agence) ON DELETE CASCADE ON UPDATE CASCADE,
+	CONSTRAINT fk_document_agence_validateur FOREIGN KEY (id_utilisateur_validateur) REFERENCES utilisateur (id_utilisateur) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

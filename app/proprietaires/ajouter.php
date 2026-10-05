@@ -18,6 +18,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$errors['general'] = 'Impossible d’enregistrer le proprietaire.';
 		}
 	}
+<<<<<<< HEAD
+=======
+
+	if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+		http_response_code(405);
+		echo json_encode(['error' => 'Méthode non autorisée.'], JSON_THROW_ON_ERROR);
+		exit;
+	}
+
+	$type = (string) ($_POST['account_type'] ?? '');
+	[$errors, $redirect] = match ($type) {
+		'proprietor' => AuthController::handleProprietorRegistration($_POST, $_FILES),
+		'agency' => AuthController::handleAgencyRegistration($_POST, $_FILES),
+		default => [['general' => 'Type de compte invalide.'], null],
+	};
+
+	if ($errors) {
+		http_response_code(422);
+		echo json_encode(['errors' => $errors], JSON_THROW_ON_ERROR);
+		exit;
+	}
+
+	echo json_encode(['success' => true, 'redirect' => '../authentification/' . $redirect], JSON_THROW_ON_ERROR);
+} catch (Throwable $exception) {
+	http_response_code(500);
+	echo json_encode(['error' => 'Une erreur interne est survenue.'], JSON_THROW_ON_ERROR);
+>>>>>>> main
 }
 $csrfToken = Auth::csrfToken();
 $title = 'Ajouter un proprietaire';

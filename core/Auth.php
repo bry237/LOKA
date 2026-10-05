@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Session.php';
+require_once __DIR__ . '/Logger.php';
 
 final class Auth
 {
@@ -24,12 +25,12 @@ final class Auth
 		return is_string($token) && hash_equals((string) ($_SESSION[self::CSRF_KEY] ?? ''), $token);
 	}
 
-	public static function login(string $email, string $password): ?array
+	public static function findByCredentials(string $email, string $password): ?array
 	{
 		$db = Database::connection();
 		$stmt = $db->prepare(
-			"SELECT u.id_utilisateur, u.id_agence, u.nom, u.prenom, u.email, u.mot_de_passe,
-					u.statut AS statut_utilisateur, r.id_role, r.nom AS role_nom
+			"SELECT u.id_utilisateur, u.id_agence, u.nom, u.prenom, u.email, u.mot_de_passe, u.telephone,
+					u.telephone_verifie, u.statut AS statut_utilisateur, r.id_role, r.nom AS role_nom
 			 FROM utilisateur u
 			 INNER JOIN role r ON r.id_role = u.id_role
 			 WHERE LOWER(u.email) = LOWER(:email)
@@ -39,10 +40,16 @@ final class Auth
 		$stmt->execute(['email' => $email]);
 		$user = $stmt->fetch();
 
-		if (!$user || $user['statut_utilisateur'] !== 'ACTIVE' || !password_verify($password, $user['mot_de_passe'])) {
+		if (!$user || !password_verify($password, $user['mot_de_passe'])) {
 			return null;
 		}
 
+		return $user;
+	}
+
+	public static function createSession(array $user): array
+	{
+		$db = Database::connection();
 		Session::regenerate();
 		$token = bin2hex(random_bytes(32));
 		$expiration = (new DateTimeImmutable('+8 hours'))->format('Y-m-d H:i:s');
@@ -69,6 +76,8 @@ final class Auth
 			'token' => $token,
 		];
 
+		Logger::audit('LOGIN', 'utilisateur', (int) $user['id_utilisateur'], (int) $user['id_utilisateur'], $user['id_agence'] !== null ? (int) $user['id_agence'] : null);
+
 		return self::user();
 	}
 
@@ -94,20 +103,34 @@ final class Auth
 		$user = $stmt->fetch();
 
 		if (!$user) {
-			self::logout();
+			self::logout(false);
 			return null;
 		}
 
 		return $user;
 	}
 
-	public static function logout(): void
+	public static function isAgencyPending(array $user): bool
+	{
+		if ($user['id_agence'] === null) {
+			return false;
+		}
+		$stmt = Database::connection()->prepare('SELECT statut FROM agence WHERE id_agence = :id LIMIT 1');
+		$stmt->execute(['id' => $user['id_agence']]);
+		return $stmt->fetchColumn() === 'PENDING';
+	}
+
+	public static function logout(bool $explicit = true): void
 	{
 		Session::start();
 		$session = $_SESSION[self::SESSION_KEY] ?? null;
 		if ($session) {
 			$stmt = Database::connection()->prepare('DELETE FROM session_utilisateur WHERE token_hash = :token_hash');
 			$stmt->execute(['token_hash' => hash('sha256', $session['token'])]);
+
+			if ($explicit) {
+				Logger::audit('LOGOUT', 'utilisateur', $session['id_utilisateur'], $session['id_utilisateur'], $session['id_agence']);
+			}
 		}
 		Session::destroy();
 	}
