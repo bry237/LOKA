@@ -35,6 +35,12 @@ $extraHead = '<link rel="stylesheet" href="agences.css">';
 $csrfToken = Auth::csrfToken();
 $redirectTarget = 'detail.php?id=' . $id;
 
+// Chemins absolus : cette page est aussi chargée dans la modale globale depuis le widget
+// "Agences récentes" du Dashboard (app/administration/dashboard/), un dossier différent du
+// sien — des liens/actions relatifs ("modifier.php", "valider-document.php"...) se résolvent
+// alors contre l'URL de la page hôte (dashboard/) et pointent vers des fichiers inexistants.
+$base = '/LOKA/app/administration/agences';
+
 $statusLabels = ['ACTIVE' => 'Actif', 'PENDING' => 'En attente', 'SUSPENDED' => 'Suspendu'];
 $statusTones = ['ACTIVE' => 'actif', 'PENDING' => 'attente', 'SUSPENDED' => 'suspendu'];
 $subStatusLabels = ['ACTIVE' => 'Actif', 'EXPIRED' => 'Expiré', 'CANCELLED' => 'Annulé'];
@@ -56,7 +62,7 @@ $actionClass = $agence['statut'] === 'ACTIVE' ? 'btn-danger' : 'btn-success';
 
 if (!$isModal) require dirname(__DIR__, 3) . '/layouts/header.php';
 ?>
-    <a class="detail-back" href="index.php">
+    <a class="detail-back" href="<?= $base ?>/index.php">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       Retour aux agences
     </a>
@@ -80,8 +86,8 @@ if (!$isModal) require dirname(__DIR__, 3) . '/layouts/header.php';
         </div>
       </div>
       <div class="detail-actions">
-        <a class="btn" href="modifier.php?id=<?= (int) $agence['id_agence'] ?>" data-modal>Modifier</a>
-        <form class="inline-form" method="post" action="changer-statut.php">
+        <a class="btn" href="<?= $base ?>/modifier.php?id=<?= (int) $agence['id_agence'] ?>" data-modal>Modifier</a>
+        <form class="inline-form" method="post" action="<?= $base ?>/changer-statut.php">
           <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
           <input type="hidden" name="id" value="<?= (int) $agence['id_agence'] ?>">
           <input type="hidden" name="statut" value="<?= $nextStatus ?>">
@@ -109,7 +115,7 @@ if (!$isModal) require dirname(__DIR__, 3) . '/layouts/header.php';
         <div class="panel">
           <div class="panel-header">
             <div class="panel-title">Historique des abonnements</div>
-            <form class="inline-form" method="post" action="changer-plan.php">
+            <form class="inline-form" method="post" action="<?= $base ?>/changer-plan.php">
               <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
               <input type="hidden" name="id" value="<?= (int) $agence['id_agence'] ?>">
               <input type="hidden" name="redirect" value="<?= htmlspecialchars($redirectTarget, ENT_QUOTES, 'UTF-8') ?>">
@@ -208,16 +214,16 @@ if (!$isModal) require dirname(__DIR__, 3) . '/layouts/header.php';
                 <?php endif; ?>
               </div>
               <div class="document-actions">
-                <a class="btn btn-sm" href="document-telecharger.php?id=<?= (int) $doc['id_document_agence'] ?>" target="_blank" rel="noopener">Télécharger</a>
+                <a class="btn btn-sm" href="<?= $base ?>/document-telecharger.php?id=<?= (int) $doc['id_document_agence'] ?>" target="_blank" rel="noopener">Télécharger</a>
                 <?php if ($doc['statut_verification'] === 'EN_ATTENTE'): ?>
-                  <form class="inline-form" method="post" action="valider-document.php">
+                  <form class="inline-form" method="post" action="<?= $base ?>/valider-document.php">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="id" value="<?= (int) $doc['id_document_agence'] ?>">
                     <input type="hidden" name="agence_id" value="<?= (int) $agence['id_agence'] ?>">
                     <input type="hidden" name="statut" value="VALIDE">
                     <button type="submit" class="btn btn-sm btn-success">Valider</button>
                   </form>
-                  <form class="inline-form" method="post" action="valider-document.php">
+                  <form class="inline-form" method="post" action="<?= $base ?>/valider-document.php">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="id" value="<?= (int) $doc['id_document_agence'] ?>">
                     <input type="hidden" name="agence_id" value="<?= (int) $agence['id_agence'] ?>">

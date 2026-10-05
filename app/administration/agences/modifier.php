@@ -46,9 +46,13 @@ $profileInitials = mb_strtoupper(mb_substr($currentUser['prenom'], 0, 1) . mb_su
 
 $csrfToken = Auth::csrfToken();
 
+// Chemin absolu : cette page est aussi chargée dans la modale globale depuis le widget
+// "Agences récentes" du Dashboard — voir la même note dans detail.php.
+$base = '/LOKA/app/administration/agences';
+
 if (!$isModal) require dirname(__DIR__, 3) . '/layouts/header.php';
 ?>
-    <a class="detail-back" href="detail.php?id=<?= $id ?>">
+    <a class="detail-back" href="<?= $base ?>/detail.php?id=<?= $id ?>">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       Retour à la fiche agence
     </a>
@@ -63,7 +67,7 @@ if (!$isModal) require dirname(__DIR__, 3) . '/layouts/header.php';
     <?php endif; ?>
 
     <div class="panel">
-      <form method="post" action="modifier.php?id=<?= $id ?>">
+      <form method="post" action="<?= $base ?>/modifier.php?id=<?= $id ?>">
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
         <input type="hidden" name="id" value="<?= $id ?>">
         <div class="form-grid">
@@ -105,7 +109,7 @@ if (!$isModal) require dirname(__DIR__, 3) . '/layouts/header.php';
         </div>
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">Enregistrer</button>
-          <a class="btn" href="detail.php?id=<?= $id ?>" data-modal>Annuler</a>
+          <a class="btn" href="<?= $base ?>/detail.php?id=<?= $id ?>" data-modal>Annuler</a>
         </div>
       </form>
     </div>
