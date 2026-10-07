@@ -130,6 +130,13 @@
 
     function setModalContent(html) {
       modalBody.innerHTML = html;
+      // innerHTML ne fait pas exécuter les <script> injectés : on les reconstruit pour forcer leur exécution.
+      modalBody.querySelectorAll('script').forEach((oldScript) => {
+        const newScript = document.createElement('script');
+        for (const attr of oldScript.attributes) newScript.setAttribute(attr.name, attr.value);
+        newScript.textContent = oldScript.textContent;
+        oldScript.replaceWith(newScript);
+      });
       modalPanel.scrollTop = 0;
     }
 

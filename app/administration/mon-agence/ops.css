@@ -1,0 +1,26 @@
+/* ---------- Interventions & Documents : badges et petits éléments partagés
+   (réutilise .kpi-*, .panel, .table-panel, .status-badge... définis dans
+   dashboard.css / layouts/admin.css) ---------- */
+
+.priority-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700;white-space:nowrap;}
+.priority-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;}
+.priority-badge.low{background:#EDF1F1;color:var(--text);}
+.priority-badge.medium{background:#E5F0FB;color:var(--blue);}
+.priority-badge.high{background:#FDF1DC;color:var(--warning);}
+.priority-badge.urgent{background:#FCE9E9;color:var(--danger);}
+
+.doc-row{display:flex;align-items:center;gap:10px;}
+.doc-icon{width:32px;height:32px;border-radius:9px;background:#E3F4F4;color:var(--primary);display:flex;align-items:center;justify-content:center;flex:none;}
+.doc-icon svg{width:15px;height:15px;}
+
+.row-actions{display:flex;align-items:center;gap:10px;justify-content:flex-end;}
+.icon-action{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--white);color:var(--text);cursor:pointer;}
+.icon-action:hover{background:var(--gray-light,#F2F6F6);color:var(--primary);}
+.icon-action svg{width:14px;height:14px;}
+.icon-action.danger:hover{color:var(--danger);}
+
+.status-actions{display:flex;flex-direction:column;gap:8px;}
+.status-actions .btn{width:100%;}
+
+/* .form-field{display:flex} (admin.css) outranks the UA [hidden] default — force it back. */
+.form-field[hidden]{display:none !important;}

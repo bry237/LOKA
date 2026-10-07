@@ -1,0 +1,30 @@
+DOSSIER DE JORDAN (bry237) - LOKA
+=================================
+
+OU LE COLLER
+  Coller ce dossier "jordan" dans  LOKA/app/
+  Resultat :  LOKA/app/jordan/
+
+URL D'ENTREE (XAMPP)
+  http://localhost/LOKA/app/jordan/biens/index.php
+  http://localhost/LOKA/app/jordan/dashboard/index.php
+  http://localhost/LOKA/app/jordan/admin-immobilier/dashboard/index.php
+
+BASE DE DONNEES (une seule fois)
+  Importer dans phpMyAdmin : database/20260928_refonte_gestion_immobiliere.sql
+
+CONTENU
+  admin-immobilier, biens, proprietaires, contrats, locataires, paiements,
+  maintenance, documents, rapports, notifications, dashboard
+  layouts/sidebar-gestion.php   (sa barre de navigation)
+  tests/                        (php app/jordan/tests/run.php)
+
+REGLE POUR JORDAN
+  Travailler UNIQUEMENT dans app/jordan/.
+  Ne pas modifier : app/administration, app/authentification, config, core,
+  layouts/ (racine), app/proprietaires/inscription.* et ajouter.php
+  Ne jamais relancer generate_admin.php.
+
+Le dossier utilise toujours core/ (Auth, Authorization, Database) du projet :
+ne pas le copier seul ailleurs que dans LOKA/app/.
+Les photos et documents uploades restent dans LOKA/public/uploads/.

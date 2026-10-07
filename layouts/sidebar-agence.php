@@ -38,6 +38,14 @@ $navSoonBadge = static function (string $label, string $svg, int $count, string 
 		. $svg . '<span class="nav-label">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>'
 		. $badge . '</span></li>';
 };
+
+/** Rendu d'un lien réel, avec un badge de comptage optionnel (compte à 0 : pas de badge affiché). */
+$navLinkBadge = static function (string $href, string $label, string $svg, int $count = 0, string $badgeTone = 'amber') use ($navActive): string {
+	$badge = $count > 0 ? '<span class="nav-badge ' . $badgeTone . '">' . $count . '</span>' : '';
+	return '<li class="nav-item"><a class="nav-link' . $navActive($label) . '" href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '">'
+		. $svg . '<span class="nav-label">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>'
+		. $badge . '</a></li>';
+};
 ?>
   <aside class="sidebar sidebar-agence" id="sidebar">
     <div class="brand">
@@ -79,7 +87,7 @@ $navSoonBadge = static function (string $label, string $svg, int $count, string 
 
     <div class="nav-section-label">MAINTENANCE</div>
     <ul class="nav">
-      <?= $navSoonBadge('Interventions', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94Z"/></svg>', $sidebarBadges['interventions'], 'violet') ?>
+      <?= $navLinkBadge('../mon-agence/interventions.php', 'Interventions', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94Z"/></svg>', $sidebarBadges['interventions'], 'violet') ?>
     </ul>
 
     <div class="nav-section-label">ORGANISATION</div>
@@ -88,7 +96,7 @@ $navSoonBadge = static function (string $label, string $svg, int $count, string 
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span class="nav-label">Équipe</span>
       </a></li>
-      <?= $navSoon('Documents', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>') ?>
+      <?= $navLinkBadge('../mon-agence/documents.php', 'Documents', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>') ?>
     </ul>
 
     <div class="sidebar-bottom">

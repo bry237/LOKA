@@ -340,6 +340,274 @@ final class MonAgenceModel
 		return $stmt->rowCount() > 0;
 	}
 
+	/* --------------------------------------------------------------
+	 * Interventions (maintenance), scopées à l'agence.
+	 * -------------------------------------------------------------- */
+
+	/** @param array{search?: string, priorite?: string, statut?: string} $filters */
+	public static function interventions(int $idAgence, array $filters = []): array
+	{
+		$sql = "SELECT i.*, b.titre AS bien_titre, b.reference AS bien_reference,
+					u.nom AS assigne_nom, u.prenom AS assigne_prenom
+				FROM intervention i
+				INNER JOIN bien b ON b.id_bien = i.id_bien
+				LEFT JOIN utilisateur u ON u.id_utilisateur = i.id_utilisateur_assigne
+				WHERE i.id_agence = :id_agence";
+		$params = ['id_agence' => $idAgence];
+
+		if (!empty($filters['search'])) {
+			$sql .= ' AND i.titre LIKE :search';
+			$params['search'] = '%' . $filters['search'] . '%';
+		}
+		if (!empty($filters['priorite'])) {
+			$sql .= ' AND i.priorite = :priorite';
+			$params['priorite'] = $filters['priorite'];
+		}
+		if (!empty($filters['statut'])) {
+			$sql .= ' AND i.statut = :statut';
+			$params['statut'] = $filters['statut'];
+		}
+		$sql .= ' ORDER BY i.created_at DESC';
+
+		$stmt = Database::connection()->prepare($sql);
+		$stmt->execute($params);
+		return $stmt->fetchAll();
+	}
+
+	public static function interventionStats(int $idAgence): array
+	{
+		$stmt = Database::connection()->prepare(
+			"SELECT
+				SUM(CASE WHEN statut IN ('OPEN', 'ASSIGNED') THEN 1 ELSE 0 END) AS ouvertes,
+				SUM(CASE WHEN statut = 'IN_PROGRESS' THEN 1 ELSE 0 END) AS en_cours,
+				SUM(CASE WHEN priorite = 'URGENT' AND statut NOT IN ('RESOLVED', 'CLOSED', 'CANCELLED') THEN 1 ELSE 0 END) AS urgentes,
+				SUM(CASE WHEN statut = 'RESOLVED' AND MONTH(updated_at) = MONTH(CURDATE()) AND YEAR(updated_at) = YEAR(CURDATE()) THEN 1 ELSE 0 END) AS resolues_ce_mois
+			 FROM intervention WHERE id_agence = :id_agence"
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		$row = $stmt->fetch() ?: [];
+		return [
+			'ouvertes' => (int) ($row['ouvertes'] ?? 0),
+			'en_cours' => (int) ($row['en_cours'] ?? 0),
+			'urgentes' => (int) ($row['urgentes'] ?? 0),
+			'resolues_ce_mois' => (int) ($row['resolues_ce_mois'] ?? 0),
+		];
+	}
+
+	public static function interventionFind(int $idAgence, int $idIntervention): ?array
+	{
+		$stmt = Database::connection()->prepare(
+			"SELECT i.*, b.titre AS bien_titre, b.reference AS bien_reference,
+					l.nom AS locataire_nom, l.prenom AS locataire_prenom,
+					u.nom AS assigne_nom, u.prenom AS assigne_prenom
+			 FROM intervention i
+			 INNER JOIN bien b ON b.id_bien = i.id_bien
+			 LEFT JOIN locataire l ON l.id_locataire = i.id_locataire
+			 LEFT JOIN utilisateur u ON u.id_utilisateur = i.id_utilisateur_assigne
+			 WHERE i.id_intervention = :id AND i.id_agence = :id_agence
+			 LIMIT 1"
+		);
+		$stmt->execute(['id' => $idIntervention, 'id_agence' => $idAgence]);
+		$row = $stmt->fetch();
+		return $row ?: null;
+	}
+
+	/** Biens de l'agence, pour le sélecteur de l'écran de création d'intervention. */
+	public static function biensForIntervention(int $idAgence): array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT id_bien, titre, reference FROM bien WHERE id_agence = :id_agence AND deleted_at IS NULL ORDER BY titre'
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		return $stmt->fetchAll();
+	}
+
+	/** Locataires de l'agence, pour le sélecteur (optionnel) de l'écran de création d'intervention. */
+	public static function locatairesForIntervention(int $idAgence): array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT id_locataire, nom, prenom FROM locataire WHERE id_agence = :id_agence AND deleted_at IS NULL ORDER BY nom'
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		return $stmt->fetchAll();
+	}
+
+	/**
+	 * @param array{titre: string, description: string, priorite: string, id_bien: int, id_locataire: ?int, cout_estime: ?float} $data
+	 */
+	public static function createIntervention(int $idAgence, int $idUtilisateurCreateur, array $data): int
+	{
+		$stmt = Database::connection()->prepare(
+			"INSERT INTO intervention (id_agence, id_bien, id_locataire, id_utilisateur_createur, titre, description, priorite, cout_estime, statut, created_at, updated_at)
+			 VALUES (:id_agence, :id_bien, :id_locataire, :id_utilisateur_createur, :titre, :description, :priorite, :cout_estime, 'OPEN', NOW(), NOW())"
+		);
+		$stmt->execute([
+			'id_agence' => $idAgence,
+			'id_bien' => $data['id_bien'],
+			'id_locataire' => $data['id_locataire'],
+			'id_utilisateur_createur' => $idUtilisateurCreateur,
+			'titre' => $data['titre'],
+			'description' => $data['description'],
+			'priorite' => $data['priorite'],
+			'cout_estime' => $data['cout_estime'],
+		]);
+		return (int) Database::connection()->lastInsertId();
+	}
+
+	public static function updateInterventionStatus(int $idAgence, int $idIntervention, string $statut): bool
+	{
+		$stmt = Database::connection()->prepare(
+			'UPDATE intervention SET statut = :statut, updated_at = NOW() WHERE id_intervention = :id AND id_agence = :id_agence'
+		);
+		$stmt->execute(['statut' => $statut, 'id' => $idIntervention, 'id_agence' => $idAgence]);
+		return $stmt->rowCount() > 0;
+	}
+
+	public static function closeIntervention(int $idAgence, int $idIntervention, ?float $coutFinal, string $compteRendu): bool
+	{
+		$stmt = Database::connection()->prepare(
+			"UPDATE intervention SET statut = 'CLOSED', cout_final = :cout_final, compte_rendu = :compte_rendu, date_fin = NOW(), updated_at = NOW()
+			 WHERE id_intervention = :id AND id_agence = :id_agence"
+		);
+		$stmt->execute(['cout_final' => $coutFinal, 'compte_rendu' => $compteRendu, 'id' => $idIntervention, 'id_agence' => $idAgence]);
+		return $stmt->rowCount() > 0;
+	}
+
+	/* --------------------------------------------------------------
+	 * Documents, scopés à l'agence (table partagée avec le module Jordan :
+	 * un document n'a pas de colonne id_agence directe, son agence se déduit
+	 * de l'entité à laquelle il est rattaché — bien/contrat/proprietaire/
+	 * locataire/intervention — chacune elle-même scopée par id_agence).
+	 * -------------------------------------------------------------- */
+
+	private const DOCUMENT_JOIN_SQL = "FROM document d
+				JOIN type_document td ON td.id_type_document = d.id_type_document
+				LEFT JOIN bien b ON d.id_bien = b.id_bien AND b.id_agence = :agence1
+				LEFT JOIN contrat c ON d.id_contrat = c.id_contrat AND c.id_agence = :agence2
+				LEFT JOIN proprietaire p ON d.id_proprietaire = p.id_proprietaire AND p.id_agence = :agence3
+				LEFT JOIN locataire l ON d.id_locataire = l.id_locataire AND l.id_agence = :agence4
+				LEFT JOIN intervention i ON d.id_intervention = i.id_intervention AND i.id_agence = :agence5
+				WHERE (d.id_bien IS NOT NULL AND b.id_bien IS NOT NULL
+					OR d.id_contrat IS NOT NULL AND c.id_contrat IS NOT NULL
+					OR d.id_proprietaire IS NOT NULL AND p.id_proprietaire IS NOT NULL
+					OR d.id_locataire IS NOT NULL AND l.id_locataire IS NOT NULL
+					OR d.id_intervention IS NOT NULL AND i.id_intervention IS NOT NULL)";
+
+	/** @param array{search?: string, id_type_document?: string, entity_type?: string} $filters */
+	public static function documents(int $idAgence, array $filters = []): array
+	{
+		$sql = "SELECT d.*, td.nom AS type_nom,
+					b.titre AS bien_nom, c.numero AS contrat_numero,
+					p.nom AS proprietaire_nom, p.prenom AS proprietaire_prenom,
+					l.nom AS locataire_nom, l.prenom AS locataire_prenom,
+					i.titre AS intervention_titre
+				" . self::DOCUMENT_JOIN_SQL;
+		$params = ['agence1' => $idAgence, 'agence2' => $idAgence, 'agence3' => $idAgence, 'agence4' => $idAgence, 'agence5' => $idAgence];
+
+		if (!empty($filters['search'])) {
+			$sql .= ' AND d.nom LIKE :search';
+			$params['search'] = '%' . $filters['search'] . '%';
+		}
+		if (!empty($filters['id_type_document'])) {
+			$sql .= ' AND d.id_type_document = :type_id';
+			$params['type_id'] = $filters['id_type_document'];
+		}
+		if (!empty($filters['entity_type'])) {
+			$column = match ($filters['entity_type']) {
+				'bien' => 'd.id_bien', 'contrat' => 'd.id_contrat', 'proprietaire' => 'd.id_proprietaire',
+				'locataire' => 'd.id_locataire', 'intervention' => 'd.id_intervention', default => null,
+			};
+			if ($column !== null) {
+				$sql .= " AND {$column} IS NOT NULL";
+			}
+		}
+		$sql .= ' ORDER BY d.created_at DESC';
+
+		$stmt = Database::connection()->prepare($sql);
+		$stmt->execute($params);
+		return $stmt->fetchAll();
+	}
+
+	public static function documentFind(int $idAgence, int $idDocument): ?array
+	{
+		$sql = "SELECT d.* " . self::DOCUMENT_JOIN_SQL . ' AND d.id_document = :id_document';
+		$stmt = Database::connection()->prepare($sql);
+		$stmt->execute(['agence1' => $idAgence, 'agence2' => $idAgence, 'agence3' => $idAgence, 'agence4' => $idAgence, 'agence5' => $idAgence, 'id_document' => $idDocument]);
+		$row = $stmt->fetch();
+		return $row ?: null;
+	}
+
+	public static function documentTypes(): array
+	{
+		return Database::connection()->query('SELECT id_type_document, nom FROM type_document ORDER BY nom')->fetchAll();
+	}
+
+	/** Entités de l'agence pouvant recevoir un document (listes pour le formulaire d'import). */
+	public static function documentEntities(int $idAgence): array
+	{
+		$db = Database::connection();
+
+		$biens = $db->prepare('SELECT id_bien, titre, reference FROM bien WHERE id_agence = :a AND deleted_at IS NULL ORDER BY titre');
+		$biens->execute(['a' => $idAgence]);
+
+		$contrats = $db->prepare('SELECT id_contrat, numero FROM contrat WHERE id_agence = :a ORDER BY numero');
+		$contrats->execute(['a' => $idAgence]);
+
+		$proprietaires = $db->prepare('SELECT id_proprietaire, nom, prenom FROM proprietaire WHERE id_agence = :a AND deleted_at IS NULL ORDER BY nom');
+		$proprietaires->execute(['a' => $idAgence]);
+
+		$locataires = $db->prepare('SELECT id_locataire, nom, prenom FROM locataire WHERE id_agence = :a AND deleted_at IS NULL ORDER BY nom');
+		$locataires->execute(['a' => $idAgence]);
+
+		$interventions = $db->prepare('SELECT id_intervention, titre FROM intervention WHERE id_agence = :a ORDER BY titre');
+		$interventions->execute(['a' => $idAgence]);
+
+		return [
+			'bien' => $biens->fetchAll(),
+			'contrat' => $contrats->fetchAll(),
+			'proprietaire' => $proprietaires->fetchAll(),
+			'locataire' => $locataires->fetchAll(),
+			'intervention' => $interventions->fetchAll(),
+		];
+	}
+
+	/**
+	 * @param array{id_type_document: int, id_bien: ?int, id_contrat: ?int, id_proprietaire: ?int, id_locataire: ?int, id_intervention: ?int, nom: string, nom_original: string, mime_type: string, taille_octets: int, chemin_stockage: string} $data
+	 */
+	public static function createDocument(array $data): int
+	{
+		$stmt = Database::connection()->prepare(
+			'INSERT INTO document (id_type_document, id_bien, id_contrat, id_proprietaire, id_locataire, id_intervention, nom, nom_original, mime_type, taille_octets, chemin_stockage, version, created_at, updated_at)
+			 VALUES (:id_type_document, :id_bien, :id_contrat, :id_proprietaire, :id_locataire, :id_intervention, :nom, :nom_original, :mime_type, :taille_octets, :chemin_stockage, 1, NOW(), NOW())'
+		);
+		$stmt->execute([
+			'id_type_document' => $data['id_type_document'],
+			'id_bien' => $data['id_bien'],
+			'id_contrat' => $data['id_contrat'],
+			'id_proprietaire' => $data['id_proprietaire'],
+			'id_locataire' => $data['id_locataire'],
+			'id_intervention' => $data['id_intervention'],
+			'nom' => $data['nom'],
+			'nom_original' => $data['nom_original'],
+			'mime_type' => $data['mime_type'],
+			'taille_octets' => $data['taille_octets'],
+			'chemin_stockage' => $data['chemin_stockage'],
+		]);
+		return (int) Database::connection()->lastInsertId();
+	}
+
+	/** @return string|null Le chemin de stockage du fichier supprimé, ou null si le document n'appartient pas à l'agence. */
+	public static function deleteDocument(int $idAgence, int $idDocument): ?string
+	{
+		$doc = self::documentFind($idAgence, $idDocument);
+		if (!$doc) {
+			return null;
+		}
+		$stmt = Database::connection()->prepare('DELETE FROM document WHERE id_document = :id');
+		$stmt->execute(['id' => $idDocument]);
+		return $doc['chemin_stockage'];
+	}
+
 	/** Compteurs légers utilisés pour les badges de la sidebar. */
 	public static function navBadges(int $idAgence): array
 	{

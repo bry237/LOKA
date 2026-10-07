@@ -549,7 +549,7 @@
     transition:background .15s ease,color .15s ease,transform .15s ease;
   }
   .modal-close:hover{background:var(--danger);border-color:var(--danger);color:#fff;transform:rotate(90deg);}
-  .modal-close svg{width:16px;height:16px;}
+  .modal-close svg{width:16px;height:16px;flex-shrink:0;}
   .modal-body{padding:26px 26px 28px;}
   .modal-body .detail-back{display:none;}
   .modal-body .page-header{margin-bottom:18px;padding-right:34px;}
@@ -614,7 +614,7 @@
     background:var(--white);border:1px solid var(--border);border-radius:10px;
     cursor:pointer;margin-right:4px;flex-shrink:0;
   }
-  .menu-toggle svg{width:18px;height:18px;}
+  .menu-toggle svg{width:18px;height:18px;flex-shrink:0;}
   .sidebar-overlay{
     display:none;position:fixed;inset:0;background:rgba(4,63,66,.35);z-index:35;
   }
