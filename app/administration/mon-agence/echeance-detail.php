@@ -106,6 +106,50 @@ if (!$isModal) require dirname(__DIR__, 3) . '/layouts/header.php';
         </div>
       <?php endif; ?>
 
+    </div>
+
+    <?php if ($echeance['statut'] !== 'CANCELLED' && $echeance['solde'] > 0): ?>
+    <div class="panel" style="margin-top:16px;">
+      <div class="panel-header"><div class="panel-title">Paiement en ligne</div></div>
+      <?php if ($echeance['demande_pending']): ?>
+        <div style="padding:18px;">
+          <p style="margin:0 0 10px;color:#5a6b6b;font-size:13.5px;">
+            Une demande de paiement de <?= number_format((float) $echeance['demande_pending']['montant'], 2, ',', ' ') ?> €
+            est en attente de règlement par le locataire. Partagez ce lien :
+          </p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input type="text" id="demandeLienInput" readonly value="<?= htmlspecialchars((string) ($echeance['demande_pending']['checkout_url'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" style="flex:1;min-width:200px;padding:8px 10px;border:1px solid #e2e8e8;border-radius:8px;font-size:13px;color:#5a6b6b;" onclick="this.select()">
+            <button type="button" class="btn" onclick="navigator.clipboard.writeText(document.getElementById('demandeLienInput').value); this.textContent='Copié !'; setTimeout(() => this.textContent='Copier le lien', 1500);">Copier le lien</button>
+          </div>
+          <form method="post" action="demande-paiement-annuler.php" style="margin-top:12px;">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="id_demande" value="<?= (int) $echeance['demande_pending']['id_demande'] ?>">
+            <input type="hidden" name="id_echeance" value="<?= $id ?>">
+            <?php if ($isModal): ?><input type="hidden" name="modal" value="1"><?php endif; ?>
+            <button type="submit" class="btn btn-sm btn-danger">Annuler la demande</button>
+          </form>
+        </div>
+      <?php else: ?>
+        <div style="padding:18px;">
+          <p style="margin:0 0 12px;color:#5a6b6b;font-size:13.5px;">
+            Envoyez un lien de paiement sécurisé (carte bancaire, via Stripe) que le locataire peut régler
+            lui-même, sans compte LOKA. Le paiement, la quittance et l’activation du contrat se font
+            ensuite automatiquement.
+          </p>
+          <form method="post" action="demande-paiement-envoyer.php">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="id" value="<?= $id ?>">
+            <?php if ($isModal): ?><input type="hidden" name="modal" value="1"><?php endif; ?>
+            <button type="submit" class="btn btn-primary">Envoyer une demande de paiement</button>
+          </form>
+        </div>
+      <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <div class="panel" style="margin-top:16px;">
+      <div class="panel-header"><div class="panel-title">Enregistrer un paiement manuel</div></div>
+      <p style="padding:18px 18px 0;color:#5a6b6b;font-size:13.5px;">Pour un règlement reçu en espèces, chèque ou virement.</p>
       <?php if ($echeance['statut'] !== 'CANCELLED' && $echeance['solde'] > 0): ?>
       <form method="post" action="echeance-detail.php?id=<?= $id ?>" class="form-grid" style="padding:18px;">
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">

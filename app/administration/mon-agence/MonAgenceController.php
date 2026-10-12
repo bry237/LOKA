@@ -7,6 +7,7 @@ require_once dirname(__DIR__, 3) . '/core/Logger.php';
 require_once dirname(__DIR__, 3) . '/core/SmsSender.php';
 require_once dirname(__DIR__, 3) . '/core/SubscriptionLimiter.php';
 require_once dirname(__DIR__, 3) . '/core/Phone.php';
+require_once dirname(__DIR__, 3) . '/core/StripeClient.php';
 
 final class MonAgenceController
 {
@@ -1143,8 +1144,14 @@ HTML;
 	/** @return array{list: array, stats: array} */
 	public static function echeances(int $idAgence, array $filters): array
 	{
+		$list = MonAgenceModel::echeances($idAgence, $filters);
+		$pendingDemandes = MonAgenceModel::pendingDemandesByEcheances(array_column($list, 'id_echeance'));
+		foreach ($list as &$echeance) {
+			$echeance['demande_pending'] = $pendingDemandes[(int) $echeance['id_echeance']] ?? null;
+		}
+		unset($echeance);
 		return [
-			'list' => MonAgenceModel::echeances($idAgence, $filters),
+			'list' => $list,
 			'stats' => MonAgenceModel::echeanceStats($idAgence),
 		];
 	}
@@ -1159,6 +1166,10 @@ HTML;
 		$echeance['total_paye'] = MonAgenceModel::echeanceTotalPaid($idEcheance);
 		$echeance['solde'] = max(0.0, (float) $echeance['montant_total'] - $echeance['total_paye']);
 		$echeance['locataires'] = MonAgenceModel::echeanceTenants($idEcheance);
+		$demande = MonAgenceModel::demandePaiementLatestForEcheance($idEcheance);
+		$echeance['demande_pending'] = ($demande && $demande['statut'] === 'PENDING' && (string) $demande['checkout_url'] !== '')
+			? $demande
+			: null;
 		return $echeance;
 	}
 
@@ -1284,6 +1295,169 @@ HTML;
 		return ['list' => MonAgenceModel::quittances($idAgence)];
 	}
 
+	/* --------------------------------------------------------------
+	 * Demande de paiement en ligne (Stripe Checkout, mode paiement unique).
+	 * -------------------------------------------------------------- */
+
+	/** @return array{error: ?string, url: ?string} */
+	public static function createDemandePaiement(int $idAgence, int $idEcheance, int $idUtilisateur): array
+	{
+		$echeance = MonAgenceModel::echeanceFind($idAgence, $idEcheance);
+		if (!$echeance) {
+			return ['error' => 'Échéance introuvable pour votre agence.', 'url' => null];
+		}
+		$totalPaye = MonAgenceModel::echeanceTotalPaid($idEcheance);
+		$solde = round((float) $echeance['montant_total'] - $totalPaye, 2);
+		if ($solde <= 0) {
+			return ['error' => 'Cette échéance est déjà réglée.', 'url' => null];
+		}
+
+		$existing = MonAgenceModel::demandePaiementLatestForEcheance($idEcheance);
+		if ($existing && $existing['statut'] === 'PENDING' && (string) $existing['stripe_checkout_session_id'] !== '') {
+			try {
+				$session = StripeClient::retrieveCheckoutSession((string) $existing['stripe_checkout_session_id']);
+				if (($session['status'] ?? '') === 'open') {
+					return ['error' => null, 'url' => (string) $session['url']];
+				}
+			} catch (Throwable $exception) {
+				// La session Stripe n'est plus récupérable (expirée côté Stripe) : on en recrée une ci-dessous.
+			}
+		}
+
+		$tenants = MonAgenceModel::echeanceTenants($idEcheance);
+		$principal = $tenants[0] ?? null;
+		$idLocataire = $principal ? (int) $principal['id_locataire'] : null;
+
+		$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+		$baseUrl = $scheme . '://' . $_SERVER['HTTP_HOST'] . '/LOKA/app/administration/mon-agence/paiement-locataire-retour.php';
+
+		$idDemande = MonAgenceModel::createDemandePaiement([
+			'id_agence' => $idAgence,
+			'id_echeance' => $idEcheance,
+			'id_locataire' => $idLocataire,
+			'montant' => $solde,
+			'stripe_checkout_session_id' => null,
+			'id_utilisateur_createur' => $idUtilisateur,
+		]);
+
+		try {
+			$session = StripeClient::createOneTimeCheckoutSession(
+				null,
+				'Loyer — ' . $echeance['bien_titre'] . ' (' . (new DateTimeImmutable($echeance['periode_debut']))->format('d/m/Y') . ' — ' . (new DateTimeImmutable($echeance['periode_fin']))->format('d/m/Y') . ')',
+				$solde,
+				$baseUrl . '?success=1&session_id={CHECKOUT_SESSION_ID}',
+				$baseUrl . '?cancel=1',
+				['kind' => 'loyer', 'id_demande' => $idDemande]
+			);
+		} catch (Throwable $exception) {
+			return ['error' => 'Impossible de créer le paiement en ligne : ' . $exception->getMessage(), 'url' => null];
+		}
+
+		MonAgenceModel::setDemandePaiementSession($idDemande, (string) $session['id'], (string) $session['url']);
+		Logger::audit('CREATE', 'demande_paiement', $idDemande, $idUtilisateur, $idAgence, null, ['id_echeance' => $idEcheance, 'montant' => $solde]);
+
+		return ['error' => null, 'url' => (string) $session['url']];
+	}
+
+	public static function cancelDemandePaiement(int $idAgence, int $idDemande, int $idUtilisateur): bool
+	{
+		$ok = MonAgenceModel::cancelDemandePaiement($idAgence, $idDemande);
+		if ($ok) {
+			Logger::audit('UPDATE', 'demande_paiement', $idDemande, $idUtilisateur, $idAgence, null, ['statut' => 'CANCELLED']);
+		}
+		return $ok;
+	}
+
+	/** Appelé par le webhook Stripe (app/administration/abonnements/webhook.php) pour une session `kind=loyer`. */
+	public static function handleRentPaymentWebhookEvent(array $event): void
+	{
+		$type = (string) ($event['type'] ?? '');
+		$session = $event['data']['object'] ?? [];
+		if ($type === 'checkout.session.completed') {
+			self::processRentCheckoutSession($session);
+		} elseif ($type === 'checkout.session.expired') {
+			$demande = MonAgenceModel::demandePaiementBySessionId((string) ($session['id'] ?? ''));
+			if ($demande) {
+				MonAgenceModel::markDemandePaiementExpired((int) $demande['id_demande']);
+			}
+		}
+	}
+
+	/**
+	 * Confirme une session directement auprès de Stripe au retour du locataire sur la page de
+	 * remerciement, sans dépendre du webhook — indispensable en local XAMPP sans `stripe listen`
+	 * (même pattern que AbonnementController::confirmCheckoutSession).
+	 */
+	public static function confirmRentCheckoutSession(string $sessionId): string
+	{
+		$demande = MonAgenceModel::demandePaiementBySessionId($sessionId);
+		if (!$demande) {
+			return 'unknown';
+		}
+		if ($demande['statut'] === 'PAID') {
+			return 'already';
+		}
+		try {
+			$session = StripeClient::retrieveCheckoutSession($sessionId);
+		} catch (Throwable $exception) {
+			return 'pending';
+		}
+		if (($session['payment_status'] ?? '') !== 'paid') {
+			return 'pending';
+		}
+		self::processRentCheckoutSession($session);
+		return 'confirmed';
+	}
+
+	/**
+	 * Enregistre un paiement de loyer reçu en ligne et enchaîne toute l'automatisation :
+	 * échéance mise à jour, quittance + document générés, contrat activé si besoin. Idempotent :
+	 * ignore une session déjà traitée (la demande n'est alors plus PENDING).
+	 */
+	private static function processRentCheckoutSession(array $session): void
+	{
+		$sessionId = (string) ($session['id'] ?? '');
+		if ($sessionId === '') {
+			return;
+		}
+		$demande = MonAgenceModel::demandePaiementBySessionId($sessionId);
+		if (!$demande || $demande['statut'] !== 'PENDING') {
+			return;
+		}
+		$idAgence = (int) $demande['id_agence'];
+		$echeance = MonAgenceModel::echeanceFind($idAgence, (int) $demande['id_echeance']);
+		if (!$echeance) {
+			return;
+		}
+		$idUtilisateur = (int) ($demande['id_utilisateur_createur'] ?? 0);
+		$reference = (string) ($session['payment_intent'] ?? $sessionId);
+
+		$idPaiement = MonAgenceModel::createPaiement([
+			'id_echeance' => $demande['id_echeance'],
+			'id_contrat' => (int) $echeance['id_contrat'],
+			'id_locataire' => $demande['id_locataire'],
+			'montant' => $demande['montant'],
+			'date_paiement' => date('Y-m-d H:i:s'),
+			'mode_paiement' => 'CARD',
+			'reference_transaction' => $reference,
+			'statut' => 'PAID',
+			'commentaire' => 'Paiement en ligne via demande de paiement.',
+		]);
+
+		MonAgenceModel::refreshEcheanceStatut((int) $demande['id_echeance']);
+		Logger::audit('CREATE', 'paiement', $idPaiement, $idUtilisateur, $idAgence, null, ['montant' => $demande['montant'], 'via' => 'stripe']);
+
+		self::generateQuittance($idAgence, $idPaiement, $idUtilisateur);
+		MonAgenceModel::markDemandePaiementPaid((int) $demande['id_demande'], $idPaiement);
+
+		$idContrat = (int) $echeance['id_contrat'];
+		$contrat = MonAgenceModel::contratFind($idAgence, $idContrat);
+		if ($contrat && $contrat['statut'] === 'DRAFT' && MonAgenceModel::updateContratStatus($idAgence, $idContrat, 'ACTIVE')) {
+			Logger::audit('UPDATE', 'contrat', $idContrat, $idUtilisateur, $idAgence, null, ['statut' => 'ACTIVE', 'via' => 'premier_paiement_en_ligne']);
+			self::regenerateContratDocument($idAgence, $idContrat);
+		}
+	}
+
 	private static function generateQuittance(int $idAgence, int $idPaiement, int $idUtilisateur): void
 	{
 		if (MonAgenceModel::quittanceByPaiement($idPaiement)) {
@@ -1300,6 +1474,26 @@ HTML;
 		$idQuittance = MonAgenceModel::createQuittance($idPaiement, $numero, $p['periode_debut'] ?? null, $p['periode_fin'] ?? null);
 		Logger::audit('CREATE', 'quittance', $idQuittance, $idUtilisateur, $idAgence, null, ['numero' => $numero]);
 		self::regenerateQuittanceDocument($idAgence, $idQuittance);
+
+		// La quittance est aussi enregistrée comme document du contrat, pour qu'elle apparaisse
+		// automatiquement dans l'onglet Documents de l'agence sans action manuelle supplémentaire.
+		$documentData = MonAgenceModel::quittanceDocumentData($idAgence, $idQuittance);
+		$path = (string) ($documentData['quittance']['chemin_fichier_pdf'] ?? '');
+		if ($documentData !== null && $path !== '') {
+			MonAgenceModel::createDocument([
+				'id_type_document' => 3,
+				'id_bien' => null,
+				'id_contrat' => (int) $documentData['paiement']['id_contrat'],
+				'id_proprietaire' => null,
+				'id_locataire' => null,
+				'id_intervention' => null,
+				'nom' => 'Quittance ' . $numero,
+				'nom_original' => basename($path),
+				'mime_type' => 'text/html',
+				'taille_octets' => null,
+				'chemin_stockage' => $path,
+			]);
+		}
 	}
 
 	private static function regenerateQuittanceDocument(int $idAgence, int $idQuittance): void

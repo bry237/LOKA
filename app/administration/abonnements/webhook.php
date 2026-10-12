@@ -7,6 +7,7 @@ declare(strict_types=1);
  * uniquement de la vérification de signature ci-dessous, pas d'un rôle applicatif.
  */
 require_once __DIR__ . '/AbonnementController.php';
+require_once dirname(__DIR__) . '/mon-agence/MonAgenceController.php';
 require_once dirname(__DIR__, 3) . '/core/StripeClient.php';
 
 header('Content-Type: application/json; charset=UTF-8');
@@ -24,7 +25,13 @@ if ($webhookSecret === '' || !StripeClient::verifyWebhookSignature($payload, $si
 
 try {
 	$event = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
-	AbonnementController::handleWebhookEvent(is_array($event) ? $event : []);
+	$event = is_array($event) ? $event : [];
+	$metadata = $event['data']['object']['metadata'] ?? [];
+	if (($metadata['kind'] ?? '') === 'loyer') {
+		MonAgenceController::handleRentPaymentWebhookEvent($event);
+	} else {
+		AbonnementController::handleWebhookEvent($event);
+	}
 	echo json_encode(['received' => true]);
 } catch (Throwable $exception) {
 	http_response_code(500);

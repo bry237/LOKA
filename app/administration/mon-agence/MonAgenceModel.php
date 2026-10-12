@@ -1557,6 +1557,92 @@ final class MonAgenceModel
 		];
 	}
 
+	/* ---------------- Demandes de paiement en ligne ---------------- */
+
+	public static function createDemandePaiement(array $data): int
+	{
+		$stmt = Database::connection()->prepare(
+			'INSERT INTO demande_paiement (id_agence, id_echeance, id_locataire, montant, stripe_checkout_session_id, id_utilisateur_createur)
+			 VALUES (:id_agence, :id_echeance, :id_locataire, :montant, :stripe_checkout_session_id, :id_utilisateur_createur)'
+		);
+		$stmt->execute([
+			'id_agence' => $data['id_agence'],
+			'id_echeance' => $data['id_echeance'],
+			'id_locataire' => $data['id_locataire'],
+			'montant' => $data['montant'],
+			'stripe_checkout_session_id' => $data['stripe_checkout_session_id'],
+			'id_utilisateur_createur' => $data['id_utilisateur_createur'],
+		]);
+		return (int) Database::connection()->lastInsertId();
+	}
+
+	public static function setDemandePaiementSession(int $idDemande, string $sessionId, string $checkoutUrl): void
+	{
+		Database::connection()
+			->prepare('UPDATE demande_paiement SET stripe_checkout_session_id = :session_id, checkout_url = :checkout_url WHERE id_demande = :id')
+			->execute(['session_id' => $sessionId, 'checkout_url' => $checkoutUrl, 'id' => $idDemande]);
+	}
+
+	public static function demandePaiementBySessionId(string $sessionId): ?array
+	{
+		$stmt = Database::connection()->prepare('SELECT * FROM demande_paiement WHERE stripe_checkout_session_id = :id LIMIT 1');
+		$stmt->execute(['id' => $sessionId]);
+		$row = $stmt->fetch();
+		return $row ?: null;
+	}
+
+	/** Dernière demande (quel que soit son statut) pour une échéance, pour éviter les doublons dans l'UI. */
+	public static function demandePaiementLatestForEcheance(int $idEcheance): ?array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT * FROM demande_paiement WHERE id_echeance = :id_echeance ORDER BY id_demande DESC LIMIT 1'
+		);
+		$stmt->execute(['id_echeance' => $idEcheance]);
+		$row = $stmt->fetch();
+		return $row ?: null;
+	}
+
+	/** @return array<int,array> id_echeance => dernière demande PENDING, pour l'affichage en liste. */
+	public static function pendingDemandesByEcheances(array $idEcheances): array
+	{
+		if (!$idEcheances) {
+			return [];
+		}
+		$placeholders = implode(',', array_fill(0, count($idEcheances), '?'));
+		$stmt = Database::connection()->prepare(
+			"SELECT * FROM demande_paiement WHERE statut = 'PENDING' AND id_echeance IN ($placeholders)"
+		);
+		$stmt->execute(array_map('intval', $idEcheances));
+		$result = [];
+		foreach ($stmt->fetchAll() as $row) {
+			$result[(int) $row['id_echeance']] = $row;
+		}
+		return $result;
+	}
+
+	public static function markDemandePaiementPaid(int $idDemande, int $idPaiement): void
+	{
+		Database::connection()
+			->prepare("UPDATE demande_paiement SET statut = 'PAID', id_paiement = :id_paiement, paid_at = NOW() WHERE id_demande = :id")
+			->execute(['id_paiement' => $idPaiement, 'id' => $idDemande]);
+	}
+
+	public static function markDemandePaiementExpired(int $idDemande): void
+	{
+		Database::connection()
+			->prepare("UPDATE demande_paiement SET statut = 'EXPIRED' WHERE id_demande = :id AND statut = 'PENDING'")
+			->execute(['id' => $idDemande]);
+	}
+
+	public static function cancelDemandePaiement(int $idAgence, int $idDemande): bool
+	{
+		$stmt = Database::connection()->prepare(
+			"UPDATE demande_paiement SET statut = 'CANCELLED' WHERE id_demande = :id AND id_agence = :id_agence AND statut = 'PENDING'"
+		);
+		$stmt->execute(['id' => $idDemande, 'id_agence' => $idAgence]);
+		return $stmt->rowCount() > 0;
+	}
+
 	/* --------------------------------------------------------------
 	 * Interventions (maintenance), scopées à l'agence.
 	 * -------------------------------------------------------------- */

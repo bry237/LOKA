@@ -97,7 +97,10 @@ require dirname(__DIR__, 3) . '/layouts/header.php';
                   <td class="cell-sub"><?= (new DateTimeImmutable($e['periode_debut']))->format('d/m/Y') ?> — <?= (new DateTimeImmutable($e['periode_fin']))->format('d/m/Y') ?></td>
                   <td class="cell-sub"><?= number_format((float) $e['montant_total'], 0, ',', ' ') ?> €</td>
                   <td class="cell-sub"><?= (new DateTimeImmutable($e['date_echeance']))->format('d/m/Y') ?></td>
-                  <td><span class="status-badge <?= $statusTones[$e['statut']] ?? '' ?>"><?= $statusLabels[$e['statut']] ?? $e['statut'] ?></span></td>
+                  <td>
+                    <span class="status-badge <?= $statusTones[$e['statut']] ?? '' ?>"><?= $statusLabels[$e['statut']] ?? $e['statut'] ?></span>
+                    <?php if ($e['demande_pending']): ?><span class="status-badge attente" style="margin-left:4px;">Demande envoyée</span><?php endif; ?>
+                  </td>
                   <td>
                     <a class="consult-link" href="echeance-detail.php?id=<?= (int) $e['id_echeance'] ?>" data-modal>
                       Consulter
