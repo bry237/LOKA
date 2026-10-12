@@ -1432,16 +1432,14 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
 
     <div class="contrat-actions">
 
-        <a
-            href="/LOKA/app/proprietaires/Contrat/modifierContrat.php?id=<?= (int) $contrat['id_contrat'] ?>"
-            class="contrat-action-button contrat-action-primary"
-        >
-            ✏️ Modifier le contrat
-        </a>
+     <a
+    href="/LOKA/app/proprietaires/Contrat/modifierContrat.php?id=<?= (int) $contrat['id_contrat'] ?>"
+    class="contrat-action-button contrat-action-primary"
+>
+    ✏️ Modifier le contrat
+</a>
 
-        <?php if (in_array($contrat['statut'], ['ACTIVE', 'EXPIRED'], true)): ?>
-
-            <a
+<?php if (in_array($contrat['statut'], ['ACTIVE', 'EXPIRED'], true)): ?> <a
                 href="/LOKA/app/proprietaires/Contrat/renouvelerContrat.php?id=<?= (int) $contrat['id_contrat'] ?>"
                 class="contrat-action-button contrat-action-secondary"
             >
@@ -1485,7 +1483,7 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
         </a>
 
         <a
-            href="/LOKA/app/proprietaires/Contrat/supprimerPdfContrat.php?id=<?= (int) $contrat['id_contrat'] ?>"
+            href="/LOKA/app/proprietaires/Contrat/supprimerContrat.php?id=<?= (int) $contrat['id_contrat'] ?>"
             class="contrat-action-button contrat-action-danger"
             onclick="return confirm('Voulez-vous vraiment supprimer le PDF de ce contrat ?');"
         >
@@ -1508,7 +1506,7 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
     <div class="contrat-document-actions">
 
         <a
-            href="/LOKA/app/proprietaires/gerer_pdf_contrat.php?id=<?= (int) $contrat['id_contrat'] ?>"
+            href="/LOKA/app/proprietaires/Contrat/gererPdfContrat.php?id=<?= (int) $contrat['id_contrat'] ?>"
             class="contrat-action-button contrat-action-primary"
         >
             📤 Ajouter le PDF

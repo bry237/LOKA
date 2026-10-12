@@ -794,7 +794,7 @@ foreach ($contrats as $contrat) {
 
 
             <a
-                href="/LOKA/app/proprietaires/mes_revenus.php"
+                href="/LOKA/app/proprietaires/Revenus/revenus.php"
             >
 
                 <i class="fa-solid fa-wallet"></i>
@@ -805,7 +805,7 @@ foreach ($contrats as $contrat) {
 
 
             <a
-                href="/LOKA/app/proprietaires/paiements.php"
+                href="/LOKA/app/proprietaires/Paiements/index.php"
             >
 
                 <i class="fa-solid fa-credit-card"></i>

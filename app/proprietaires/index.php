@@ -316,12 +316,12 @@ foreach ($resultats as $ligne) {
             Mes contrats
         </a>
 
-        <a href="/LOKA/app/proprietaires/mes_revenus.php">
+        <a href="/LOKA/app/proprietaires/Revenus/revenus.php">
             <i class="fa-solid fa-wallet"></i>
             Mes revenus
         </a>
 
-        <a href="/LOKA/app/proprietaires/paiements.php">
+        <a href="/LOKA/app/proprietaires/Paiements/index.php">
             <i class="fa-solid fa-credit-card"></i>
             Paiements
         </a>

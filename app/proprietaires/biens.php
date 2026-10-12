@@ -134,7 +134,8 @@ function getImageUrl(?string $url): ?string
 
 <body>
 
-  <aside class="sidebar">
+  
+        <aside class="sidebar">
 
     <div class="logo">
         <h2>LOKA</h2>
@@ -143,12 +144,12 @@ function getImageUrl(?string $url): ?string
 
     <nav>
 
-        <a href="/LOKA/app/proprietaires/index.php">
+        <a href="/LOKA/app/proprietaires/index.php" >
             <i class="fa-solid fa-chart-line"></i>
             Dashboard
         </a>
 
-        <a href="/LOKA/app/proprietaires/biens.php"  class="active">
+        <a href="/LOKA/app/proprietaires/biens.php" class="active">
             <i class="fa-solid fa-building"></i>
             Mes biens
         </a>
@@ -165,12 +166,12 @@ function getImageUrl(?string $url): ?string
             Mes contrats
         </a>
 
-        <a href="/LOKA/app/proprietaires/mes_revenus.php">
+        <a href="/LOKA/app/proprietaires/Revenus/revenus.php">
             <i class="fa-solid fa-wallet"></i>
             Mes revenus
         </a>
 
-        <a href="/LOKA/app/proprietaires/paiements.php">
+        <a href="/LOKA/app/proprietaires/Paiements/index.php">
             <i class="fa-solid fa-credit-card"></i>
             Paiements
         </a>
@@ -192,7 +193,7 @@ function getImageUrl(?string $url): ?string
 
     </nav>
 
-</aside>    
+</aside> 
 
 <div class="content">
 
