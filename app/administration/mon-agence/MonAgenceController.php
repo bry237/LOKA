@@ -8,6 +8,7 @@ require_once dirname(__DIR__, 3) . '/core/SmsSender.php';
 require_once dirname(__DIR__, 3) . '/core/SubscriptionLimiter.php';
 require_once dirname(__DIR__, 3) . '/core/Phone.php';
 require_once dirname(__DIR__, 3) . '/core/StripeClient.php';
+require_once dirname(__DIR__, 3) . '/core/Color.php';
 
 final class MonAgenceController
 {
@@ -1853,5 +1854,112 @@ HTML;
 		);
 
 		return null;
+	}
+
+	/* --------------------------------------------------------------
+	 * Paramètres de l'agence
+	 * -------------------------------------------------------------- */
+
+	private const LOGO_UPLOAD_DIR = __DIR__ . '/../../../public/uploads/logos';
+	private const LOGO_ALLOWED_MIMES = ['image/jpeg' => 'jpg', 'image/png' => 'png'];
+	private const LOGO_MAX_BYTES = 2 * 1024 * 1024;
+
+	/** @return array<string,string> Erreurs de validation, vide si succès. */
+	public static function updateAgencyProfile(int $idAgence, int $idUtilisateur, array $input): array
+	{
+		$data = [
+			'nom' => trim((string) ($input['nom'] ?? '')),
+			'email' => trim((string) ($input['email'] ?? '')),
+			'telephone' => trim((string) ($input['telephone'] ?? '')),
+			'adresse' => trim((string) ($input['adresse'] ?? '')),
+			'code_postal' => trim((string) ($input['code_postal'] ?? '')),
+			'ville' => trim((string) ($input['ville'] ?? '')),
+			'pays' => trim((string) ($input['pays'] ?? 'France')),
+		];
+
+		$errors = [];
+		foreach ([
+			'nom' => 'Le nom de l’agence', 'email' => 'L’email', 'telephone' => 'Le téléphone',
+			'adresse' => 'L’adresse', 'code_postal' => 'Le code postal', 'ville' => 'La ville', 'pays' => 'Le pays',
+		] as $key => $label) {
+			if ($data[$key] === '') {
+				$errors[$key] = "$label est requis.";
+			}
+		}
+		if ($data['email'] !== '' && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+			$errors['email'] = 'Adresse email invalide.';
+		} elseif ($data['email'] !== '' && MonAgenceModel::agencyEmailExists($data['email'], $idAgence)) {
+			$errors['email'] = 'Cet email est déjà utilisé par une autre agence.';
+		}
+
+		if ($errors) {
+			return $errors;
+		}
+
+		MonAgenceModel::updateAgencyProfile($idAgence, $data);
+		Logger::audit('UPDATE', 'agence', $idAgence, $idUtilisateur, $idAgence, null, $data);
+
+		return [];
+	}
+
+	/** @return string|null Message d'erreur, ou null si l'opération a réussi. */
+	public static function uploadAgencyLogo(int $idAgence, int $idUtilisateur, ?array $file, ?string $accentColor): ?string
+	{
+		if ($file === null || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+			return 'Veuillez choisir une image.';
+		}
+		if ($file['error'] !== UPLOAD_ERR_OK) {
+			return 'Erreur lors du téléchargement du fichier.';
+		}
+		if ((int) $file['size'] > self::LOGO_MAX_BYTES) {
+			return 'Le logo ne doit pas dépasser 2 Mo.';
+		}
+		$finfo = new finfo(FILEINFO_MIME_TYPE);
+		$mimeType = (string) $finfo->file($file['tmp_name']);
+		if (!isset(self::LOGO_ALLOWED_MIMES[$mimeType])) {
+			return 'Format non autorisé (JPEG ou PNG uniquement).';
+		}
+
+		$destinationDir = self::LOGO_UPLOAD_DIR;
+		if (!is_dir($destinationDir) && !mkdir($destinationDir, 0750, true) && !is_dir($destinationDir)) {
+			return 'Impossible de créer le dossier de stockage.';
+		}
+
+		$storedName = bin2hex(random_bytes(16)) . '.' . self::LOGO_ALLOWED_MIMES[$mimeType];
+		if (!move_uploaded_file($file['tmp_name'], $destinationDir . DIRECTORY_SEPARATOR . $storedName)) {
+			return 'Impossible d’enregistrer le fichier envoyé.';
+		}
+
+		// Couleur dominante calculée côté client (voir parametres.php) à partir du fichier réellement
+		// choisi — on ne lui fait confiance que si c'est un hex valide, et on la ramène dans une plage
+		// exploitable pour du texte blanc par-dessus (boutons, badges) avant de la stocker.
+		$couleurAccent = ($accentColor !== null && Color::isValidHex($accentColor)) ? Color::clampForUi($accentColor) : null;
+
+		$ancienLogo = MonAgenceModel::agency($idAgence)['logo'] ?? null;
+		MonAgenceModel::setAgencyLogo($idAgence, 'public/uploads/logos/' . $storedName, $couleurAccent);
+		Logger::audit('UPDATE', 'agence', $idAgence, $idUtilisateur, $idAgence, null, ['logo' => $storedName, 'couleur_accent' => $couleurAccent]);
+
+		if ($ancienLogo) {
+			$ancienPath = dirname(__DIR__, 3) . '/' . $ancienLogo;
+			if (is_file($ancienPath)) {
+				@unlink($ancienPath);
+			}
+		}
+
+		return null;
+	}
+
+	public static function removeAgencyLogo(int $idAgence, int $idUtilisateur): void
+	{
+		$agence = MonAgenceModel::agency($idAgence);
+		if (!$agence || !$agence['logo']) {
+			return;
+		}
+		$path = dirname(__DIR__, 3) . '/' . $agence['logo'];
+		if (is_file($path)) {
+			@unlink($path);
+		}
+		MonAgenceModel::setAgencyLogo($idAgence, null, null);
+		Logger::audit('UPDATE', 'agence', $idAgence, $idUtilisateur, $idAgence, null, ['logo' => null]);
 	}
 }

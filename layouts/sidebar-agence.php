@@ -7,19 +7,15 @@ declare(strict_types=1);
  * Se charge de son identité d'agence et de ses badges elle-même (indépendante de la page hôte),
  * pour rester correcte sur n'importe quelle page qui l'inclut.
  */
-require_once __DIR__ . '/../core/Auth.php';
-require_once dirname(__DIR__) . '/app/administration/mon-agence/MonAgenceModel.php';
+// header.php charge déjà cet include avant d'émettre le <style> de thème (voir agency-identity.php) ;
+// le garde ci-dessous permet à cette sidebar de continuer à fonctionner si elle est un jour incluse
+// sans passer par header.php.
+if (!isset($sidebarAgence)) {
+	require __DIR__ . '/agency-identity.php';
+}
 
 $activeNav ??= '';
 $navActive = static fn (string $page): string => $activeNav === $page ? ' active' : '';
-
-$sidebarUser = Auth::user();
-$sidebarAgence = $sidebarUser && $sidebarUser['id_agence'] !== null
-	? MonAgenceModel::agency((int) $sidebarUser['id_agence'])
-	: null;
-$sidebarBadges = $sidebarUser && $sidebarUser['id_agence'] !== null
-	? MonAgenceModel::navBadges((int) $sidebarUser['id_agence'])
-	: ['contrats' => 0, 'interventions' => 0, 'biens' => 0, 'echeances_en_retard' => 0];
 
 $agenceStatutLabel = ['ACTIVE' => 'Actif', 'PENDING' => 'En attente', 'SUSPENDED' => 'Suspendu'];
 $agenceStatutTone = ['ACTIVE' => 'actif', 'PENDING' => 'attente', 'SUSPENDED' => 'suspendu'];
@@ -49,7 +45,7 @@ $navLinkBadge = static function (string $href, string $label, string $svg, int $
 ?>
   <aside class="sidebar sidebar-agence" id="sidebar">
     <div class="brand">
-      <div class="brand-mark">LK</div>
+      <div class="brand-mark"><?php if ($sidebarAgence && $sidebarAgence['logo']): ?><img src="<?= htmlspecialchars('/LOKA/' . $sidebarAgence['logo'], ENT_QUOTES, 'UTF-8') ?>" alt=""><?php else: ?>LK<?php endif; ?></div>
       <div class="brand-name">LOKA</div>
     </div>
 
@@ -102,7 +98,7 @@ $navLinkBadge = static function (string $href, string $label, string $svg, int $
     <div class="sidebar-bottom">
       <div class="nav-section-label" style="padding-top:0;">AGENCE</div>
       <ul class="nav">
-        <?= $navSoon('Paramètres', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>') ?>
+        <?= $navLinkBadge('../mon-agence/parametres.php', 'Paramètres', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>') ?>
         <li class="nav-item"><a class="nav-link<?= $navActive('Abonnement') ?>" href="../mon-agence/abonnement.php">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
           <span class="nav-label">Abonnement</span>

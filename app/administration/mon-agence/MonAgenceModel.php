@@ -8,7 +8,7 @@ final class MonAgenceModel
 	public static function agency(int $idAgence): ?array
 	{
 		$stmt = Database::connection()->prepare(
-			'SELECT id_agence, nom, email, telephone, adresse, ville, code_postal, pays, statut, created_at
+			'SELECT id_agence, nom, email, telephone, adresse, ville, code_postal, pays, logo, couleur_accent, statut, created_at
 			 FROM agence
 			 WHERE id_agence = :id_agence AND deleted_at IS NULL
 			 LIMIT 1'
@@ -16,6 +16,32 @@ final class MonAgenceModel
 		$stmt->execute(['id_agence' => $idAgence]);
 		$row = $stmt->fetch();
 		return $row ?: null;
+	}
+
+	public static function agencyEmailExists(string $email, int $excludeIdAgence): bool
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT 1 FROM agence WHERE LOWER(email) = LOWER(:email) AND id_agence != :exclude_id AND deleted_at IS NULL LIMIT 1'
+		);
+		$stmt->execute(['email' => $email, 'exclude_id' => $excludeIdAgence]);
+		return (bool) $stmt->fetchColumn();
+	}
+
+	/** @param array{nom: string, email: string, telephone: string, adresse: string, code_postal: string, ville: string, pays: string} $data */
+	public static function updateAgencyProfile(int $idAgence, array $data): void
+	{
+		Database::connection()->prepare(
+			'UPDATE agence SET nom = :nom, email = :email, telephone = :telephone, adresse = :adresse,
+				ville = :ville, code_postal = :code_postal, pays = :pays, updated_at = NOW()
+			 WHERE id_agence = :id_agence AND deleted_at IS NULL'
+		)->execute($data + ['id_agence' => $idAgence]);
+	}
+
+	public static function setAgencyLogo(int $idAgence, ?string $path, ?string $couleurAccent): void
+	{
+		Database::connection()
+			->prepare('UPDATE agence SET logo = :logo, couleur_accent = :couleur_accent, updated_at = NOW() WHERE id_agence = :id_agence')
+			->execute(['logo' => $path, 'couleur_accent' => $couleurAccent, 'id_agence' => $idAgence]);
 	}
 
 	public static function subscription(int $idAgence): ?array
