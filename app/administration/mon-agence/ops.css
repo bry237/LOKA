@@ -24,3 +24,17 @@
 
 /* .form-field{display:flex} (admin.css) outranks the UA [hidden] default — force it back. */
 .form-field[hidden]{display:none !important;}
+
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;padding:18px;}
+.photo-thumb{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);aspect-ratio:1;background:#F2F6F6;}
+.photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.photo-thumb-main{position:absolute;top:6px;left:6px;width:20px;height:20px;border-radius:50%;background:var(--warning);color:#fff;display:flex;align-items:center;justify-content:center;}
+.photo-thumb-main svg{width:11px;height:11px;}
+.photo-thumb-actions{position:absolute;inset:auto 6px 6px 6px;display:flex;gap:6px;justify-content:flex-end;opacity:0;transition:opacity .15s ease;}
+.photo-thumb:hover .photo-thumb-actions{opacity:1;}
+.photo-thumb-actions button{width:24px;height:24px;border-radius:7px;border:none;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.photo-thumb-actions button svg{width:12px;height:12px;}
+.photo-upload-field{padding:0 18px 18px;}
+
+.equipment-checklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;padding:0 18px 18px;}
+.equipment-checklist label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);font-weight:500;}

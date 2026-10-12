@@ -151,7 +151,7 @@ function renderPortfolio(){
         <div class="empty-state-icon">${ICONS.home}</div>
         <h4>Votre portefeuille est encore vide</h4>
         <p>Ajoutez votre premier bien pour commencer à gérer votre patrimoine.</p>
-        <span class="btn empty-state-cta" title="Bientôt disponible">${ICONS.plus}Ajouter un bien<span class="nav-soon light">Bientôt</span></span>
+        <a class="btn empty-state-cta" href="biens.php">${ICONS.plus}Ajouter un bien</a>
       </div>
     `;
     return;
@@ -269,7 +269,7 @@ function renderActivity(){
 
 /* ---------------- Render: Actions rapides ---------------- */
 const QUICK_ACTIONS = [
-  { icon:'home', label:'Ajouter un bien', module:'Biens' },
+  { icon:'home', label:'Ajouter un bien', href:'bien-ajouter.php' },
   { icon:'user', label:'Ajouter un locataire', module:'Locataires' },
   { icon:'card', label:'Créer un contrat', module:'Contrats' },
   { icon:'users', label:'Inviter un collaborateur', href:'equipe.php' },

@@ -341,6 +341,941 @@ final class MonAgenceModel
 	}
 
 	/* --------------------------------------------------------------
+	 * Biens (parc immobilier), scopés à l'agence.
+	 * -------------------------------------------------------------- */
+
+	public static function bienTypes(): array
+	{
+		return Database::connection()->query('SELECT id_type_bien, nom FROM type_bien ORDER BY nom')->fetchAll();
+	}
+
+	public static function bienTypeExists(int $idTypeBien): bool
+	{
+		$stmt = Database::connection()->prepare('SELECT 1 FROM type_bien WHERE id_type_bien = :id');
+		$stmt->execute(['id' => $idTypeBien]);
+		return (bool) $stmt->fetchColumn();
+	}
+
+	/** Adresses déjà utilisées par l'agence (via un immeuble ou un bien), pour le sélecteur du formulaire. */
+	public static function bienAddresses(int $idAgence): array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT DISTINCT a.id_adresse, a.ligne1, a.ligne2, a.code_postal, a.ville
+			 FROM adresse a
+			 LEFT JOIN immeuble i ON i.id_adresse = a.id_adresse AND i.id_agence = :id_agence_immeuble
+			 LEFT JOIN bien b ON b.id_adresse = a.id_adresse AND b.id_agence = :id_agence_bien
+			 WHERE i.id_immeuble IS NOT NULL OR b.id_bien IS NOT NULL
+			 ORDER BY a.ville, a.ligne1'
+		);
+		$stmt->execute(['id_agence_immeuble' => $idAgence, 'id_agence_bien' => $idAgence]);
+		return $stmt->fetchAll();
+	}
+
+	public static function bienBuildings(int $idAgence): array
+	{
+		$stmt = Database::connection()->prepare('SELECT id_immeuble, nom FROM immeuble WHERE id_agence = :id_agence ORDER BY nom');
+		$stmt->execute(['id_agence' => $idAgence]);
+		return $stmt->fetchAll();
+	}
+
+	/** @param array{ligne1: string, ligne2: ?string, code_postal: ?string, ville: string, region: ?string, pays: string} $data */
+	public static function createAddress(array $data): int
+	{
+		$stmt = Database::connection()->prepare(
+			'INSERT INTO adresse (ligne1, ligne2, code_postal, ville, region, pays)
+			 VALUES (:ligne1, :ligne2, :code_postal, :ville, :region, :pays)'
+		);
+		$stmt->execute($data);
+		return (int) Database::connection()->lastInsertId();
+	}
+
+	public static function referenceExists(string $reference, ?int $excludeIdBien = null): bool
+	{
+		$sql = 'SELECT 1 FROM bien WHERE reference = :reference';
+		$params = ['reference' => $reference];
+		if ($excludeIdBien !== null) {
+			$sql .= ' AND id_bien != :exclude_id';
+			$params['exclude_id'] = $excludeIdBien;
+		}
+		$stmt = Database::connection()->prepare($sql . ' LIMIT 1');
+		$stmt->execute($params);
+		return (bool) $stmt->fetchColumn();
+	}
+
+	/** @param array{search?: string, statut?: string, id_type_bien?: string} $filters */
+	public static function biens(int $idAgence, array $filters = []): array
+	{
+		$where = ['b.id_agence = :id_agence'];
+		$params = ['id_agence' => $idAgence];
+
+		if (!empty($filters['search'])) {
+			$where[] = '(b.reference LIKE :search1 OR b.titre LIKE :search2 OR a.ville LIKE :search3)';
+			$term = '%' . $filters['search'] . '%';
+			$params['search1'] = $term;
+			$params['search2'] = $term;
+			$params['search3'] = $term;
+		}
+		if (!empty($filters['statut'])) {
+			$where[] = 'b.statut = :statut';
+			$params['statut'] = $filters['statut'];
+		} else {
+			$where[] = "b.statut != 'ARCHIVED'";
+		}
+		if (!empty($filters['id_type_bien'])) {
+			$where[] = 'b.id_type_bien = :id_type_bien';
+			$params['id_type_bien'] = (int) $filters['id_type_bien'];
+		}
+
+		$stmt = Database::connection()->prepare(
+			'SELECT b.id_bien, b.reference, b.titre, b.surface, b.nombre_pieces, b.loyer, b.statut,
+					t.nom AS type_bien, a.ville
+			 FROM bien b
+			 INNER JOIN type_bien t ON t.id_type_bien = b.id_type_bien
+			 INNER JOIN adresse a ON a.id_adresse = b.id_adresse
+			 WHERE ' . implode(' AND ', $where) . '
+			 ORDER BY b.updated_at DESC, b.id_bien DESC'
+		);
+		$stmt->execute($params);
+		return $stmt->fetchAll();
+	}
+
+	/** KPI de la liste des biens, dérivés de la répartition déjà calculée pour le dashboard. */
+	public static function bienStats(int $idAgence): array
+	{
+		$portfolio = self::propertyPortfolio($idAgence);
+		$byStatut = [];
+		foreach ($portfolio['segments'] as $segment) {
+			$byStatut[$segment['statut']] = $segment['count'];
+		}
+		return [
+			'total' => $portfolio['total'],
+			'disponibles' => $byStatut['AVAILABLE'] ?? 0,
+			'occupes' => $byStatut['OCCUPIED'] ?? 0,
+			'maintenance' => $byStatut['MAINTENANCE'] ?? 0,
+		];
+	}
+
+	public static function bienFind(int $idAgence, int $idBien): ?array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT b.*, t.nom AS type_bien, a.ligne1, a.ligne2, a.code_postal, a.ville, i.nom AS immeuble_nom
+			 FROM bien b
+			 INNER JOIN type_bien t ON t.id_type_bien = b.id_type_bien
+			 INNER JOIN adresse a ON a.id_adresse = b.id_adresse
+			 LEFT JOIN immeuble i ON i.id_immeuble = b.id_immeuble
+			 WHERE b.id_bien = :id AND b.id_agence = :id_agence AND b.deleted_at IS NULL
+			 LIMIT 1'
+		);
+		$stmt->execute(['id' => $idBien, 'id_agence' => $idAgence]);
+		$row = $stmt->fetch();
+		return $row ?: null;
+	}
+
+	public static function createBien(int $idAgence, array $data): int
+	{
+		$stmt = Database::connection()->prepare(
+			'INSERT INTO bien (id_agence, id_type_bien, id_adresse, id_immeuble, reference, titre, surface,
+				nombre_pieces, etage, loyer, charges, caution, statut, description, meuble,
+				date_disponibilite, dpe_classe, ges_classe)
+			 VALUES (:id_agence, :id_type_bien, :id_adresse, :id_immeuble, :reference, :titre, :surface,
+				:nombre_pieces, :etage, :loyer, :charges, :caution, :statut, :description, :meuble,
+				:date_disponibilite, :dpe_classe, :ges_classe)'
+		);
+		$stmt->execute(self::bienParams($idAgence, $data));
+		return (int) Database::connection()->lastInsertId();
+	}
+
+	public static function updateBien(int $idAgence, int $idBien, array $data): bool
+	{
+		$params = self::bienParams($idAgence, $data);
+		$params['id_bien'] = $idBien;
+		$stmt = Database::connection()->prepare(
+			'UPDATE bien SET id_type_bien = :id_type_bien, id_adresse = :id_adresse, id_immeuble = :id_immeuble,
+				reference = :reference, titre = :titre, surface = :surface, nombre_pieces = :nombre_pieces,
+				etage = :etage, loyer = :loyer, charges = :charges, caution = :caution, statut = :statut,
+				description = :description, meuble = :meuble, date_disponibilite = :date_disponibilite,
+				dpe_classe = :dpe_classe, ges_classe = :ges_classe, updated_at = NOW()
+			 WHERE id_bien = :id_bien AND id_agence = :id_agence AND deleted_at IS NULL'
+		);
+		$stmt->execute($params);
+		return $stmt->rowCount() > 0;
+	}
+
+	public static function archiveBien(int $idAgence, int $idBien): bool
+	{
+		$stmt = Database::connection()->prepare(
+			"UPDATE bien SET statut = 'ARCHIVED', deleted_at = NOW()
+			 WHERE id_bien = :id AND id_agence = :id_agence AND deleted_at IS NULL"
+		);
+		$stmt->execute(['id' => $idBien, 'id_agence' => $idAgence]);
+		return $stmt->rowCount() > 0;
+	}
+
+	private static function bienParams(int $idAgence, array $data): array
+	{
+		return [
+			'id_agence' => $idAgence,
+			'id_type_bien' => (int) $data['id_type_bien'],
+			'id_adresse' => (int) $data['id_adresse'],
+			'id_immeuble' => $data['id_immeuble'] !== null ? (int) $data['id_immeuble'] : null,
+			'reference' => $data['reference'],
+			'titre' => $data['titre'],
+			'surface' => (float) $data['surface'],
+			'nombre_pieces' => (int) $data['nombre_pieces'],
+			'etage' => $data['etage'] !== null ? (int) $data['etage'] : null,
+			'loyer' => (float) $data['loyer'],
+			'charges' => (float) $data['charges'],
+			'caution' => (float) $data['caution'],
+			'statut' => $data['statut'],
+			'description' => $data['description'],
+			'meuble' => $data['meuble'],
+			'date_disponibilite' => $data['date_disponibilite'],
+			'dpe_classe' => $data['dpe_classe'],
+			'ges_classe' => $data['ges_classe'],
+		];
+	}
+
+	public static function bienEquipments(): array
+	{
+		return Database::connection()->query('SELECT id_equipement, nom FROM equipement ORDER BY nom')->fetchAll();
+	}
+
+	/** @return int[] */
+	public static function bienEquipmentAssignments(int $idBien): array
+	{
+		$stmt = Database::connection()->prepare('SELECT id_equipement FROM bien_equipement WHERE id_bien = :id_bien');
+		$stmt->execute(['id_bien' => $idBien]);
+		return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+	}
+
+	/** @param int[] $equipmentIds */
+	public static function updateBienEquipmentAssignments(int $idBien, array $equipmentIds): void
+	{
+		$db = Database::connection();
+		$db->beginTransaction();
+		try {
+			$db->prepare('DELETE FROM bien_equipement WHERE id_bien = :id_bien')->execute(['id_bien' => $idBien]);
+			$insert = $db->prepare('INSERT INTO bien_equipement (id_bien, id_equipement, quantite) VALUES (:id_bien, :id_equipement, 1)');
+			foreach ($equipmentIds as $equipmentId) {
+				$insert->execute(['id_bien' => $idBien, 'id_equipement' => $equipmentId]);
+			}
+			$db->commit();
+		} catch (Throwable $exception) {
+			$db->rollBack();
+			throw $exception;
+		}
+	}
+
+	public static function bienPhotos(int $idBien): array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT id_photo, nom_fichier, chemin_stockage, est_principale, ordre_affichage
+			 FROM photo_bien WHERE id_bien = :id_bien ORDER BY est_principale DESC, ordre_affichage, id_photo'
+		);
+		$stmt->execute(['id_bien' => $idBien]);
+		return $stmt->fetchAll();
+	}
+
+	public static function addBienPhoto(int $idBien, string $filename, string $storagePath, bool $main): int
+	{
+		$db = Database::connection();
+		$db->beginTransaction();
+		try {
+			$order = $db->prepare('SELECT COALESCE(MAX(ordre_affichage), -1) + 1 FROM photo_bien WHERE id_bien = :id_bien');
+			$order->execute(['id_bien' => $idBien]);
+			$displayOrder = (int) $order->fetchColumn();
+			if ($main) {
+				$db->prepare('UPDATE photo_bien SET est_principale = 0 WHERE id_bien = :id_bien')->execute(['id_bien' => $idBien]);
+			}
+			$stmt = $db->prepare(
+				'INSERT INTO photo_bien (id_bien, nom_fichier, chemin_stockage, est_principale, ordre_affichage)
+				 VALUES (:id_bien, :nom_fichier, :chemin_stockage, :est_principale, :ordre_affichage)'
+			);
+			$stmt->execute([
+				'id_bien' => $idBien,
+				'nom_fichier' => $filename,
+				'chemin_stockage' => $storagePath,
+				'est_principale' => $main ? 1 : 0,
+				'ordre_affichage' => $displayOrder,
+			]);
+			$db->commit();
+			return (int) $db->lastInsertId();
+		} catch (Throwable $exception) {
+			$db->rollBack();
+			throw $exception;
+		}
+	}
+
+	public static function setBienMainPhoto(int $idBien, int $idPhoto): void
+	{
+		$db = Database::connection();
+		$db->beginTransaction();
+		try {
+			$db->prepare('UPDATE photo_bien SET est_principale = 0 WHERE id_bien = :id_bien')->execute(['id_bien' => $idBien]);
+			$db->prepare('UPDATE photo_bien SET est_principale = 1 WHERE id_photo = :id_photo AND id_bien = :id_bien')
+				->execute(['id_photo' => $idPhoto, 'id_bien' => $idBien]);
+			$db->commit();
+		} catch (Throwable $exception) {
+			$db->rollBack();
+			throw $exception;
+		}
+	}
+
+	/** @return string|null Chemin de stockage du fichier supprimé, ou null si la photo n'existe pas sur ce bien. */
+	public static function deleteBienPhoto(int $idBien, int $idPhoto): ?string
+	{
+		$db = Database::connection();
+		$stmt = $db->prepare('SELECT chemin_stockage, est_principale FROM photo_bien WHERE id_photo = :id_photo AND id_bien = :id_bien');
+		$stmt->execute(['id_photo' => $idPhoto, 'id_bien' => $idBien]);
+		$photo = $stmt->fetch();
+		if (!$photo) {
+			return null;
+		}
+		$db->prepare('DELETE FROM photo_bien WHERE id_photo = :id_photo')->execute(['id_photo' => $idPhoto]);
+		if ((int) $photo['est_principale'] === 1) {
+			$db->prepare(
+				'UPDATE photo_bien SET est_principale = 1
+				 WHERE id_photo = (SELECT id_photo FROM (SELECT id_photo FROM photo_bien WHERE id_bien = :id_bien ORDER BY ordre_affichage, id_photo LIMIT 1) next_photo)'
+			)->execute(['id_bien' => $idBien]);
+		}
+		return $photo['chemin_stockage'];
+	}
+
+	/** Propriétaires actuellement rattachés au bien (lecture seule — géré par le futur module Propriétaires). */
+	public static function bienOwners(int $idBien): array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT p.id_proprietaire, p.nom, p.prenom, bp.quote_part, bp.date_debut
+			 FROM bien_proprietaire bp
+			 INNER JOIN proprietaire p ON p.id_proprietaire = bp.id_proprietaire
+			 WHERE bp.id_bien = :id_bien AND bp.date_fin IS NULL AND p.deleted_at IS NULL
+			 ORDER BY p.nom'
+		);
+		$stmt->execute(['id_bien' => $idBien]);
+		return $stmt->fetchAll();
+	}
+
+	/** Propriétaires de l'agence pas encore rattachés à ce bien, pour le sélecteur de rattachement. */
+	public static function bienAvailableOwners(int $idAgence, int $idBien): array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT p.id_proprietaire, p.nom, p.prenom
+			 FROM proprietaire p
+			 WHERE p.id_agence = :id_agence AND p.deleted_at IS NULL
+			 AND NOT EXISTS (
+				SELECT 1 FROM bien_proprietaire bp
+				WHERE bp.id_bien = :id_bien AND bp.id_proprietaire = p.id_proprietaire AND bp.date_fin IS NULL
+			 )
+			 ORDER BY p.nom, p.prenom'
+		);
+		$stmt->execute(['id_agence' => $idAgence, 'id_bien' => $idBien]);
+		return $stmt->fetchAll();
+	}
+
+	/* --------------------------------------------------------------
+	 * Locataires, scopés à l'agence.
+	 * -------------------------------------------------------------- */
+
+	/** @param array{search?: string, statut?: string} $filters */
+	public static function locataires(int $idAgence, array $filters = []): array
+	{
+		$where = ['l.id_agence = :id_agence', 'l.deleted_at IS NULL'];
+		$params = ['id_agence' => $idAgence];
+
+		if (!empty($filters['search'])) {
+			$where[] = '(l.nom LIKE :search1 OR l.prenom LIKE :search2 OR l.email LIKE :search3)';
+			$term = '%' . $filters['search'] . '%';
+			$params['search1'] = $term;
+			$params['search2'] = $term;
+			$params['search3'] = $term;
+		}
+		if (!empty($filters['statut'])) {
+			$where[] = 'l.statut = :statut';
+			$params['statut'] = $filters['statut'];
+		}
+
+		$stmt = Database::connection()->prepare(
+			"SELECT l.id_locataire, l.nom, l.prenom, l.email, l.telephone, l.statut,
+					(SELECT COUNT(*) FROM contrat_locataire cl
+					 INNER JOIN contrat c ON c.id_contrat = cl.id_contrat
+					 WHERE cl.id_locataire = l.id_locataire AND c.deleted_at IS NULL AND c.statut = 'ACTIVE') AS contrats_actifs
+			 FROM locataire l
+			 WHERE " . implode(' AND ', $where) . '
+			 ORDER BY l.nom ASC, l.prenom ASC'
+		);
+		$stmt->execute($params);
+		return $stmt->fetchAll();
+	}
+
+	public static function locataireStats(int $idAgence): array
+	{
+		$stmt = Database::connection()->prepare(
+			"SELECT COUNT(*) AS total,
+					SUM(CASE WHEN statut = 'ACTIVE' THEN 1 ELSE 0 END) AS actifs,
+					SUM(CASE WHEN statut = 'INACTIVE' THEN 1 ELSE 0 END) AS inactifs
+			 FROM locataire WHERE id_agence = :id_agence AND deleted_at IS NULL"
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		$row = $stmt->fetch() ?: [];
+		return [
+			'total' => (int) ($row['total'] ?? 0),
+			'actifs' => (int) ($row['actifs'] ?? 0),
+			'inactifs' => (int) ($row['inactifs'] ?? 0),
+		];
+	}
+
+	public static function locataireFind(int $idAgence, int $idLocataire): ?array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT * FROM locataire WHERE id_locataire = :id AND id_agence = :id_agence AND deleted_at IS NULL LIMIT 1'
+		);
+		$stmt->execute(['id' => $idLocataire, 'id_agence' => $idAgence]);
+		$row = $stmt->fetch();
+		return $row ?: null;
+	}
+
+	public static function createLocataire(int $idAgence, array $data): int
+	{
+		$stmt = Database::connection()->prepare(
+			'INSERT INTO locataire (
+				id_agence, nom, prenom, email, telephone, adresse, code_postal, ville, pays,
+				date_naissance, profession, revenu_mensuel, revenu_mensuel_fourchette, statut,
+				numero_identite, type_identite, situation_familiale, nombre_occupants,
+				garant_nom, garant_telephone, garant_email, notes, created_at, updated_at
+			) VALUES (
+				:id_agence, :nom, :prenom, :email, :telephone, :adresse, :code_postal, :ville, :pays,
+				:date_naissance, :profession, :revenu_mensuel, :revenu_mensuel_fourchette, :statut,
+				:numero_identite, :type_identite, :situation_familiale, :nombre_occupants,
+				:garant_nom, :garant_telephone, :garant_email, :notes, NOW(), NOW()
+			)'
+		);
+		$stmt->execute(self::locataireParams($idAgence, $data));
+		return (int) Database::connection()->lastInsertId();
+	}
+
+	public static function updateLocataire(int $idAgence, int $idLocataire, array $data): bool
+	{
+		$params = self::locataireParams($idAgence, $data);
+		$params['id_locataire'] = $idLocataire;
+		$stmt = Database::connection()->prepare(
+			'UPDATE locataire SET
+				nom = :nom, prenom = :prenom, email = :email, telephone = :telephone,
+				adresse = :adresse, code_postal = :code_postal, ville = :ville, pays = :pays,
+				date_naissance = :date_naissance, profession = :profession,
+				revenu_mensuel = :revenu_mensuel, revenu_mensuel_fourchette = :revenu_mensuel_fourchette,
+				statut = :statut, numero_identite = :numero_identite, type_identite = :type_identite,
+				situation_familiale = :situation_familiale, nombre_occupants = :nombre_occupants,
+				garant_nom = :garant_nom, garant_telephone = :garant_telephone,
+				garant_email = :garant_email, notes = :notes, updated_at = NOW()
+			 WHERE id_agence = :id_agence AND id_locataire = :id_locataire AND deleted_at IS NULL'
+		);
+		$stmt->execute($params);
+		return $stmt->rowCount() > 0;
+	}
+
+	public static function archiveLocataire(int $idAgence, int $idLocataire): bool
+	{
+		$stmt = Database::connection()->prepare(
+			"UPDATE locataire SET deleted_at = NOW(), statut = 'ARCHIVED'
+			 WHERE id_agence = :id_agence AND id_locataire = :id_locataire AND deleted_at IS NULL"
+		);
+		$stmt->execute(['id_agence' => $idAgence, 'id_locataire' => $idLocataire]);
+		return $stmt->rowCount() > 0;
+	}
+
+	/** Contrats du locataire, en lecture seule (gestion complète dans le futur module Contrats). */
+	public static function locataireContracts(int $idAgence, int $idLocataire): array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT c.id_contrat, c.numero, c.statut, c.date_debut, c.date_fin, b.titre AS bien_titre
+			 FROM contrat c
+			 INNER JOIN contrat_locataire cl ON cl.id_contrat = c.id_contrat
+			 INNER JOIN bien b ON b.id_bien = c.id_bien
+			 WHERE cl.id_locataire = :id_locataire AND c.id_agence = :id_agence AND c.deleted_at IS NULL
+			 ORDER BY c.date_debut DESC'
+		);
+		$stmt->execute(['id_locataire' => $idLocataire, 'id_agence' => $idAgence]);
+		return $stmt->fetchAll();
+	}
+
+	private static function locataireParams(int $idAgence, array $data): array
+	{
+		return [
+			'id_agence' => $idAgence,
+			'nom' => $data['nom'],
+			'prenom' => $data['prenom'],
+			'email' => $data['email'],
+			'telephone' => $data['telephone'],
+			'adresse' => $data['adresse'],
+			'code_postal' => $data['code_postal'],
+			'ville' => $data['ville'],
+			'pays' => $data['pays'],
+			'date_naissance' => $data['date_naissance'],
+			'profession' => $data['profession'],
+			'revenu_mensuel' => $data['revenu_mensuel'],
+			'revenu_mensuel_fourchette' => $data['revenu_mensuel_fourchette'],
+			'statut' => $data['statut'],
+			'numero_identite' => $data['numero_identite'],
+			'type_identite' => $data['type_identite'],
+			'situation_familiale' => $data['situation_familiale'],
+			'nombre_occupants' => $data['nombre_occupants'],
+			'garant_nom' => $data['garant_nom'],
+			'garant_telephone' => $data['garant_telephone'],
+			'garant_email' => $data['garant_email'],
+			'notes' => $data['notes'],
+		];
+	}
+
+	/* --------------------------------------------------------------
+	 * Propriétaires, scopés à l'agence.
+	 * -------------------------------------------------------------- */
+
+	/** @param array{search?: string} $filters */
+	public static function proprietaires(int $idAgence, array $filters = []): array
+	{
+		$where = ['p.id_agence = :id_agence', 'p.deleted_at IS NULL'];
+		$params = ['id_agence' => $idAgence];
+		if (!empty($filters['search'])) {
+			$where[] = '(p.nom LIKE :search1 OR p.prenom LIKE :search2 OR p.email LIKE :search3)';
+			$term = '%' . $filters['search'] . '%';
+			$params['search1'] = $term;
+			$params['search2'] = $term;
+			$params['search3'] = $term;
+		}
+		$stmt = Database::connection()->prepare(
+			'SELECT p.id_proprietaire, p.nom, p.prenom, p.email, p.telephone, p.ville,
+					COUNT(DISTINCT bp.id_bien) AS biens_count
+			 FROM proprietaire p
+			 LEFT JOIN bien_proprietaire bp ON bp.id_proprietaire = p.id_proprietaire AND bp.date_fin IS NULL
+			 WHERE ' . implode(' AND ', $where) . '
+			 GROUP BY p.id_proprietaire
+			 ORDER BY p.nom, p.prenom'
+		);
+		$stmt->execute($params);
+		return $stmt->fetchAll();
+	}
+
+	public static function proprietaireStats(int $idAgence): array
+	{
+		$db = Database::connection();
+		$stmt = $db->prepare('SELECT COUNT(*) FROM proprietaire WHERE id_agence = :id_agence AND deleted_at IS NULL');
+		$stmt->execute(['id_agence' => $idAgence]);
+		$total = (int) $stmt->fetchColumn();
+
+		$stmt = $db->prepare(
+			'SELECT COUNT(DISTINCT p.id_proprietaire)
+			 FROM proprietaire p
+			 INNER JOIN bien_proprietaire bp ON bp.id_proprietaire = p.id_proprietaire AND bp.date_fin IS NULL
+			 WHERE p.id_agence = :id_agence AND p.deleted_at IS NULL'
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		$avecBien = (int) $stmt->fetchColumn();
+
+		return ['total' => $total, 'avec_bien' => $avecBien, 'sans_bien' => $total - $avecBien];
+	}
+
+	public static function proprietaireFind(int $idAgence, int $idProprietaire): ?array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT * FROM proprietaire WHERE id_proprietaire = :id AND id_agence = :id_agence AND deleted_at IS NULL LIMIT 1'
+		);
+		$stmt->execute(['id' => $idProprietaire, 'id_agence' => $idAgence]);
+		$row = $stmt->fetch();
+		return $row ?: null;
+	}
+
+	public static function createProprietaire(int $idAgence, array $data): int
+	{
+		$stmt = Database::connection()->prepare(
+			'INSERT INTO proprietaire (id_agence, nom, prenom, email, telephone, adresse, code_postal, ville, pays, date_naissance, created_at, updated_at)
+			 VALUES (:id_agence, :nom, :prenom, :email, :telephone, :adresse, :code_postal, :ville, :pays, :date_naissance, NOW(), NOW())'
+		);
+		$stmt->execute(self::proprietaireParams($idAgence, $data));
+		return (int) Database::connection()->lastInsertId();
+	}
+
+	public static function updateProprietaire(int $idAgence, int $idProprietaire, array $data): bool
+	{
+		$params = self::proprietaireParams($idAgence, $data);
+		$params['id_proprietaire'] = $idProprietaire;
+		$stmt = Database::connection()->prepare(
+			'UPDATE proprietaire SET nom = :nom, prenom = :prenom, email = :email, telephone = :telephone,
+				adresse = :adresse, code_postal = :code_postal, ville = :ville, pays = :pays,
+				date_naissance = :date_naissance, updated_at = NOW()
+			 WHERE id_proprietaire = :id_proprietaire AND id_agence = :id_agence AND deleted_at IS NULL'
+		);
+		$stmt->execute($params);
+		return $stmt->rowCount() > 0;
+	}
+
+	public static function archiveProprietaire(int $idAgence, int $idProprietaire): bool
+	{
+		$stmt = Database::connection()->prepare(
+			'UPDATE proprietaire SET deleted_at = NOW()
+			 WHERE id_proprietaire = :id AND id_agence = :id_agence AND deleted_at IS NULL'
+		);
+		$stmt->execute(['id' => $idProprietaire, 'id_agence' => $idAgence]);
+		return $stmt->rowCount() > 0;
+	}
+
+	private static function proprietaireParams(int $idAgence, array $data): array
+	{
+		return [
+			'id_agence' => $idAgence,
+			'nom' => $data['nom'],
+			'prenom' => $data['prenom'],
+			'email' => $data['email'],
+			'telephone' => $data['telephone'],
+			'adresse' => $data['adresse'],
+			'code_postal' => $data['code_postal'],
+			'ville' => $data['ville'],
+			'pays' => $data['pays'],
+			'date_naissance' => $data['date_naissance'],
+		];
+	}
+
+	/** Biens actuellement rattachés au propriétaire (quote-part active). */
+	public static function proprietaireProperties(int $idAgence, int $idProprietaire): array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT b.id_bien, b.reference, b.titre, b.statut, b.surface, b.loyer, bp.quote_part, bp.date_debut
+			 FROM bien_proprietaire bp
+			 INNER JOIN bien b ON b.id_bien = bp.id_bien AND b.id_agence = :id_agence
+			 WHERE bp.id_proprietaire = :id_proprietaire AND bp.date_fin IS NULL AND b.deleted_at IS NULL
+			 ORDER BY b.titre'
+		);
+		$stmt->execute(['id_agence' => $idAgence, 'id_proprietaire' => $idProprietaire]);
+		return $stmt->fetchAll();
+	}
+
+	/** Biens de l'agence pas encore rattachés à ce propriétaire, pour le sélecteur de rattachement. */
+	public static function proprietaireAvailableProperties(int $idAgence, int $idProprietaire): array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT b.id_bien, b.reference, b.titre
+			 FROM bien b
+			 WHERE b.id_agence = :id_agence AND b.deleted_at IS NULL
+			 AND NOT EXISTS (
+				SELECT 1 FROM bien_proprietaire bp
+				WHERE bp.id_bien = b.id_bien AND bp.id_proprietaire = :id_proprietaire AND bp.date_fin IS NULL
+			 )
+			 ORDER BY b.titre'
+		);
+		$stmt->execute(['id_agence' => $idAgence, 'id_proprietaire' => $idProprietaire]);
+		return $stmt->fetchAll();
+	}
+
+	/** Somme des quotes-parts actives déjà attribuées sur un bien, hors un propriétaire donné. */
+	public static function bienQuotePartTotal(int $idBien, int $excludeIdProprietaire): float
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT COALESCE(SUM(quote_part), 0) FROM bien_proprietaire
+			 WHERE id_bien = :id_bien AND date_fin IS NULL AND id_proprietaire <> :id_proprietaire'
+		);
+		$stmt->execute(['id_bien' => $idBien, 'id_proprietaire' => $excludeIdProprietaire]);
+		return (float) $stmt->fetchColumn();
+	}
+
+	public static function attachProprietaireProperty(int $idProprietaire, int $idBien, float $quotePart, string $dateDebut): void
+	{
+		$db = Database::connection();
+		$existing = $db->prepare('SELECT date_fin FROM bien_proprietaire WHERE id_bien = :id_bien AND id_proprietaire = :id_proprietaire');
+		$existing->execute(['id_bien' => $idBien, 'id_proprietaire' => $idProprietaire]);
+		$existingDateFin = $existing->fetchColumn();
+		if ($existingDateFin === false) {
+			$stmt = $db->prepare(
+				'INSERT INTO bien_proprietaire (id_bien, id_proprietaire, quote_part, date_debut)
+				 VALUES (:id_bien, :id_proprietaire, :quote_part, :date_debut)'
+			);
+		} else {
+			$stmt = $db->prepare(
+				'UPDATE bien_proprietaire SET quote_part = :quote_part, date_debut = :date_debut, date_fin = NULL
+				 WHERE id_bien = :id_bien AND id_proprietaire = :id_proprietaire'
+			);
+		}
+		$stmt->execute(['id_bien' => $idBien, 'id_proprietaire' => $idProprietaire, 'quote_part' => $quotePart, 'date_debut' => $dateDebut]);
+	}
+
+	public static function detachProprietaireProperty(int $idAgence, int $idProprietaire, int $idBien): void
+	{
+		$stmt = Database::connection()->prepare(
+			'UPDATE bien_proprietaire bp INNER JOIN bien b ON b.id_bien = bp.id_bien
+			 SET bp.date_fin = CURRENT_DATE
+			 WHERE bp.id_bien = :id_bien AND bp.id_proprietaire = :id_proprietaire
+			 AND bp.date_fin IS NULL AND b.id_agence = :id_agence'
+		);
+		$stmt->execute(['id_bien' => $idBien, 'id_proprietaire' => $idProprietaire, 'id_agence' => $idAgence]);
+	}
+
+	/* --------------------------------------------------------------
+	 * Contrats, scopés à l'agence.
+	 * -------------------------------------------------------------- */
+
+	/** @param array{search?: string, statut?: string, type_contrat?: string} $filters */
+	public static function contrats(int $idAgence, array $filters = []): array
+	{
+		$where = ['c.id_agence = :id_agence', 'c.deleted_at IS NULL'];
+		$params = ['id_agence' => $idAgence];
+
+		if (!empty($filters['search'])) {
+			$where[] = '(c.numero LIKE :search1 OR b.titre LIKE :search2 OR b.reference LIKE :search3)';
+			$term = '%' . $filters['search'] . '%';
+			$params['search1'] = $term;
+			$params['search2'] = $term;
+			$params['search3'] = $term;
+		}
+		if (!empty($filters['statut'])) {
+			$where[] = 'c.statut = :statut';
+			$params['statut'] = $filters['statut'];
+		}
+		if (!empty($filters['type_contrat'])) {
+			$where[] = 'c.type_contrat = :type_contrat';
+			$params['type_contrat'] = $filters['type_contrat'];
+		}
+
+		$stmt = Database::connection()->prepare(
+			"SELECT c.id_contrat, c.numero, c.type_contrat, c.date_debut, c.date_fin, c.loyer, c.statut,
+					b.titre AS bien_titre, b.reference AS bien_reference,
+					(SELECT CONCAT(l.prenom, ' ', l.nom) FROM contrat_locataire cl
+					 INNER JOIN locataire l ON l.id_locataire = cl.id_locataire
+					 WHERE cl.id_contrat = c.id_contrat ORDER BY cl.titulaire_principal DESC LIMIT 1) AS locataire_principal
+			 FROM contrat c
+			 INNER JOIN bien b ON b.id_bien = c.id_bien
+			 WHERE " . implode(' AND ', $where) . '
+			 ORDER BY c.created_at DESC'
+		);
+		$stmt->execute($params);
+		return $stmt->fetchAll();
+	}
+
+	public static function contratStats(int $idAgence): array
+	{
+		$stmt = Database::connection()->prepare(
+			"SELECT
+				COUNT(*) AS total,
+				SUM(CASE WHEN statut = 'ACTIVE' THEN 1 ELSE 0 END) AS actifs,
+				SUM(CASE WHEN statut = 'DRAFT' THEN 1 ELSE 0 END) AS brouillons,
+				SUM(CASE WHEN statut = 'EXPIRED' THEN 1 ELSE 0 END) AS expires
+			 FROM contrat WHERE id_agence = :id_agence AND deleted_at IS NULL"
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		$row = $stmt->fetch() ?: [];
+		return [
+			'total' => (int) ($row['total'] ?? 0),
+			'actifs' => (int) ($row['actifs'] ?? 0),
+			'brouillons' => (int) ($row['brouillons'] ?? 0),
+			'expires' => (int) ($row['expires'] ?? 0),
+		];
+	}
+
+	public static function contratFind(int $idAgence, int $idContrat): ?array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT c.*, b.titre AS bien_titre, b.reference AS bien_reference
+			 FROM contrat c
+			 INNER JOIN bien b ON b.id_bien = c.id_bien
+			 WHERE c.id_contrat = :id AND c.id_agence = :id_agence AND c.deleted_at IS NULL
+			 LIMIT 1'
+		);
+		$stmt->execute(['id' => $idContrat, 'id_agence' => $idAgence]);
+		$row = $stmt->fetch();
+		return $row ?: null;
+	}
+
+	public static function numeroContratExists(string $numero, ?int $excludeIdContrat = null): bool
+	{
+		$sql = 'SELECT 1 FROM contrat WHERE numero = :numero';
+		$params = ['numero' => $numero];
+		if ($excludeIdContrat !== null) {
+			$sql .= ' AND id_contrat != :exclude_id';
+			$params['exclude_id'] = $excludeIdContrat;
+		}
+		$stmt = Database::connection()->prepare($sql . ' LIMIT 1');
+		$stmt->execute($params);
+		return (bool) $stmt->fetchColumn();
+	}
+
+	public static function createContrat(int $idAgence, array $data): int
+	{
+		$stmt = Database::connection()->prepare(
+			'INSERT INTO contrat (
+				id_agence, id_bien, numero, type_contrat, date_debut, date_fin,
+				loyer, charges, depot_garantie, frequence_paiement, jour_echeance, statut
+			) VALUES (
+				:id_agence, :id_bien, :numero, :type_contrat, :date_debut, :date_fin,
+				:loyer, :charges, :depot_garantie, :frequence_paiement, :jour_echeance, :statut
+			)'
+		);
+		$stmt->execute(self::contratParams($idAgence, $data));
+		return (int) Database::connection()->lastInsertId();
+	}
+
+	public static function updateContrat(int $idAgence, int $idContrat, array $data): bool
+	{
+		$params = self::contratParams($idAgence, $data);
+		$params['id_contrat'] = $idContrat;
+		$stmt = Database::connection()->prepare(
+			'UPDATE contrat SET id_bien = :id_bien, numero = :numero, type_contrat = :type_contrat,
+				date_debut = :date_debut, date_fin = :date_fin, loyer = :loyer, charges = :charges,
+				depot_garantie = :depot_garantie, frequence_paiement = :frequence_paiement,
+				jour_echeance = :jour_echeance, statut = :statut, updated_at = NOW()
+			 WHERE id_contrat = :id_contrat AND id_agence = :id_agence AND deleted_at IS NULL'
+		);
+		$stmt->execute($params);
+		return $stmt->rowCount() > 0;
+	}
+
+	private static function contratParams(int $idAgence, array $data): array
+	{
+		return [
+			'id_agence' => $idAgence,
+			'id_bien' => (int) $data['id_bien'],
+			'numero' => $data['numero'],
+			'type_contrat' => $data['type_contrat'],
+			'date_debut' => $data['date_debut'],
+			'date_fin' => $data['date_fin'],
+			'loyer' => (float) $data['loyer'],
+			'charges' => (float) $data['charges'],
+			'depot_garantie' => (float) $data['depot_garantie'],
+			'frequence_paiement' => $data['frequence_paiement'],
+			'jour_echeance' => (int) $data['jour_echeance'],
+			'statut' => $data['statut'],
+		];
+	}
+
+	public static function updateContratStatus(int $idAgence, int $idContrat, string $statut): bool
+	{
+		$stmt = Database::connection()->prepare(
+			'UPDATE contrat SET statut = :statut, updated_at = NOW()
+			 WHERE id_contrat = :id AND id_agence = :id_agence AND deleted_at IS NULL'
+		);
+		$stmt->execute(['statut' => $statut, 'id' => $idContrat, 'id_agence' => $idAgence]);
+		return $stmt->rowCount() > 0;
+	}
+
+	public static function terminateContrat(int $idAgence, int $idContrat, string $motif): bool
+	{
+		$stmt = Database::connection()->prepare(
+			"UPDATE contrat SET statut = 'TERMINATED', motif_resiliation = :motif, date_resiliation = CURDATE(), updated_at = NOW()
+			 WHERE id_contrat = :id AND id_agence = :id_agence AND deleted_at IS NULL"
+		);
+		$stmt->execute(['motif' => $motif, 'id' => $idContrat, 'id_agence' => $idAgence]);
+		return $stmt->rowCount() > 0;
+	}
+
+	public static function archiveContrat(int $idAgence, int $idContrat): bool
+	{
+		$stmt = Database::connection()->prepare(
+			"UPDATE contrat SET statut = 'ARCHIVED', deleted_at = NOW()
+			 WHERE id_contrat = :id AND id_agence = :id_agence AND deleted_at IS NULL"
+		);
+		$stmt->execute(['id' => $idContrat, 'id_agence' => $idAgence]);
+		return $stmt->rowCount() > 0;
+	}
+
+	/** Locataires actuellement rattachés au contrat. */
+	public static function contratTenants(int $idContrat): array
+	{
+		$stmt = Database::connection()->prepare(
+			"SELECT l.id_locataire, l.nom, l.prenom, cl.titulaire_principal, cl.date_entree, cl.date_sortie
+			 FROM contrat_locataire cl
+			 INNER JOIN locataire l ON l.id_locataire = cl.id_locataire
+			 WHERE cl.id_contrat = :id_contrat AND l.deleted_at IS NULL
+			 ORDER BY cl.titulaire_principal DESC, l.nom"
+		);
+		$stmt->execute(['id_contrat' => $idContrat]);
+		return $stmt->fetchAll();
+	}
+
+	/** Locataires de l'agence pas encore rattachés à ce contrat, pour le sélecteur. */
+	public static function contratAvailableTenants(int $idAgence, int $idContrat): array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT l.id_locataire, l.nom, l.prenom
+			 FROM locataire l
+			 WHERE l.id_agence = :id_agence AND l.deleted_at IS NULL
+			 AND NOT EXISTS (SELECT 1 FROM contrat_locataire cl WHERE cl.id_contrat = :id_contrat AND cl.id_locataire = l.id_locataire)
+			 ORDER BY l.nom, l.prenom'
+		);
+		$stmt->execute(['id_agence' => $idAgence, 'id_contrat' => $idContrat]);
+		return $stmt->fetchAll();
+	}
+
+	public static function attachContratTenant(int $idContrat, int $idLocataire, bool $titulairePrincipal, ?string $dateEntree): void
+	{
+		$stmt = Database::connection()->prepare(
+			'INSERT INTO contrat_locataire (id_contrat, id_locataire, titulaire_principal, date_entree)
+			 VALUES (:id_contrat, :id_locataire, :titulaire_principal, :date_entree)'
+		);
+		$stmt->execute([
+			'id_contrat' => $idContrat,
+			'id_locataire' => $idLocataire,
+			'titulaire_principal' => $titulairePrincipal ? 1 : 0,
+			'date_entree' => $dateEntree,
+		]);
+	}
+
+	public static function detachContratTenant(int $idContrat, int $idLocataire): void
+	{
+		$stmt = Database::connection()->prepare(
+			'DELETE FROM contrat_locataire WHERE id_contrat = :id_contrat AND id_locataire = :id_locataire'
+		);
+		$stmt->execute(['id_contrat' => $idContrat, 'id_locataire' => $idLocataire]);
+	}
+
+	/**
+	 * Toutes les données nécessaires à la génération du document de contrat : agence, bien (avec
+	 * adresse), locataires rattachés (coordonnées complètes) et propriétaires du bien (coordonnées
+	 * complètes) — tout ce qui doit apparaître, cohérent entre lui, dans le document généré.
+	 */
+	public static function contratDocumentData(int $idAgence, int $idContrat): ?array
+	{
+		$contrat = self::contratFind($idAgence, $idContrat);
+		if (!$contrat) {
+			return null;
+		}
+		$bien = self::bienFind($idAgence, (int) $contrat['id_bien']);
+		if (!$bien) {
+			return null;
+		}
+
+		$stmt = Database::connection()->prepare(
+			'SELECT l.nom, l.prenom, l.email, l.telephone, l.adresse, l.code_postal, l.ville,
+					cl.titulaire_principal, cl.date_entree
+			 FROM contrat_locataire cl
+			 INNER JOIN locataire l ON l.id_locataire = cl.id_locataire
+			 WHERE cl.id_contrat = :id_contrat AND l.deleted_at IS NULL
+			 ORDER BY cl.titulaire_principal DESC, l.nom'
+		);
+		$stmt->execute(['id_contrat' => $idContrat]);
+		$locataires = $stmt->fetchAll();
+
+		$stmt = Database::connection()->prepare(
+			'SELECT p.nom, p.prenom, p.email, p.telephone, p.adresse, p.code_postal, p.ville, bp.quote_part
+			 FROM bien_proprietaire bp
+			 INNER JOIN proprietaire p ON p.id_proprietaire = bp.id_proprietaire
+			 WHERE bp.id_bien = :id_bien AND bp.date_fin IS NULL AND p.deleted_at IS NULL
+			 ORDER BY p.nom'
+		);
+		$stmt->execute(['id_bien' => $bien['id_bien']]);
+		$proprietaires = $stmt->fetchAll();
+
+		return [
+			'agence' => self::agency($idAgence),
+			'contrat' => $contrat,
+			'bien' => $bien,
+			'locataires' => $locataires,
+			'proprietaires' => $proprietaires,
+		];
+	}
+
+	public static function setContratDocumentPath(int $idContrat, string $path): void
+	{
+		$stmt = Database::connection()->prepare('UPDATE contrat SET chemin_fichier_pdf = :path WHERE id_contrat = :id');
+		$stmt->execute(['path' => $path, 'id' => $idContrat]);
+	}
+
+	/* --------------------------------------------------------------
 	 * Interventions (maintenance), scopées à l'agence.
 	 * -------------------------------------------------------------- */
 
@@ -615,7 +1550,15 @@ final class MonAgenceModel
 		return [
 			'contrats' => self::contractsExpiringSoonCount($db, $idAgence),
 			'interventions' => self::openInterventionsCount($db, $idAgence),
+			'biens' => self::biensToPublishCount($db, $idAgence),
 		];
+	}
+
+	private static function biensToPublishCount(PDO $db, int $idAgence): int
+	{
+		$stmt = $db->prepare("SELECT COUNT(*) FROM bien WHERE id_agence = :id_agence AND statut = 'CREATED' AND deleted_at IS NULL");
+		$stmt->execute(['id_agence' => $idAgence]);
+		return (int) $stmt->fetchColumn();
 	}
 
 	private static function contractsExpiringSoonCount(PDO $db, int $idAgence): int
@@ -715,6 +1658,8 @@ final class MonAgenceModel
 		'agence' => 'une agence',
 		'utilisateur' => 'un utilisateur',
 		'bien' => 'un bien',
+		'locataire' => 'un locataire',
+		'proprietaire' => 'un propriétaire',
 		'contrat' => 'un contrat',
 		'paiement' => 'un paiement',
 		'abonnement' => 'un abonnement',

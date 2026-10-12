@@ -19,7 +19,7 @@ $sidebarAgence = $sidebarUser && $sidebarUser['id_agence'] !== null
 	: null;
 $sidebarBadges = $sidebarUser && $sidebarUser['id_agence'] !== null
 	? MonAgenceModel::navBadges((int) $sidebarUser['id_agence'])
-	: ['contrats' => 0, 'interventions' => 0];
+	: ['contrats' => 0, 'interventions' => 0, 'biens' => 0];
 
 $agenceStatutLabel = ['ACTIVE' => 'Actif', 'PENDING' => 'En attente', 'SUSPENDED' => 'Suspendu'];
 $agenceStatutTone = ['ACTIVE' => 'actif', 'PENDING' => 'attente', 'SUSPENDED' => 'suspendu'];
@@ -73,10 +73,10 @@ $navLinkBadge = static function (string $href, string $label, string $svg, int $
 
     <div class="nav-section-label">IMMOBILIER</div>
     <ul class="nav">
-      <?= $navSoon('Biens', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>') ?>
-      <?= $navSoon('Locataires', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>') ?>
-      <?= $navSoon('Propriétaires', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v2"/><path d="M9 3.5a3 3 0 1 1 0 5.9"/></svg>') ?>
-      <?= $navSoonBadge('Contrats', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>', $sidebarBadges['contrats'], 'amber') ?>
+      <?= $navLinkBadge('../mon-agence/biens.php', 'Biens', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>', $sidebarBadges['biens'], 'blue') ?>
+      <?= $navLinkBadge('../mon-agence/locataires.php', 'Locataires', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>') ?>
+      <?= $navLinkBadge('../mon-agence/proprietaires.php', 'Propriétaires', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v2"/><path d="M9 3.5a3 3 0 1 1 0 5.9"/></svg>') ?>
+      <?= $navLinkBadge('../mon-agence/contrats.php', 'Contrats', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>', $sidebarBadges['contrats'], 'amber') ?>
     </ul>
 
     <div class="nav-section-label">FINANCES</div>
