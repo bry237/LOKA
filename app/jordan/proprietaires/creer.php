@@ -1,0 +1,26 @@
+<?php
+declare(strict_types=1);
+require_once dirname(__DIR__, 3) . '/core/Authorization.php';
+require_once __DIR__ . '/ProprietaireController.php';
+$user = Authorization::requireRole('Administrateur plateforme', 'Administrateur agence', 'Gestionnaire immobilier');
+$agencyId = (int) ($user['id_agence'] ?? 0);
+if ($agencyId < 1) { http_response_code(400); exit('Aucune agence associee a ce compte.'); }
+$isModal = (($_GET['modal'] ?? $_POST['modal'] ?? '') === '1');
+$errors = [];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+	if (!Auth::verifyCsrf($_POST['csrf_token'] ?? null)) {
+		$errors['general'] = 'Votre session a expire. Rechargez la page.';
+	} else {
+		try {
+			[$errors, $id] = ProprietaireController::save($agencyId, $_POST);
+			if ($errors === []) { header('Location: detail.php?id=' . $id); exit; }
+		} catch (Throwable $exception) {
+			error_log($exception->getMessage());
+			$errors['general'] = 'Impossible d’enregistrer le proprietaire.';
+		}
+	}
+}
+$csrfToken = Auth::csrfToken();
+$title = 'Ajouter un proprietaire';
+$action = 'creer.php';
+require __DIR__ . '/form.php';

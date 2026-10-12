@@ -1,0 +1,68 @@
+/* ---------- Interventions & Documents : badges et petits éléments partagés
+   (réutilise .kpi-*, .panel, .table-panel, .status-badge... définis dans
+   dashboard.css / layouts/admin.css) ---------- */
+
+.priority-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700;white-space:nowrap;}
+.priority-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;}
+.priority-badge.low{background:#EDF1F1;color:var(--text);}
+.priority-badge.medium{background:#E5F0FB;color:var(--blue);}
+.priority-badge.high{background:#FDF1DC;color:var(--warning);}
+.priority-badge.urgent{background:#FCE9E9;color:var(--danger);}
+
+.doc-row{display:flex;align-items:center;gap:10px;}
+.doc-icon{width:32px;height:32px;border-radius:9px;background:#E3F4F4;color:var(--primary);display:flex;align-items:center;justify-content:center;flex:none;}
+.doc-icon svg{width:15px;height:15px;}
+
+.row-actions{display:flex;align-items:center;gap:10px;justify-content:flex-end;}
+.icon-action{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--white);color:var(--text);cursor:pointer;}
+.icon-action:hover{background:var(--gray-light,#F2F6F6);color:var(--primary);}
+.icon-action svg{width:14px;height:14px;}
+.icon-action.danger:hover{color:var(--danger);}
+
+.status-actions{display:flex;flex-direction:column;gap:8px;}
+.status-actions .btn{width:100%;}
+
+/* .form-field{display:flex} (admin.css) outranks the UA [hidden] default — force it back. */
+.form-field[hidden]{display:none !important;}
+
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;padding:18px;}
+.photo-thumb{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);aspect-ratio:1;background:#F2F6F6;}
+.photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.photo-thumb-main{position:absolute;top:6px;left:6px;width:20px;height:20px;border-radius:50%;background:var(--warning);color:#fff;display:flex;align-items:center;justify-content:center;}
+.photo-thumb-main svg{width:11px;height:11px;}
+.photo-thumb-actions{position:absolute;inset:auto 6px 6px 6px;display:flex;gap:6px;justify-content:flex-end;opacity:0;transition:opacity .15s ease;}
+.photo-thumb:hover .photo-thumb-actions{opacity:1;}
+.photo-thumb-actions button{width:24px;height:24px;border-radius:7px;border:none;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.photo-thumb-actions button svg{width:12px;height:12px;}
+.photo-upload-field{padding:0 18px 18px;}
+
+.equipment-checklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;padding:0 18px 18px;}
+.equipment-checklist label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);font-weight:500;}
+
+.logo-section{display:flex;align-items:center;gap:20px;padding:20px 18px;flex-wrap:wrap;}
+
+.logo-upload{
+  position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  width:84px;height:84px;border-radius:16px;overflow:hidden;cursor:pointer;
+  background:linear-gradient(135deg,var(--primary),var(--dark));
+  box-shadow:0 2px 10px rgba(4,63,66,.14);
+}
+.logo-upload img{width:100%;height:100%;object-fit:cover;display:block;}
+.logo-upload-placeholder{color:#fff;font-weight:800;font-size:22px;letter-spacing:.02em;}
+.logo-upload-overlay{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(4,20,21,.55);opacity:0;transition:opacity .15s ease;
+}
+.logo-upload:hover .logo-upload-overlay,.logo-upload:focus-visible .logo-upload-overlay{opacity:1;}
+.logo-upload-overlay svg{width:20px;height:20px;color:#fff;}
+
+.logo-section-info{flex:1;min-width:200px;display:flex;flex-direction:column;gap:4px;}
+.logo-section-title{margin:0;font-weight:600;font-size:13.5px;color:var(--heading);}
+.logo-section-hint{margin:0;font-size:12.5px;color:#5a6b6b;line-height:1.5;}
+.logo-color-chip{display:inline-flex;align-items:center;gap:7px;margin-top:4px;font-size:12.5px;font-weight:600;color:var(--text);}
+.logo-color-swatch{width:14px;height:14px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);}
+.logo-remove-link{
+  align-self:flex-start;margin-top:6px;padding:0;border:none;background:none;
+  font-size:12.5px;color:#8a7272;cursor:pointer;text-decoration:underline;text-underline-offset:2px;
+}
+.logo-remove-link:hover{color:var(--danger);}

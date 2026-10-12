@@ -49,6 +49,14 @@ if ($message === null && $errors) {
 	<link rel="stylesheet" href="auth.css">
 </head>
 <body>
+	<?php
+
+$motDePasse = "12345678";
+
+$hash = password_hash($motDePasse, PASSWORD_DEFAULT);
+
+echo $hash;
+?>
 <main class="auth-page">
 	<section class="auth-card">
 		<div class="auth-panel__inner">

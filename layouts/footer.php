@@ -19,7 +19,7 @@ $extraScripts ??= '';
   </div>
 </div>
 
-<script src="/LOKA/layouts/admin.js"></script>
+<script src="/LOKA/layouts/admin.js?v=<?= filemtime(__DIR__ . '/admin.js') ?>"></script>
 <?= $extraScripts ?>
 </body>
 </html>

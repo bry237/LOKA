@@ -7,19 +7,15 @@ declare(strict_types=1);
  * Se charge de son identité d'agence et de ses badges elle-même (indépendante de la page hôte),
  * pour rester correcte sur n'importe quelle page qui l'inclut.
  */
-require_once __DIR__ . '/../core/Auth.php';
-require_once dirname(__DIR__) . '/app/administration/mon-agence/MonAgenceModel.php';
+// header.php charge déjà cet include avant d'émettre le <style> de thème (voir agency-identity.php) ;
+// le garde ci-dessous permet à cette sidebar de continuer à fonctionner si elle est un jour incluse
+// sans passer par header.php.
+if (!isset($sidebarAgence)) {
+	require __DIR__ . '/agency-identity.php';
+}
 
 $activeNav ??= '';
 $navActive = static fn (string $page): string => $activeNav === $page ? ' active' : '';
-
-$sidebarUser = Auth::user();
-$sidebarAgence = $sidebarUser && $sidebarUser['id_agence'] !== null
-	? MonAgenceModel::agency((int) $sidebarUser['id_agence'])
-	: null;
-$sidebarBadges = $sidebarUser && $sidebarUser['id_agence'] !== null
-	? MonAgenceModel::navBadges((int) $sidebarUser['id_agence'])
-	: ['contrats' => 0, 'interventions' => 0];
 
 $agenceStatutLabel = ['ACTIVE' => 'Actif', 'PENDING' => 'En attente', 'SUSPENDED' => 'Suspendu'];
 $agenceStatutTone = ['ACTIVE' => 'actif', 'PENDING' => 'attente', 'SUSPENDED' => 'suspendu'];
@@ -38,10 +34,18 @@ $navSoonBadge = static function (string $label, string $svg, int $count, string 
 		. $svg . '<span class="nav-label">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>'
 		. $badge . '</span></li>';
 };
+
+/** Rendu d'un lien réel, avec un badge de comptage optionnel (compte à 0 : pas de badge affiché). */
+$navLinkBadge = static function (string $href, string $label, string $svg, int $count = 0, string $badgeTone = 'amber') use ($navActive): string {
+	$badge = $count > 0 ? '<span class="nav-badge ' . $badgeTone . '">' . $count . '</span>' : '';
+	return '<li class="nav-item"><a class="nav-link' . $navActive($label) . '" href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '">'
+		. $svg . '<span class="nav-label">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>'
+		. $badge . '</a></li>';
+};
 ?>
   <aside class="sidebar sidebar-agence" id="sidebar">
     <div class="brand">
-      <div class="brand-mark">LK</div>
+      <div class="brand-mark"><?php if ($sidebarAgence && $sidebarAgence['logo']): ?><img src="<?= htmlspecialchars('/LOKA/' . $sidebarAgence['logo'], ENT_QUOTES, 'UTF-8') ?>" alt=""><?php else: ?>LK<?php endif; ?></div>
       <div class="brand-name">LOKA</div>
     </div>
 
@@ -65,21 +69,21 @@ $navSoonBadge = static function (string $label, string $svg, int $count, string 
 
     <div class="nav-section-label">IMMOBILIER</div>
     <ul class="nav">
-      <?= $navSoon('Biens', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>') ?>
-      <?= $navSoon('Locataires', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>') ?>
-      <?= $navSoon('Propriétaires', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v2"/><path d="M9 3.5a3 3 0 1 1 0 5.9"/></svg>') ?>
-      <?= $navSoonBadge('Contrats', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>', $sidebarBadges['contrats'], 'amber') ?>
+      <?= $navLinkBadge('../mon-agence/biens.php', 'Biens', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>', $sidebarBadges['biens'], 'blue') ?>
+      <?= $navLinkBadge('../mon-agence/locataires.php', 'Locataires', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>') ?>
+      <?= $navLinkBadge('../mon-agence/proprietaires.php', 'Propriétaires', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v2"/><path d="M9 3.5a3 3 0 1 1 0 5.9"/></svg>') ?>
+      <?= $navLinkBadge('../mon-agence/contrats.php', 'Contrats', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>', $sidebarBadges['contrats'], 'amber') ?>
     </ul>
 
     <div class="nav-section-label">FINANCES</div>
     <ul class="nav">
-      <?= $navSoon('Paiements', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>') ?>
-      <?= $navSoon('Quittances', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M9 7h7M9 11h5M9 15h3"/></svg>') ?>
+      <?= $navLinkBadge('../mon-agence/paiements.php', 'Paiements', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>', $sidebarBadges['echeances_en_retard'], 'amber') ?>
+      <?= $navLinkBadge('../mon-agence/quittances.php', 'Quittances', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M9 7h7M9 11h5M9 15h3"/></svg>') ?>
     </ul>
 
     <div class="nav-section-label">MAINTENANCE</div>
     <ul class="nav">
-      <?= $navSoonBadge('Interventions', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94Z"/></svg>', $sidebarBadges['interventions'], 'violet') ?>
+      <?= $navLinkBadge('../mon-agence/interventions.php', 'Interventions', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94Z"/></svg>', $sidebarBadges['interventions'], 'violet') ?>
     </ul>
 
     <div class="nav-section-label">ORGANISATION</div>
@@ -88,13 +92,13 @@ $navSoonBadge = static function (string $label, string $svg, int $count, string 
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span class="nav-label">Équipe</span>
       </a></li>
-      <?= $navSoon('Documents', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>') ?>
+      <?= $navLinkBadge('../mon-agence/documents.php', 'Documents', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>') ?>
     </ul>
 
     <div class="sidebar-bottom">
       <div class="nav-section-label" style="padding-top:0;">AGENCE</div>
       <ul class="nav">
-        <?= $navSoon('Paramètres', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>') ?>
+        <?= $navLinkBadge('../mon-agence/parametres.php', 'Paramètres', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>') ?>
         <li class="nav-item"><a class="nav-link<?= $navActive('Abonnement') ?>" href="../mon-agence/abonnement.php">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
           <span class="nav-label">Abonnement</span>

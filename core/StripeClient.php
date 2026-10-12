@@ -56,6 +56,44 @@ final class StripeClient
 	}
 
 	/**
+	 * Session Checkout en mode paiement unique (par opposition à `createCheckoutSession`, en mode
+	 * abonnement) : aucun Produit/Prix Stripe à créer au préalable, le montant est fourni à la volée
+	 * via `price_data`. Utilisé pour les demandes de paiement de loyer envoyées à un locataire, qui
+	 * n'a pas de `stripe_customer_id` (paiement en tant qu'invité).
+	 *
+	 * @param array<string,scalar> $metadata
+	 * @return array{id: string, url: string}
+	 */
+	public static function createOneTimeCheckoutSession(
+		?string $customerEmail,
+		string $description,
+		float $amount,
+		string $successUrl,
+		string $cancelUrl,
+		array $metadata
+	): array {
+		$params = [
+			'mode' => 'payment',
+			'line_items' => [[
+				'price_data' => [
+					'currency' => 'eur',
+					'product_data' => ['name' => $description],
+					'unit_amount' => (int) round($amount * 100),
+				],
+				'quantity' => 1,
+			]],
+			'success_url' => $successUrl,
+			'cancel_url' => $cancelUrl,
+			'metadata' => $metadata,
+		];
+		if ($customerEmail !== null && $customerEmail !== '') {
+			$params['customer_email'] = $customerEmail;
+		}
+		$response = self::request('POST', '/checkout/sessions', $params);
+		return ['id' => (string) $response['id'], 'url' => (string) $response['url']];
+	}
+
+	/**
 	 * Relit une session Checkout auprès de Stripe (ex. au retour sur success_url), pour
 	 * confirmer un paiement sans dépendre de la réception du webhook (indispensable en local,
 	 * où Stripe ne peut pas joindre une URL localhost sans `stripe listen`).

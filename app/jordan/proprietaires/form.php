@@ -1,0 +1,80 @@
+<?php
+$owner = $owner ?? $_POST;
+$action = $action ?? 'creer.php';
+$isModal = $isModal ?? false;
+if (!$isModal): ?>
+<!doctype html>
+<html lang="fr">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title><?= htmlspecialchars($title ?? 'Propriétaire', ENT_QUOTES, 'UTF-8') ?> | LOKA</title>
+	<link rel="stylesheet" href="/LOKA/app/jordan/biens/bien.css">
+</head>
+<body>
+<div class="app-shell">
+	<?php $currentPage = 'proprietaires'; require_once dirname(__DIR__) . '/layouts/sidebar-gestion.php'; ?>
+	<div class="content">
+		<header class="topbar">
+			<div>
+				<div class="topbar__eyebrow">Patrimoine · Propriétaires</div>
+				<div class="topbar__title">Fiche propriétaire</div>
+			</div>
+			<a class="button button--ghost" href="index.php">Retour</a>
+		</header>
+		<main class="page">
+			<div class="page__header">
+				<div>
+					<h1 class="page__title"><?= htmlspecialchars($title ?? 'Propriétaire', ENT_QUOTES, 'UTF-8') ?></h1>
+					<p class="page__subtitle">Conservez des informations fiables pour vos relations propriétaires.</p>
+				</div>
+			</div>
+<?php endif; ?>
+			<section class="card">
+				<div class="card__body">
+<?php if (isset($errors['general'])): ?>
+					<div class="alert alert--error"><?= htmlspecialchars($errors['general'], ENT_QUOTES, 'UTF-8') ?></div>
+<?php endif; ?>
+<?php foreach ($errors as $field => $error): if ($field !== 'general'): ?>
+					<div class="alert alert--error"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
+<?php endif; endforeach; ?>
+					<form method="post" action="<?= htmlspecialchars($action, ENT_QUOTES, 'UTF-8') ?>">
+						<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+						<?php if ($isModal): ?><input type="hidden" name="modal" value="1"><?php endif; ?>
+						<div class="form-section">
+							<h3 class="form-section-title">Identité</h3>
+							<div class="form-grid">
+								<label>Nom <input name="nom" required maxlength="150" value="<?= htmlspecialchars((string) ($owner['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+								<label>Prénom <input name="prenom" required maxlength="150" value="<?= htmlspecialchars((string) ($owner['prenom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+								<label>E-mail <input type="email" name="email" maxlength="255" value="<?= htmlspecialchars((string) ($owner['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+								<label>Téléphone <input name="telephone" maxlength="30" value="<?= htmlspecialchars((string) ($owner['telephone'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+								<label>Date de naissance <input type="date" name="date_naissance" value="<?= htmlspecialchars((string) ($owner['date_naissance'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+							</div>
+						</div>
+						<div class="form-section">
+							<h3 class="form-section-title">Adresse</h3>
+							<div class="form-grid">
+								<label class="full">Adresse <input name="adresse" maxlength="255" value="<?= htmlspecialchars((string) ($owner['adresse'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+								<label>Code postal <input name="code_postal" maxlength="20" value="<?= htmlspecialchars((string) ($owner['code_postal'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+								<label>Ville <input name="ville" maxlength="100" value="<?= htmlspecialchars((string) ($owner['ville'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+								<label>Pays <input name="pays" maxlength="100" value="<?= htmlspecialchars((string) ($owner['pays'] ?? 'France'), ENT_QUOTES, 'UTF-8') ?>"></label>
+							</div>
+						</div>
+						<div class="form-actions">
+							<?php if ($isModal): ?>
+								<a class="button button--ghost" href="index.php" data-modal-cancel>Annuler</a>
+							<?php else: ?>
+								<a class="button button--ghost" href="index.php">Annuler</a>
+							<?php endif; ?>
+							<button type="submit" class="button--primary">Enregistrer</button>
+						</div>
+					</form>
+				</div>
+			</section>
+<?php if (!$isModal): ?>
+		</main>
+	</div>
+</div>
+</body>
+</html>
+<?php endif; ?>
