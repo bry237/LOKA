@@ -1276,6 +1276,288 @@ final class MonAgenceModel
 	}
 
 	/* --------------------------------------------------------------
+	 * Paiements, échéances et quittances, scopés à l'agence.
+	 * -------------------------------------------------------------- */
+
+	/** Contrats de l'agence éligibles à une nouvelle échéance, avec loyer/charges pour préremplir le formulaire. */
+	public static function contratsForEcheance(int $idAgence): array
+	{
+		$stmt = Database::connection()->prepare(
+			"SELECT c.id_contrat, c.numero, c.loyer, c.charges, b.titre AS bien_titre
+			 FROM contrat c
+			 INNER JOIN bien b ON b.id_bien = c.id_bien
+			 WHERE c.id_agence = :id_agence AND c.deleted_at IS NULL AND c.statut IN ('ACTIVE', 'DRAFT', 'RENEWED')
+			 ORDER BY c.numero"
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		return $stmt->fetchAll();
+	}
+
+	/** @param array{statut?: string} $filters */
+	public static function echeances(int $idAgence, array $filters = []): array
+	{
+		$where = ['c.id_agence = :id_agence'];
+		$params = ['id_agence' => $idAgence];
+		if (!empty($filters['statut'])) {
+			$where[] = 'e.statut = :statut';
+			$params['statut'] = $filters['statut'];
+		}
+		$stmt = Database::connection()->prepare(
+			"SELECT e.id_echeance, e.periode_debut, e.periode_fin, e.montant_total, e.date_echeance, e.statut,
+					c.numero AS contrat_numero, b.titre AS bien_titre,
+					(SELECT CONCAT(l.prenom, ' ', l.nom) FROM contrat_locataire cl
+					 INNER JOIN locataire l ON l.id_locataire = cl.id_locataire
+					 WHERE cl.id_contrat = c.id_contrat ORDER BY cl.titulaire_principal DESC LIMIT 1) AS locataire_principal
+			 FROM echeance e
+			 INNER JOIN contrat c ON c.id_contrat = e.id_contrat
+			 INNER JOIN bien b ON b.id_bien = c.id_bien
+			 WHERE " . implode(' AND ', $where) . '
+			 ORDER BY e.date_echeance DESC'
+		);
+		$stmt->execute($params);
+		return $stmt->fetchAll();
+	}
+
+	public static function echeanceStats(int $idAgence): array
+	{
+		$db = Database::connection();
+		$stmt = $db->prepare(
+			"SELECT SUM(CASE WHEN p.statut = 'PAID' AND MONTH(p.date_paiement) = MONTH(CURDATE()) AND YEAR(p.date_paiement) = YEAR(CURDATE()) THEN p.montant ELSE 0 END) AS encaisse_mois
+			 FROM paiement p
+			 INNER JOIN contrat c ON c.id_contrat = p.id_contrat
+			 WHERE c.id_agence = :id_agence"
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		$encaisseMois = (float) ($stmt->fetchColumn() ?: 0);
+
+		$stmt = $db->prepare(
+			"SELECT
+				SUM(CASE WHEN e.statut IN ('PENDING','PARTIAL','LATE') AND e.date_echeance < CURDATE() THEN 1 ELSE 0 END) AS en_retard_count,
+				SUM(CASE WHEN e.statut IN ('PENDING','PARTIAL','LATE') AND e.date_echeance < CURDATE() THEN e.montant_total ELSE 0 END) AS en_retard_montant,
+				SUM(CASE WHEN e.statut IN ('PENDING','PARTIAL') THEN 1 ELSE 0 END) AS en_attente_count
+			 FROM echeance e
+			 INNER JOIN contrat c ON c.id_contrat = e.id_contrat
+			 WHERE c.id_agence = :id_agence"
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		$row = $stmt->fetch() ?: [];
+
+		return [
+			'encaisse_mois' => $encaisseMois,
+			'en_retard_count' => (int) ($row['en_retard_count'] ?? 0),
+			'en_retard_montant' => (float) ($row['en_retard_montant'] ?? 0),
+			'en_attente_count' => (int) ($row['en_attente_count'] ?? 0),
+		];
+	}
+
+	public static function echeanceFind(int $idAgence, int $idEcheance): ?array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT e.*, c.numero AS contrat_numero, b.titre AS bien_titre, b.reference AS bien_reference
+			 FROM echeance e
+			 INNER JOIN contrat c ON c.id_contrat = e.id_contrat
+			 INNER JOIN bien b ON b.id_bien = c.id_bien
+			 WHERE e.id_echeance = :id AND c.id_agence = :id_agence
+			 LIMIT 1'
+		);
+		$stmt->execute(['id' => $idEcheance, 'id_agence' => $idAgence]);
+		$row = $stmt->fetch();
+		return $row ?: null;
+	}
+
+	public static function createEcheance(array $data): int
+	{
+		$stmt = Database::connection()->prepare(
+			'INSERT INTO echeance (id_contrat, periode_debut, periode_fin, montant_loyer, montant_charges, date_echeance)
+			 VALUES (:id_contrat, :periode_debut, :periode_fin, :montant_loyer, :montant_charges, :date_echeance)'
+		);
+		$stmt->execute([
+			'id_contrat' => $data['id_contrat'],
+			'periode_debut' => $data['periode_debut'],
+			'periode_fin' => $data['periode_fin'],
+			'montant_loyer' => $data['montant_loyer'],
+			'montant_charges' => $data['montant_charges'],
+			'date_echeance' => $data['date_echeance'],
+		]);
+		return (int) Database::connection()->lastInsertId();
+	}
+
+	public static function echeancePaiements(int $idEcheance): array
+	{
+		$stmt = Database::connection()->prepare(
+			"SELECT p.*, CONCAT(l.prenom, ' ', l.nom) AS locataire_nom
+			 FROM paiement p
+			 LEFT JOIN locataire l ON l.id_locataire = p.id_locataire
+			 WHERE p.id_echeance = :id_echeance
+			 ORDER BY p.date_paiement DESC, p.id_paiement DESC"
+		);
+		$stmt->execute(['id_echeance' => $idEcheance]);
+		return $stmt->fetchAll();
+	}
+
+	public static function echeanceTotalPaid(int $idEcheance): float
+	{
+		$stmt = Database::connection()->prepare(
+			"SELECT COALESCE(SUM(montant), 0) FROM paiement WHERE id_echeance = :id_echeance AND statut = 'PAID'"
+		);
+		$stmt->execute(['id_echeance' => $idEcheance]);
+		return (float) $stmt->fetchColumn();
+	}
+
+	/** Locataires du contrat lié à l'échéance, pour le sélecteur du formulaire d'encaissement. */
+	public static function echeanceTenants(int $idEcheance): array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT l.id_locataire, l.nom, l.prenom
+			 FROM echeance e
+			 INNER JOIN contrat_locataire cl ON cl.id_contrat = e.id_contrat
+			 INNER JOIN locataire l ON l.id_locataire = cl.id_locataire
+			 WHERE e.id_echeance = :id_echeance AND l.deleted_at IS NULL
+			 ORDER BY cl.titulaire_principal DESC, l.nom'
+		);
+		$stmt->execute(['id_echeance' => $idEcheance]);
+		return $stmt->fetchAll();
+	}
+
+	public static function createPaiement(array $data): int
+	{
+		$stmt = Database::connection()->prepare(
+			'INSERT INTO paiement (id_echeance, id_contrat, id_locataire, montant, date_paiement, mode_paiement, reference_transaction, statut, commentaire)
+			 VALUES (:id_echeance, :id_contrat, :id_locataire, :montant, :date_paiement, :mode_paiement, :reference_transaction, :statut, :commentaire)'
+		);
+		$stmt->execute([
+			'id_echeance' => $data['id_echeance'],
+			'id_contrat' => $data['id_contrat'],
+			'id_locataire' => $data['id_locataire'],
+			'montant' => $data['montant'],
+			'date_paiement' => $data['date_paiement'],
+			'mode_paiement' => $data['mode_paiement'],
+			'reference_transaction' => $data['reference_transaction'],
+			'statut' => $data['statut'],
+			'commentaire' => $data['commentaire'],
+		]);
+		return (int) Database::connection()->lastInsertId();
+	}
+
+	/** Recalcule et met à jour le statut d'une échéance d'après les paiements PAID enregistrés contre elle. */
+	public static function refreshEcheanceStatut(int $idEcheance): void
+	{
+		$db = Database::connection();
+		$stmt = $db->prepare(
+			"SELECT e.montant_total, e.date_echeance, COALESCE(SUM(CASE WHEN p.statut = 'PAID' THEN p.montant ELSE 0 END), 0) AS total_paye
+			 FROM echeance e
+			 LEFT JOIN paiement p ON p.id_echeance = e.id_echeance
+			 WHERE e.id_echeance = :id_echeance
+			 GROUP BY e.id_echeance, e.montant_total, e.date_echeance"
+		);
+		$stmt->execute(['id_echeance' => $idEcheance]);
+		$row = $stmt->fetch();
+		if (!$row) {
+			return;
+		}
+		$montantTotal = (float) $row['montant_total'];
+		$totalPaye = (float) $row['total_paye'];
+		if ($totalPaye >= $montantTotal) {
+			$statut = 'PAID';
+		} elseif ($totalPaye > 0) {
+			$statut = 'PARTIAL';
+		} elseif (strtotime((string) $row['date_echeance']) < strtotime('today')) {
+			$statut = 'LATE';
+		} else {
+			$statut = 'PENDING';
+		}
+		$db->prepare('UPDATE echeance SET statut = :statut WHERE id_echeance = :id_echeance')
+			->execute(['statut' => $statut, 'id_echeance' => $idEcheance]);
+	}
+
+	/* ---------------- Quittances ---------------- */
+
+	public static function quittances(int $idAgence): array
+	{
+		$stmt = Database::connection()->prepare(
+			"SELECT q.id_quittance, q.numero, q.date_emission, q.periode_debut, q.periode_fin, q.chemin_fichier_pdf,
+					p.montant, c.numero AS contrat_numero, b.titre AS bien_titre,
+					CONCAT(l.prenom, ' ', l.nom) AS locataire_nom
+			 FROM quittance q
+			 INNER JOIN paiement p ON p.id_paiement = q.id_paiement
+			 INNER JOIN contrat c ON c.id_contrat = p.id_contrat
+			 INNER JOIN bien b ON b.id_bien = c.id_bien
+			 LEFT JOIN locataire l ON l.id_locataire = p.id_locataire
+			 WHERE c.id_agence = :id_agence
+			 ORDER BY q.date_emission DESC"
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		return $stmt->fetchAll();
+	}
+
+	public static function quittanceFind(int $idAgence, int $idQuittance): ?array
+	{
+		$stmt = Database::connection()->prepare(
+			'SELECT q.*, c.id_agence
+			 FROM quittance q
+			 INNER JOIN paiement p ON p.id_paiement = q.id_paiement
+			 INNER JOIN contrat c ON c.id_contrat = p.id_contrat
+			 WHERE q.id_quittance = :id AND c.id_agence = :id_agence
+			 LIMIT 1'
+		);
+		$stmt->execute(['id' => $idQuittance, 'id_agence' => $idAgence]);
+		$row = $stmt->fetch();
+		return $row ?: null;
+	}
+
+	public static function quittanceByPaiement(int $idPaiement): ?array
+	{
+		$stmt = Database::connection()->prepare('SELECT * FROM quittance WHERE id_paiement = :id_paiement LIMIT 1');
+		$stmt->execute(['id_paiement' => $idPaiement]);
+		$row = $stmt->fetch();
+		return $row ?: null;
+	}
+
+	public static function createQuittance(int $idPaiement, string $numero, ?string $periodeDebut, ?string $periodeFin): int
+	{
+		$stmt = Database::connection()->prepare(
+			'INSERT INTO quittance (id_paiement, numero, periode_debut, periode_fin) VALUES (:id_paiement, :numero, :periode_debut, :periode_fin)'
+		);
+		$stmt->execute(['id_paiement' => $idPaiement, 'numero' => $numero, 'periode_debut' => $periodeDebut, 'periode_fin' => $periodeFin]);
+		return (int) Database::connection()->lastInsertId();
+	}
+
+	public static function setQuittanceDocumentPath(int $idQuittance, string $path): void
+	{
+		$stmt = Database::connection()->prepare('UPDATE quittance SET chemin_fichier_pdf = :path WHERE id_quittance = :id');
+		$stmt->execute(['path' => $path, 'id' => $idQuittance]);
+	}
+
+	/** Toutes les données nécessaires à la génération du document de quittance. */
+	public static function quittanceDocumentData(int $idAgence, int $idQuittance): ?array
+	{
+		$quittance = self::quittanceFind($idAgence, $idQuittance);
+		if (!$quittance) {
+			return null;
+		}
+		$stmt = Database::connection()->prepare(
+			"SELECT p.*, c.numero AS contrat_numero, c.id_bien,
+					CONCAT(l.prenom, ' ', l.nom) AS locataire_nom, l.adresse, l.code_postal, l.ville
+			 FROM paiement p
+			 INNER JOIN contrat c ON c.id_contrat = p.id_contrat
+			 LEFT JOIN locataire l ON l.id_locataire = p.id_locataire
+			 WHERE p.id_paiement = :id_paiement"
+		);
+		$stmt->execute(['id_paiement' => $quittance['id_paiement']]);
+		$paiement = $stmt->fetch();
+		if (!$paiement) {
+			return null;
+		}
+		$bien = self::bienFind($idAgence, (int) $paiement['id_bien']);
+		return [
+			'agence' => self::agency($idAgence),
+			'quittance' => $quittance,
+			'paiement' => $paiement,
+			'bien' => $bien,
+		];
+	}
+
+	/* --------------------------------------------------------------
 	 * Interventions (maintenance), scopées à l'agence.
 	 * -------------------------------------------------------------- */
 
@@ -1551,7 +1833,19 @@ final class MonAgenceModel
 			'contrats' => self::contractsExpiringSoonCount($db, $idAgence),
 			'interventions' => self::openInterventionsCount($db, $idAgence),
 			'biens' => self::biensToPublishCount($db, $idAgence),
+			'echeances_en_retard' => self::echeancesEnRetardCount($db, $idAgence),
 		];
+	}
+
+	private static function echeancesEnRetardCount(PDO $db, int $idAgence): int
+	{
+		$stmt = $db->prepare(
+			"SELECT COUNT(*) FROM echeance e
+			 INNER JOIN contrat c ON c.id_contrat = e.id_contrat
+			 WHERE c.id_agence = :id_agence AND e.statut IN ('PENDING','PARTIAL','LATE') AND e.date_echeance < CURDATE()"
+		);
+		$stmt->execute(['id_agence' => $idAgence]);
+		return (int) $stmt->fetchColumn();
 	}
 
 	private static function biensToPublishCount(PDO $db, int $idAgence): int
@@ -1662,6 +1956,8 @@ final class MonAgenceModel
 		'proprietaire' => 'un propriétaire',
 		'contrat' => 'un contrat',
 		'paiement' => 'un paiement',
+		'echeance' => 'une échéance',
+		'quittance' => 'une quittance',
 		'abonnement' => 'un abonnement',
 	];
 

@@ -1133,6 +1133,263 @@ HTML;
 	}
 
 	/* --------------------------------------------------------------
+	 * Paiements, échéances et quittances
+	 * -------------------------------------------------------------- */
+
+	private const PAIEMENT_MODES = ['CASH', 'BANK_TRANSFER', 'CARD', 'CHEQUE', 'DIRECT_DEBIT', 'OTHER'];
+	private const PAIEMENT_STATUSES = ['PENDING', 'PAID', 'LATE', 'CANCELLED', 'REFUNDED'];
+	private const QUITTANCE_UPLOAD_DIR = __DIR__ . '/../../../public/uploads/quittances';
+
+	/** @return array{list: array, stats: array} */
+	public static function echeances(int $idAgence, array $filters): array
+	{
+		return [
+			'list' => MonAgenceModel::echeances($idAgence, $filters),
+			'stats' => MonAgenceModel::echeanceStats($idAgence),
+		];
+	}
+
+	public static function echeanceDetail(int $idAgence, int $idEcheance): ?array
+	{
+		$echeance = MonAgenceModel::echeanceFind($idAgence, $idEcheance);
+		if (!$echeance) {
+			return null;
+		}
+		$echeance['paiements'] = MonAgenceModel::echeancePaiements($idEcheance);
+		$echeance['total_paye'] = MonAgenceModel::echeanceTotalPaid($idEcheance);
+		$echeance['solde'] = max(0.0, (float) $echeance['montant_total'] - $echeance['total_paye']);
+		$echeance['locataires'] = MonAgenceModel::echeanceTenants($idEcheance);
+		return $echeance;
+	}
+
+	/** @return array<string,string> Erreurs de validation, vide si succès. */
+	public static function createEcheance(int $idAgence, int $idUtilisateur, array $input): array
+	{
+		$errors = [];
+		$idContrat = (int) ($input['id_contrat'] ?? 0);
+		$periodeDebut = trim((string) ($input['periode_debut'] ?? ''));
+		$periodeFin = trim((string) ($input['periode_fin'] ?? ''));
+		$dateEcheance = trim((string) ($input['date_echeance'] ?? ''));
+		$montantLoyer = (string) ($input['montant_loyer'] ?? '');
+		$montantCharges = (string) ($input['montant_charges'] ?? '') !== '' ? (string) $input['montant_charges'] : '0';
+
+		if ($idContrat < 1 || !self::belongsToAgence($idAgence, 'contrat', 'id_contrat', $idContrat)) {
+			$errors['id_contrat'] = 'Le contrat est requis et doit appartenir à votre agence.';
+		}
+		if ($periodeDebut === '') {
+			$errors['periode_debut'] = 'La date de début de période est requise.';
+		}
+		if ($periodeFin === '') {
+			$errors['periode_fin'] = 'La date de fin de période est requise.';
+		} elseif ($periodeDebut !== '' && $periodeFin < $periodeDebut) {
+			$errors['periode_fin'] = 'La fin de période doit être postérieure au début.';
+		}
+		if ($dateEcheance === '') {
+			$errors['date_echeance'] = 'La date d’échéance est requise.';
+		}
+		if (!is_numeric($montantLoyer) || (float) $montantLoyer < 0) {
+			$errors['montant_loyer'] = 'Le loyer doit être un nombre positif.';
+		}
+		if (!is_numeric($montantCharges) || (float) $montantCharges < 0) {
+			$errors['montant_charges'] = 'Les charges doivent être un nombre positif.';
+		}
+
+		if ($errors) {
+			return $errors;
+		}
+
+		try {
+			$id = MonAgenceModel::createEcheance([
+				'id_contrat' => $idContrat,
+				'periode_debut' => $periodeDebut,
+				'periode_fin' => $periodeFin,
+				'montant_loyer' => $montantLoyer,
+				'montant_charges' => $montantCharges,
+				'date_echeance' => $dateEcheance,
+			]);
+		} catch (PDOException $exception) {
+			if ((int) $exception->getCode() === 23000) {
+				return ['_global' => 'Une échéance existe déjà pour ce contrat sur cette période.'];
+			}
+			throw $exception;
+		}
+
+		Logger::audit('CREATE', 'echeance', $id, $idUtilisateur, $idAgence, null, ['id_contrat' => $idContrat, 'periode_debut' => $periodeDebut]);
+		return [];
+	}
+
+	/** @return string|null Message d'erreur, ou null si l'opération a réussi. */
+	public static function createPaiement(int $idAgence, int $idEcheance, int $idUtilisateur, array $input): ?string
+	{
+		$echeance = MonAgenceModel::echeanceFind($idAgence, $idEcheance);
+		if (!$echeance) {
+			return 'Échéance introuvable pour votre agence.';
+		}
+
+		$montant = (string) ($input['montant'] ?? '');
+		$datePaiement = trim((string) ($input['date_paiement'] ?? ''));
+		$mode = (string) ($input['mode_paiement'] ?? '');
+		$statut = (string) ($input['statut'] ?? 'PAID');
+		$idLocataire = filter_var($input['id_locataire'] ?? null, FILTER_VALIDATE_INT) ?: null;
+		$reference = trim((string) ($input['reference_transaction'] ?? ''));
+
+		if (!is_numeric($montant) || (float) $montant <= 0) {
+			return 'Le montant doit être un nombre positif.';
+		}
+		if ($datePaiement === '') {
+			return 'La date de paiement est requise.';
+		}
+		if (!in_array($mode, self::PAIEMENT_MODES, true)) {
+			return 'Le mode de paiement est invalide.';
+		}
+		if (!in_array($statut, self::PAIEMENT_STATUSES, true)) {
+			return 'Le statut est invalide.';
+		}
+		if ($idLocataire !== null && !self::belongsToAgence($idAgence, 'locataire', 'id_locataire', $idLocataire)) {
+			return 'Le locataire sélectionné est invalide.';
+		}
+
+		try {
+			$idPaiement = MonAgenceModel::createPaiement([
+				'id_echeance' => $idEcheance,
+				'id_contrat' => (int) $echeance['id_contrat'],
+				'id_locataire' => $idLocataire,
+				'montant' => $montant,
+				'date_paiement' => $datePaiement,
+				'mode_paiement' => $mode,
+				'reference_transaction' => $reference !== '' ? $reference : null,
+				'statut' => $statut,
+				'commentaire' => self::nullableTrim($input['commentaire'] ?? null),
+			]);
+		} catch (PDOException $exception) {
+			if ((int) $exception->getCode() === 23000) {
+				return 'Cette référence de transaction est déjà utilisée.';
+			}
+			throw $exception;
+		}
+
+		MonAgenceModel::refreshEcheanceStatut($idEcheance);
+		Logger::audit('CREATE', 'paiement', $idPaiement, $idUtilisateur, $idAgence, null, ['montant' => $montant, 'id_echeance' => $idEcheance]);
+
+		if ($statut === 'PAID') {
+			self::generateQuittance($idAgence, $idPaiement, $idUtilisateur);
+		}
+
+		return null;
+	}
+
+	/** @return array{list: array} */
+	public static function quittances(int $idAgence): array
+	{
+		return ['list' => MonAgenceModel::quittances($idAgence)];
+	}
+
+	private static function generateQuittance(int $idAgence, int $idPaiement, int $idUtilisateur): void
+	{
+		if (MonAgenceModel::quittanceByPaiement($idPaiement)) {
+			return;
+		}
+		$numero = 'QUIT-' . date('Y') . '-' . str_pad((string) $idPaiement, 6, '0', STR_PAD_LEFT);
+		$db = Database::connection();
+		$periode = $db->prepare(
+			'SELECT e.periode_debut, e.periode_fin FROM paiement p INNER JOIN echeance e ON e.id_echeance = p.id_echeance WHERE p.id_paiement = :id'
+		);
+		$periode->execute(['id' => $idPaiement]);
+		$p = $periode->fetch();
+
+		$idQuittance = MonAgenceModel::createQuittance($idPaiement, $numero, $p['periode_debut'] ?? null, $p['periode_fin'] ?? null);
+		Logger::audit('CREATE', 'quittance', $idQuittance, $idUtilisateur, $idAgence, null, ['numero' => $numero]);
+		self::regenerateQuittanceDocument($idAgence, $idQuittance);
+	}
+
+	private static function regenerateQuittanceDocument(int $idAgence, int $idQuittance): void
+	{
+		$data = MonAgenceModel::quittanceDocumentData($idAgence, $idQuittance);
+		if ($data === null) {
+			return;
+		}
+		$destinationDir = self::QUITTANCE_UPLOAD_DIR;
+		if (!is_dir($destinationDir) && !mkdir($destinationDir, 0750, true) && !is_dir($destinationDir)) {
+			return;
+		}
+		$existingPath = (string) ($data['quittance']['chemin_fichier_pdf'] ?? '');
+		$storedName = $existingPath !== '' ? basename($existingPath) : bin2hex(random_bytes(16)) . '.html';
+
+		$html = self::renderQuittanceDocumentHtml($data);
+		file_put_contents($destinationDir . DIRECTORY_SEPARATOR . $storedName, $html);
+
+		if ($existingPath === '') {
+			MonAgenceModel::setQuittanceDocumentPath((int) $data['quittance']['id_quittance'], 'public/uploads/quittances/' . $storedName);
+		}
+	}
+
+	/** @param array{agence: ?array, quittance: array, paiement: array, bien: ?array} $data */
+	private static function renderQuittanceDocumentHtml(array $data): string
+	{
+		$esc = static fn (mixed $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
+		$money = static fn (mixed $v): string => number_format((float) $v, 2, ',', ' ') . ' €';
+		$date = static fn (?string $v): string => $v ? (new DateTimeImmutable($v))->format('d/m/Y') : '—';
+
+		$agence = $data['agence'] ?? [];
+		$quittance = $data['quittance'];
+		$paiement = $data['paiement'];
+		$bien = $data['bien'] ?? [];
+
+		$modeLabels = ['CASH' => 'Espèces', 'BANK_TRANSFER' => 'Virement', 'CARD' => 'Carte', 'CHEQUE' => 'Chèque', 'DIRECT_DEBIT' => 'Prélèvement', 'OTHER' => 'Autre'];
+
+		$locataireLine = $paiement['locataire_nom'] ? $esc($paiement['locataire_nom']) : 'Locataire';
+		$adresseLocataire = $paiement['adresse'] ? '<br>' . $esc(trim($paiement['adresse'] . ', ' . $paiement['code_postal'] . ' ' . $paiement['ville'], ' ,')) : '';
+		$bienLine = $bien ? $esc($bien['titre'] . ' (' . $bien['reference'] . ')') : '—';
+		$agenceAdresse = !empty($agence['adresse']) ? $esc(', ' . $agence['adresse'] . ', ' . $agence['code_postal'] . ' ' . $agence['ville']) : '';
+
+		$pageTitle = 'Quittance de loyer ' . $esc($quittance['numero']);
+
+		return <<<HTML
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>{$pageTitle}</title>
+<style>
+  body{font-family:Georgia,'Times New Roman',serif;color:#1a2b2b;max-width:680px;margin:40px auto;padding:0 24px;line-height:1.6;}
+  h1{font-size:19px;text-align:center;margin:0 0 4px;letter-spacing:.03em;}
+  .subtitle{text-align:center;color:#5a6b6b;font-size:13px;margin:0 0 28px;}
+  p{margin:0 0 10px;font-size:13.5px;}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:12px;}
+  td{padding:6px 0;border-bottom:1px solid #eef2f2;}
+  td:first-child{color:#5a6b6b;width:50%;}
+  td:last-child{text-align:right;font-weight:600;}
+  .statement{margin-top:24px;font-size:13.5px;color:#5a6b6b;}
+  .print-bar{text-align:center;margin-bottom:24px;}
+  .print-bar button{font-family:inherit;font-size:13px;padding:8px 16px;border-radius:8px;border:1px solid #0f8b8d;background:#0f8b8d;color:#fff;cursor:pointer;}
+  @media print{.print-bar{display:none;}body{margin:0;max-width:none;}}
+</style>
+</head>
+<body>
+  <div class="print-bar"><button onclick="window.print()">Imprimer / Enregistrer en PDF</button></div>
+
+  <h1>Quittance de loyer</h1>
+  <p class="subtitle">N° {$esc($quittance['numero'])} · émise le {$date($quittance['date_emission'])} · {$esc($agence['nom'] ?? '')}</p>
+
+  <p><strong>{$esc($agence['nom'] ?? '')}</strong>{$agenceAdresse}</p>
+
+  <p>Reçu de <strong>{$locataireLine}</strong>{$adresseLocataire}</p>
+
+  <table>
+    <tr><td>Bien concerné</td><td>{$bienLine}</td></tr>
+    <tr><td>Période</td><td>{$date($quittance['periode_debut'])} — {$date($quittance['periode_fin'])}</td></tr>
+    <tr><td>Montant réglé</td><td>{$money($paiement['montant'])}</td></tr>
+    <tr><td>Mode de règlement</td><td>{$esc($modeLabels[$paiement['mode_paiement']] ?? $paiement['mode_paiement'])}</td></tr>
+    <tr><td>Date de règlement</td><td>{$date($paiement['date_paiement'])}</td></tr>
+  </table>
+
+  <p class="statement">La présente quittance est délivrée sous réserve d’encaissement effectif et annule tout décompte antérieur pour la période concernée.</p>
+</body>
+</html>
+HTML;
+	}
+
+	/* --------------------------------------------------------------
 	 * Interventions (maintenance)
 	 * -------------------------------------------------------------- */
 

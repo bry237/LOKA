@@ -19,7 +19,7 @@ $sidebarAgence = $sidebarUser && $sidebarUser['id_agence'] !== null
 	: null;
 $sidebarBadges = $sidebarUser && $sidebarUser['id_agence'] !== null
 	? MonAgenceModel::navBadges((int) $sidebarUser['id_agence'])
-	: ['contrats' => 0, 'interventions' => 0, 'biens' => 0];
+	: ['contrats' => 0, 'interventions' => 0, 'biens' => 0, 'echeances_en_retard' => 0];
 
 $agenceStatutLabel = ['ACTIVE' => 'Actif', 'PENDING' => 'En attente', 'SUSPENDED' => 'Suspendu'];
 $agenceStatutTone = ['ACTIVE' => 'actif', 'PENDING' => 'attente', 'SUSPENDED' => 'suspendu'];
@@ -81,8 +81,8 @@ $navLinkBadge = static function (string $href, string $label, string $svg, int $
 
     <div class="nav-section-label">FINANCES</div>
     <ul class="nav">
-      <?= $navSoon('Paiements', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>') ?>
-      <?= $navSoon('Quittances', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M9 7h7M9 11h5M9 15h3"/></svg>') ?>
+      <?= $navLinkBadge('../mon-agence/paiements.php', 'Paiements', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>', $sidebarBadges['echeances_en_retard'], 'amber') ?>
+      <?= $navLinkBadge('../mon-agence/quittances.php', 'Quittances', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M9 7h7M9 11h5M9 15h3"/></svg>') ?>
     </ul>
 
     <div class="nav-section-label">MAINTENANCE</div>
