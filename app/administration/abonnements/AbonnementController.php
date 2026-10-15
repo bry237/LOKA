@@ -83,6 +83,24 @@ final class AbonnementController
 		return [];
 	}
 
+	/**
+	 * @return string|null Message d'erreur, ou null si l'opération a réussi.
+	 */
+	public static function delete(int $id): ?string
+	{
+		$target = AbonnementModel::find($id);
+		if (!$target || $target['deleted_at'] !== null) {
+			return 'Plan introuvable.';
+		}
+
+		AbonnementModel::delete($id);
+
+		$currentUser = Auth::user();
+		Logger::audit('DELETE', 'abonnement', $id, $currentUser['id_utilisateur'] ?? null, null, ['nom' => $target['nom']], null);
+
+		return null;
+	}
+
 	public static function setActif(int $id, bool $actif): ?string
 	{
 		$target = AbonnementModel::find($id);

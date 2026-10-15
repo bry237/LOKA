@@ -59,7 +59,7 @@ require dirname(__DIR__, 3) . '/layouts/header.php';
       <div class="panel">
         <div class="panel-header">
           <div class="panel-title">Activité récente</div>
-          <div class="panel-link" id="voirAudit">Voir tout l'audit</div>
+          <a class="panel-link" href="/LOKA/app/administration/audit/index.php">Voir tout l'audit</a>
         </div>
         <p style="font-size:11.5px;color:#8AA0A0;margin:0 18px 6px;">Dernières entrées du journal d'audit</p>
         <div class="activity-list" id="activityList"></div>
@@ -113,5 +113,5 @@ require dirname(__DIR__, 3) . '/layouts/header.php';
       </div>
     </div>
 <?php
-$extraScripts = '<script src="dashboard.js"></script>';
+$extraScripts = '<script src="dashboard.js?v=' . filemtime(__DIR__ . '/dashboard.js') . '"></script>';
 require dirname(__DIR__, 3) . '/layouts/footer.php';

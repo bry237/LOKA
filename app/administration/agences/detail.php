@@ -58,7 +58,7 @@ $actionLabel = match ($agence['statut']) {
 	'SUSPENDED' => 'Réactiver',
 	default => 'Activer',
 };
-$actionClass = $agence['statut'] === 'ACTIVE' ? 'btn-danger' : 'btn-success';
+$actionClass = $agence['statut'] === 'ACTIVE' ? 'btn-warning' : 'btn-success';
 
 if (!$isModal) require dirname(__DIR__, 3) . '/layouts/header.php';
 ?>
@@ -157,6 +157,9 @@ if (!$isModal) require dirname(__DIR__, 3) . '/layouts/header.php';
           <div class="panel-header"><div class="panel-title">Administrateur</div></div>
           <?php if (!$admin): ?>
             <p class="empty-note">Aucun administrateur associé à cette agence.</p>
+            <div style="padding:0 18px 18px;">
+              <a class="btn btn-primary" href="/LOKA/app/administration/utilisateurs/ajouter.php?id_agence=<?= (int) $agence['id_agence'] ?>" data-modal>+ Créer un administrateur</a>
+            </div>
           <?php else: ?>
             <div class="info-list">
               <div class="info-row"><span class="info-label">Nom</span><span class="info-value"><?= htmlspecialchars($admin['prenom'] . ' ' . $admin['nom'], ENT_QUOTES, 'UTF-8') ?></span></div>

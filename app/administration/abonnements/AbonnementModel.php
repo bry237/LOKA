@@ -8,15 +8,22 @@ final class AbonnementModel
 	public static function all(): array
 	{
 		return Database::connection()
-			->query('SELECT * FROM abonnement ORDER BY prix_mensuel ASC')
+			->query('SELECT * FROM abonnement WHERE deleted_at IS NULL ORDER BY prix_mensuel ASC')
 			->fetchAll();
 	}
 
 	public static function activePlans(): array
 	{
 		return Database::connection()
-			->query("SELECT * FROM abonnement WHERE actif = 1 ORDER BY prix_mensuel ASC")
+			->query("SELECT * FROM abonnement WHERE actif = 1 AND deleted_at IS NULL ORDER BY prix_mensuel ASC")
 			->fetchAll();
+	}
+
+	/** Suppression logique : conserve l'historique (agence_abonnement, facture_abonnement). */
+	public static function delete(int $id): void
+	{
+		$stmt = Database::connection()->prepare('UPDATE abonnement SET deleted_at = NOW() WHERE id_abonnement = :id');
+		$stmt->execute(['id' => $id]);
 	}
 
 	public static function find(int $id): ?array

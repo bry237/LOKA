@@ -47,11 +47,12 @@ require dirname(__DIR__, 3) . '/layouts/header.php';
               <th>PAIEMENT STRIPE</th>
               <th>STATUT</th>
               <th></th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             <?php if (!$plans): ?>
-              <tr class="empty-row"><td colspan="7">Aucun plan au catalogue.</td></tr>
+              <tr class="empty-row"><td colspan="8">Aucun plan au catalogue.</td></tr>
             <?php endif; ?>
             <?php foreach ($plans as $p): ?>
               <tr>
@@ -64,17 +65,24 @@ require dirname(__DIR__, 3) . '/layouts/header.php';
                 <td><span class="cell-limit<?= $p['limite_biens'] === null ? ' unlimited' : '' ?>"><?= $p['limite_biens'] !== null ? (int) $p['limite_biens'] : 'Illimité' ?></span></td>
                 <td><span class="status-badge <?= $p['stripe_price_id'] ? 'actif' : 'attente' ?>"><?= $p['stripe_price_id'] ? 'Configuré' : ((float) $p['prix_mensuel'] > 0 ? 'Non configuré' : 'Gratuit') ?></span></td>
                 <td><span class="status-badge <?= $p['actif'] ? 'actif' : 'suspendu' ?>"><?= $p['actif'] ? 'Actif' : 'Désactivé' ?></span></td>
+                <td style="text-align:right;">
+                  <a class="consult-link" href="modifier.php?id=<?= (int) $p['id_abonnement'] ?>" data-modal>
+                    Modifier
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+                  </a>
+                </td>
                 <td>
                   <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;">
-                    <a class="consult-link" href="modifier.php?id=<?= (int) $p['id_abonnement'] ?>" data-modal>
-                      Modifier
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
-                    </a>
                     <form class="inline-form" method="post" action="toggle-actif.php">
                       <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                       <input type="hidden" name="id" value="<?= (int) $p['id_abonnement'] ?>">
                       <input type="hidden" name="actif" value="<?= $p['actif'] ? '0' : '1' ?>">
-                      <button type="submit" class="btn btn-sm <?= $p['actif'] ? 'btn-danger' : 'btn-success' ?>"><?= $p['actif'] ? 'Désactiver' : 'Activer' ?></button>
+                      <button type="submit" class="btn btn-sm <?= $p['actif'] ? 'btn-warning' : 'btn-success' ?>"><?= $p['actif'] ? 'Désactiver' : 'Activer' ?></button>
+                    </form>
+                    <form class="inline-form" method="post" action="supprimer.php">
+                      <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                      <input type="hidden" name="id" value="<?= (int) $p['id_abonnement'] ?>">
+                      <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Supprimer définitivement ce plan du catalogue ?');">Supprimer</button>
                     </form>
                   </div>
                 </td>

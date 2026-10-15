@@ -63,16 +63,20 @@ function renderActivity(){
 /* ---------------- Render: Watch ---------------- */
 function renderWatch(){
   const list = document.getElementById('watchList');
-  list.innerHTML = DATA_MOCK.watch.map(w => `
-    <div class="watch-item">
+  list.innerHTML = DATA_MOCK.watch.map(w => {
+    const tag = w.url ? 'a' : 'div';
+    const href = w.url ? `href="${w.url}"` : '';
+    return `
+    <${tag} class="watch-item${w.url ? ' watch-item-link' : ''}" ${href}>
       <div class="watch-icon ${w.tone}">${w.icon}</div>
       <div>
         <div class="watch-title">${w.title}</div>
         <div class="watch-sub">${w.sub}</div>
       </div>
-      <div class="watch-chev">${ICONS.arrow}</div>
-    </div>
-  `).join('');
+      ${w.url ? `<div class="watch-chev">${ICONS.arrow}</div>` : ''}
+    </${tag}>
+  `;
+  }).join('');
 }
 
 /* ---------------- Render: Donut legend ---------------- */

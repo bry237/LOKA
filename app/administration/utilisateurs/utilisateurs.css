@@ -1,0 +1,11 @@
+
+  /* =========================================================
+     utilisateurs.css — styles propres au module Utilisateurs.
+     Le socle partagé (panel, table, status-badge, btn, fiche
+     détail, formulaires...) vit dans layouts/admin.css.
+     ========================================================= */
+
+  .phone-group{display:flex;gap:8px;}
+  .phone-group select{flex:0 0 150px;}
+  .phone-group input{flex:1;min-width:0;}
+  .field-hint{margin:6px 0 0;font-size:11px;color:#8AA0A0;line-height:1.4;}

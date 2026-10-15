@@ -5,6 +5,7 @@ require_once __DIR__ . '/AgenceModel.php';
 require_once __DIR__ . '/AgenceValidator.php';
 require_once __DIR__ . '/DocumentAgenceModel.php';
 require_once dirname(__DIR__) . '/abonnements/AbonnementModel.php';
+require_once dirname(__DIR__) . '/parametres/ParametreController.php';
 require_once dirname(__DIR__, 3) . '/core/Auth.php';
 require_once dirname(__DIR__, 3) . '/core/Logger.php';
 require_once dirname(__DIR__, 3) . '/core/SmsSender.php';
@@ -95,6 +96,14 @@ final class AgenceController
 			null,
 			$data
 		);
+
+		// Une agence créée manuellement ici n'a, sinon, aucun abonnement : les vérifications de
+		// limite d'usage (SubscriptionLimiter) ne trouvent alors aucun plan et désactivent de fait
+		// les limites. Voir ParametreController::planDefautAgence (réglage "Agences" des Paramètres).
+		$planDefaut = ParametreController::planDefautAgence();
+		if ($planDefaut !== null && AbonnementModel::find($planDefaut)) {
+			AbonnementModel::assignToAgence($id, $planDefaut);
+		}
 
 		return [[], $id];
 	}
@@ -202,8 +211,37 @@ final class AgenceController
 		return null;
 	}
 
+	/**
+	 * @return string|null Message d'erreur, ou null si l'opération a réussi.
+	 */
+	public static function delete(int $id): ?string
+	{
+		$target = AgenceModel::find($id);
+		if (!$target) {
+			return 'Agence introuvable.';
+		}
+
+		AgenceModel::delete($id);
+
+		$currentUser = Auth::user();
+		Logger::audit(
+			'DELETE',
+			'agence',
+			$id,
+			$currentUser['id_utilisateur'] ?? null,
+			$id,
+			['nom' => $target['nom']],
+			null
+		);
+
+		return null;
+	}
+
 	private static function notifyAgencyValidated(int $idAgence): void
 	{
+		if (!ParametreController::smsValidationAgenceActif()) {
+			return;
+		}
 		$admin = AgenceModel::findAdminContact($idAgence);
 		if (!$admin || !$admin['telephone']) {
 			return;

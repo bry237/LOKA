@@ -17,6 +17,14 @@ final class AgenceModel
 		return $row ?: null;
 	}
 
+	/** Pour un <select> d'affectation (ex. rattachement d'un utilisateur à une agence). */
+	public static function selectOptions(): array
+	{
+		return Database::connection()
+			->query('SELECT id_agence, nom, statut FROM agence WHERE deleted_at IS NULL ORDER BY nom')
+			->fetchAll();
+	}
+
 	/**
 	 * @param array{q?: string, status?: string} $filters
 	 */
@@ -141,6 +149,13 @@ final class AgenceModel
 	{
 		$stmt = Database::connection()->prepare('UPDATE agence SET statut = :statut WHERE id_agence = :id');
 		$stmt->execute(['statut' => $status, 'id' => $id]);
+	}
+
+	/** Suppression logique : conserve l'historique (facturation, audit...) référençant cette agence. */
+	public static function delete(int $id): void
+	{
+		$stmt = Database::connection()->prepare('UPDATE agence SET deleted_at = NOW() WHERE id_agence = :id');
+		$stmt->execute(['id' => $id]);
 	}
 
 	public static function setStripeCustomerId(int $id, string $stripeCustomerId): void

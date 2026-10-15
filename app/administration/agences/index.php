@@ -50,11 +50,12 @@ $renderResults = function () use ($result, $statusLabels, $statusTones, $csrfTok
 					<th>DATE D'INSCRIPTION</th>
 					<th>STATUT</th>
 					<th></th>
+					<th></th>
 				</tr>
 			</thead>
 			<tbody>
 				<?php if (!$result['rows']): ?>
-					<tr class="empty-row"><td colspan="6">Aucune agence ne correspond à ces critères.</td></tr>
+					<tr class="empty-row"><td colspan="7">Aucune agence ne correspond à ces critères.</td></tr>
 				<?php endif; ?>
 				<?php foreach ($result['rows'] as $a): ?>
 					<?php
@@ -65,7 +66,7 @@ $renderResults = function () use ($result, $statusLabels, $statusTones, $csrfTok
 							'SUSPENDED' => 'Réactiver',
 							default => 'Activer',
 						};
-						$actionClass = $a['statut'] === 'ACTIVE' ? 'btn-danger' : 'btn-success';
+						$actionClass = $a['statut'] === 'ACTIVE' ? 'btn-warning' : 'btn-success';
 					?>
 					<tr>
 						<td>
@@ -81,18 +82,25 @@ $renderResults = function () use ($result, $statusLabels, $statusTones, $csrfTok
 						<td><?= htmlspecialchars($a['plan_nom'] ?? 'Aucun', ENT_QUOTES, 'UTF-8') ?></td>
 						<td><?= (new DateTimeImmutable($a['created_at']))->format('d/m/Y') ?></td>
 						<td><span class="status-badge <?= $statusTones[$a['statut']] ?? '' ?>"><?= htmlspecialchars($statusLabels[$a['statut']] ?? $a['statut'], ENT_QUOTES, 'UTF-8') ?></span></td>
+						<td style="text-align:right;">
+							<a class="consult-link" href="detail.php?id=<?= (int) $a['id_agence'] ?>" data-modal>
+								Consulter
+								<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+							</a>
+						</td>
 						<td>
 							<div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;">
-								<a class="consult-link" href="detail.php?id=<?= (int) $a['id_agence'] ?>" data-modal>
-									Consulter
-									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
-								</a>
 								<form class="inline-form" method="post" action="changer-statut.php">
 									<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
 									<input type="hidden" name="id" value="<?= (int) $a['id_agence'] ?>">
 									<input type="hidden" name="statut" value="<?= $nextStatus ?>">
 									<input type="hidden" name="redirect" value="<?= htmlspecialchars('index.php' . ($currentQuery !== '' ? '?' . $currentQuery : ''), ENT_QUOTES, 'UTF-8') ?>">
 									<button type="submit" class="btn btn-sm <?= $actionClass ?>"<?= $a['statut'] === 'ACTIVE' ? ' onclick="return confirm(\'Suspendre cette agence ?\');"' : '' ?>><?= $actionLabel ?></button>
+								</form>
+								<form class="inline-form" method="post" action="supprimer.php">
+									<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+									<input type="hidden" name="id" value="<?= (int) $a['id_agence'] ?>">
+									<button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Supprimer définitivement cette agence ? Cette action est irréversible.');">Supprimer</button>
 								</form>
 							</div>
 						</td>

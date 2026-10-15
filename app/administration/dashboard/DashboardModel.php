@@ -109,6 +109,7 @@ final class DashboardModel
 				'icon' => '⏳', 'tone' => 'amber',
 				'title' => $pending . ' agence' . ($pending > 1 ? 's' : '') . " en attente d'activation",
 				'sub' => 'Inscrites depuis plus de 48h',
+				'url' => '/LOKA/app/administration/agences/index.php?status=PENDING',
 			];
 		}
 
@@ -120,6 +121,7 @@ final class DashboardModel
 				'icon' => '⛔', 'tone' => 'red',
 				'title' => $deactivated . ' compte' . ($deactivated > 1 ? 's' : '') . ' récemment désactivés',
 				'sub' => 'Sans réactivation depuis 7 jours',
+				'url' => '/LOKA/app/administration/utilisateurs/index.php?status=INACTIVE',
 			];
 		}
 
@@ -131,6 +133,7 @@ final class DashboardModel
 				'icon' => '⏰', 'tone' => 'blue',
 				'title' => $expiring . ' abonnement' . ($expiring > 1 ? 's' : '') . ' arrivent à expiration',
 				'sub' => "D'ici 7 jours",
+				'url' => '/LOKA/app/administration/agences/index.php',
 			];
 		}
 
@@ -139,6 +142,7 @@ final class DashboardModel
 				'icon' => '✓', 'tone' => 'green',
 				'title' => 'Aucune alerte système en cours',
 				'sub' => 'Dernière vérification : à l’instant',
+				'url' => null,
 			];
 		}
 

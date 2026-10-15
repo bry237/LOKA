@@ -53,11 +53,12 @@ $renderResults = function () use ($result, $statusLabels, $statusTones, $current
 					<th>DERNIÈRE CONNEXION</th>
 					<th>STATUT</th>
 					<th></th>
+					<th></th>
 				</tr>
 			</thead>
 			<tbody>
 				<?php if (!$result['rows']): ?>
-					<tr class="empty-row"><td colspan="6">Aucun utilisateur ne correspond à ces critères.</td></tr>
+					<tr class="empty-row"><td colspan="7">Aucun utilisateur ne correspond à ces critères.</td></tr>
 				<?php endif; ?>
 				<?php foreach ($result['rows'] as $u): ?>
 					<?php
@@ -81,12 +82,14 @@ $renderResults = function () use ($result, $statusLabels, $statusTones, $current
 						<td><?= htmlspecialchars($u['agence_nom'] ?? '—', ENT_QUOTES, 'UTF-8') ?></td>
 						<td><?= htmlspecialchars($lastLogin, ENT_QUOTES, 'UTF-8') ?></td>
 						<td><span class="status-badge <?= $statusTones[$u['statut']] ?? '' ?>"><?= htmlspecialchars($statusLabels[$u['statut']] ?? $u['statut'], ENT_QUOTES, 'UTF-8') ?></span></td>
+						<td style="text-align:right;">
+							<a class="consult-link" href="detail.php?id=<?= (int) $u['id_utilisateur'] ?>" data-modal>
+								Consulter
+								<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+							</a>
+						</td>
 						<td>
 							<div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;">
-								<a class="consult-link" href="detail.php?id=<?= (int) $u['id_utilisateur'] ?>" data-modal>
-									Consulter
-									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
-								</a>
 								<?php if ($isSelf): ?>
 									<span class="cell-sub">Vous</span>
 								<?php elseif ($u['statut'] === 'ACTIVE'): ?>
@@ -94,7 +97,7 @@ $renderResults = function () use ($result, $statusLabels, $statusTones, $current
 										<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
 										<input type="hidden" name="id" value="<?= (int) $u['id_utilisateur'] ?>">
 										<input type="hidden" name="redirect" value="<?= htmlspecialchars('index.php' . ($currentQuery !== '' ? '?' . $currentQuery : ''), ENT_QUOTES, 'UTF-8') ?>">
-										<button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Désactiver ce compte ?');">Désactiver</button>
+										<button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('Désactiver ce compte ?');">Désactiver</button>
 									</form>
 								<?php else: ?>
 									<form class="inline-form" method="post" action="activer.php">
@@ -102,6 +105,13 @@ $renderResults = function () use ($result, $statusLabels, $statusTones, $current
 										<input type="hidden" name="id" value="<?= (int) $u['id_utilisateur'] ?>">
 										<input type="hidden" name="redirect" value="<?= htmlspecialchars('index.php' . ($currentQuery !== '' ? '?' . $currentQuery : ''), ENT_QUOTES, 'UTF-8') ?>">
 										<button type="submit" class="btn btn-sm btn-success">Activer</button>
+									</form>
+								<?php endif; ?>
+								<?php if (!$isSelf): ?>
+									<form class="inline-form" method="post" action="supprimer.php">
+										<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+										<input type="hidden" name="id" value="<?= (int) $u['id_utilisateur'] ?>">
+										<button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Supprimer définitivement cet utilisateur ? Cette action est irréversible.');">Supprimer</button>
 									</form>
 								<?php endif; ?>
 							</div>
@@ -146,9 +156,12 @@ $extraScripts = '<script src="/LOKA/layouts/live-search.js"></script>';
 
 require dirname(__DIR__, 3) . '/layouts/header.php';
 ?>
-    <div class="page-header">
-      <h1>Utilisateurs</h1>
-      <p><?= $result['total'] ?> compte<?= $result['total'] > 1 ? 's' : '' ?> sur la plateforme</p>
+    <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <div>
+        <h1>Utilisateurs</h1>
+        <p><?= $result['total'] ?> compte<?= $result['total'] > 1 ? 's' : '' ?> sur la plateforme</p>
+      </div>
+      <a class="btn btn-primary" href="ajouter.php" data-modal>+ Ajouter un utilisateur</a>
     </div>
 
     <?php if (isset($_GET['success'])): ?>

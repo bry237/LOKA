@@ -112,10 +112,11 @@
     padding:11px 12px;
     border:1px solid var(--border);
     border-radius:11px;
-    cursor:pointer;
     transition:background .15s ease;
+    text-decoration:none;color:inherit;
   }
-  .watch-item:hover{background:#FAFCFC;}
+  .watch-item-link{cursor:pointer;}
+  .watch-item-link:hover{background:#FAFCFC;}
   .watch-icon{
     width:32px;height:32px;border-radius:9px;flex-shrink:0;
     display:flex;align-items:center;justify-content:center;

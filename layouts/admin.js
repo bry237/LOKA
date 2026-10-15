@@ -114,6 +114,120 @@
     });
   }
 
+  /* ---------- Notifications de la topbar ---------- */
+  const notifWrap = document.querySelector('.notif-wrap');
+  const notifBtn = document.getElementById('notifBtn');
+  const notifPanel = document.getElementById('notifPanel');
+  const notifDot = document.getElementById('notifDot');
+  const notifList = document.getElementById('notifList');
+  const notifMarkAllBtn = document.getElementById('notifMarkAllBtn');
+
+  if (notifWrap && notifBtn && notifPanel && notifList) {
+    const notifCsrfToken = notifWrap.dataset.csrf || '';
+    const notifTypeLabels = { SMS: 'SMS', EMAIL: 'Email', INTERNAL: 'Notification' };
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str || '';
+      return div.innerHTML;
+    }
+
+    function notifTimeAgo(raw) {
+      const date = new Date(String(raw).replace(' ', 'T'));
+      const diff = (Date.now() - date.getTime()) / 1000;
+      if (diff < 60) return 'À l’instant';
+      if (diff < 3600) return 'Il y a ' + Math.floor(diff / 60) + ' min';
+      if (diff < 86400) return 'Il y a ' + Math.floor(diff / 3600) + 'h';
+      return date.toLocaleDateString('fr-FR');
+    }
+
+    function setUnread(count) {
+      notifDot.hidden = !(count > 0);
+    }
+
+    function renderNotifs(items) {
+      if (!items.length) {
+        notifList.innerHTML = '<p class="empty-note">Aucune notification.</p>';
+        return;
+      }
+      notifList.innerHTML = items.map((n) => `
+        <div class="notif-item${n.lu ? '' : ' unread'}" data-id="${n.id}">
+          <div class="notif-item-top">
+            <span class="notif-item-title">${escapeHtml(n.titre || notifTypeLabels[n.type] || 'Notification')}</span>
+            <span class="notif-item-time">${notifTimeAgo(n.date)}</span>
+          </div>
+          <div class="notif-item-message">${escapeHtml(n.message)}</div>
+        </div>
+      `).join('');
+    }
+
+    function loadNotifs() {
+      fetch('/LOKA/app/administration/notifications/data.php', { credentials: 'same-origin' })
+        .then((res) => (res.ok ? res.json() : Promise.reject()))
+        .then((data) => {
+          setUnread(data.unread || 0);
+          renderNotifs(data.items || []);
+        })
+        .catch(() => {
+          notifList.innerHTML = '<p class="empty-note">Impossible de charger les notifications.</p>';
+        });
+    }
+
+    function markRead(id) {
+      const body = new URLSearchParams({ csrf_token: notifCsrfToken });
+      if (id) body.set('id', id); else body.set('all', '1');
+      fetch('/LOKA/app/administration/notifications/marquer-lu.php', { method: 'POST', credentials: 'same-origin', body })
+        .then((res) => (res.ok ? res.json() : Promise.reject()))
+        .then((data) => setUnread(data.unread || 0))
+        .catch(() => {});
+    }
+
+    notifBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const profileMenuEl = document.getElementById('profileMenu');
+      profileMenuEl && (profileMenuEl.hidden = true);
+      notifPanel.hidden = !notifPanel.hidden;
+    });
+
+    notifList.addEventListener('click', (e) => {
+      const item = e.target.closest('.notif-item.unread');
+      if (!item) return;
+      item.classList.remove('unread');
+      markRead(item.dataset.id);
+    });
+
+    notifMarkAllBtn && notifMarkAllBtn.addEventListener('click', () => {
+      notifList.querySelectorAll('.notif-item.unread').forEach((el) => el.classList.remove('unread'));
+      markRead(null);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.notif-wrap')) notifPanel.hidden = true;
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') notifPanel.hidden = true;
+    });
+
+    loadNotifs();
+  }
+
+  /* ---------- Menu profil de la topbar ---------- */
+  const profileWrap = document.querySelector('.profile-wrap');
+  const profileBtn = document.getElementById('profileBtn');
+  const profileMenu = document.getElementById('profileMenu');
+
+  if (profileWrap && profileBtn && profileMenu) {
+    profileBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const notifPanelEl = document.getElementById('notifPanel');
+      notifPanelEl && (notifPanelEl.hidden = true);
+      profileMenu.hidden = !profileMenu.hidden;
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.profile-wrap')) profileMenu.hidden = true;
+    });
+  }
+
   /* ---------- Modale globale : ajouter / consulter / modifier ---------- */
   const modalOverlay = document.getElementById('modalOverlay');
   const modalPanel = document.getElementById('modalPanel');

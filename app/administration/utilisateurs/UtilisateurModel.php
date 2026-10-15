@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__, 3) . '/core/Database.php';
+require_once __DIR__ . '/UtilisateurValidator.php';
 
 final class UtilisateurModel
 {
@@ -10,6 +11,74 @@ final class UtilisateurModel
 	public static function roles(): array
 	{
 		return Database::connection()->query('SELECT id_role, nom FROM role ORDER BY id_role')->fetchAll();
+	}
+
+	/** Rôles attribuables depuis "Ajouter/Modifier un utilisateur" (voir UtilisateurValidator). */
+	public static function creatableRoles(): array
+	{
+		$ids = implode(',', UtilisateurValidator::CREATABLE_ROLE_IDS);
+		return Database::connection()->query("SELECT id_role, nom FROM role WHERE id_role IN ({$ids}) ORDER BY id_role")->fetchAll();
+	}
+
+	public static function emailExists(string $email, ?int $excludeId = null): bool
+	{
+		$sql = 'SELECT 1 FROM utilisateur WHERE LOWER(email) = LOWER(:email) AND deleted_at IS NULL';
+		$params = ['email' => $email];
+		if ($excludeId !== null) {
+			$sql .= ' AND id_utilisateur != :exclude_id';
+			$params['exclude_id'] = $excludeId;
+		}
+		$stmt = Database::connection()->prepare($sql . ' LIMIT 1');
+		$stmt->execute($params);
+		return (bool) $stmt->fetchColumn();
+	}
+
+	/**
+	 * @param array{nom:string,prenom:string,email:string,telephone:?string,id_role:int,id_agence:?int} $data
+	 * @return array{id_utilisateur:int,mot_de_passe_temporaire:string}
+	 */
+	public static function create(array $data): array
+	{
+		$tempPassword = bin2hex(random_bytes(5));
+		$stmt = Database::connection()->prepare(
+			'INSERT INTO utilisateur (id_agence, id_role, nom, prenom, email, mot_de_passe, telephone, statut)
+			 VALUES (:id_agence, :id_role, :nom, :prenom, :email, :mot_de_passe, :telephone, \'ACTIVE\')'
+		);
+		$stmt->execute([
+			'id_agence' => $data['id_agence'],
+			'id_role' => $data['id_role'],
+			'nom' => $data['nom'],
+			'prenom' => $data['prenom'],
+			'email' => $data['email'],
+			'mot_de_passe' => password_hash($tempPassword, PASSWORD_DEFAULT),
+			'telephone' => $data['telephone'],
+		]);
+
+		return [
+			'id_utilisateur' => (int) Database::connection()->lastInsertId(),
+			'mot_de_passe_temporaire' => $tempPassword,
+		];
+	}
+
+	/**
+	 * @param array{nom:string,prenom:string,email:string,telephone:?string,id_role:int,id_agence:?int} $data
+	 */
+	public static function update(int $id, array $data): void
+	{
+		$stmt = Database::connection()->prepare(
+			'UPDATE utilisateur SET nom = :nom, prenom = :prenom, email = :email, telephone = :telephone,
+				id_role = :id_role, id_agence = :id_agence
+			 WHERE id_utilisateur = :id'
+		);
+		$stmt->execute([
+			'nom' => $data['nom'],
+			'prenom' => $data['prenom'],
+			'email' => $data['email'],
+			'telephone' => $data['telephone'],
+			'id_role' => $data['id_role'],
+			'id_agence' => $data['id_agence'],
+			'id' => $id,
+		]);
 	}
 
 	public static function find(int $id): ?array
@@ -84,6 +153,13 @@ final class UtilisateurModel
 	{
 		$stmt = Database::connection()->prepare('UPDATE utilisateur SET statut = :statut WHERE id_utilisateur = :id');
 		$stmt->execute(['statut' => $status, 'id' => $id]);
+	}
+
+	/** Suppression logique : conserve l'historique (audit, documents...) référençant ce compte. */
+	public static function delete(int $id): void
+	{
+		$stmt = Database::connection()->prepare('UPDATE utilisateur SET deleted_at = NOW() WHERE id_utilisateur = :id');
+		$stmt->execute(['id' => $id]);
 	}
 
 	private static function buildWhere(array $filters): array
