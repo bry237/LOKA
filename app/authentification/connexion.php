@@ -46,20 +46,12 @@ if ($message === null && $errors) {
 	<link rel="stylesheet" href="auth.css">
 </head>
 <body>
-	<?php
-
-$motDePasse = "12345678";
-
-$hash = password_hash($motDePasse, PASSWORD_DEFAULT);
-
-echo $hash;
-?>
 <main class="auth-page">
 	<section class="auth-card">
 		<div class="auth-panel__inner">
 			<a class="brand" href="../../index%20(2).html" aria-label="Retour à l’accueil LOKA">
 				<span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M4 14.2 16 4l12 10.2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.5 12.5V27h17V12.5M12 27v-7h8v7" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg></span><span class="brand__name">LOKA</span>
-			</a>
+			</a> 
 
 			<div class="tabs" role="tablist" aria-label="Authentification">
 				<button class="tabs__button is-active" type="button" data-panel="login" role="tab" aria-selected="true">Connexion</button>
