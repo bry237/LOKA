@@ -1,0 +1,705 @@
+/* =========================================================
+   PAGE PAIEMENTS - LOKA
+========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   CONTENU PRINCIPAL
+========================================================= */
+
+.main-content {
+    margin-left: 250px;
+    padding: 35px;
+    min-height: 100vh;
+    background: #f4f7f8;
+}
+
+
+/* =========================================================
+   EN-TÊTE
+========================================================= */
+
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 30px;
+}
+
+.page-header h1 {
+    margin: 0 0 8px;
+
+    color: #075b5f;
+
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.page-header h1 i {
+    margin-right: 10px;
+}
+
+.page-header p {
+    margin: 0;
+
+    color: #6d7b80;
+
+    font-size: 15px;
+}
+
+
+/* =========================================================
+   STATISTIQUES
+========================================================= */
+
+.stats-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 18px;
+
+    margin-bottom: 30px;
+}
+
+
+.stat-card {
+    display: flex;
+    align-items: center;
+
+    gap: 16px;
+
+    background: #ffffff;
+
+    border-radius: 16px;
+
+    padding: 22px;
+
+    box-shadow:
+        0 3px 12px rgba(0, 0, 0, 0.06);
+}
+
+
+.stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 50px;
+    height: 50px;
+
+    flex-shrink: 0;
+
+    border-radius: 13px;
+
+    background: #e4f5f5;
+
+    color: #075b5f;
+
+    font-size: 21px;
+}
+
+
+.stat-content {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 4px;
+}
+
+
+.stat-label {
+    color: #718087;
+
+    font-size: 13px;
+}
+
+
+.stat-value {
+    color: #075b5f;
+
+    font-size: 24px;
+    font-weight: 700;
+}
+
+
+.stat-description {
+    color: #8a969b;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   CARTE PAIEMENTS
+========================================================= */
+
+.payments-card {
+    background: #ffffff;
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 3px 15px rgba(0, 0, 0, 0.06);
+
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   EN-TÊTE DU TABLEAU
+========================================================= */
+
+.payments-header {
+    padding: 23px 25px;
+
+    border-bottom: 1px solid #e7ecee;
+}
+
+.payments-header h2 {
+    margin: 0 0 5px;
+
+    color: #075b5f;
+
+    font-size: 21px;
+}
+
+.payments-header p {
+    margin: 0;
+
+    color: #7a878c;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   TABLEAU
+========================================================= */
+
+.table-container {
+    width: 100%;
+
+    overflow-x: auto;
+}
+
+
+table {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    min-width: 950px;
+}
+
+
+thead th {
+    padding: 15px 18px;
+
+    background: #f6f9fa;
+
+    color: #637178;
+
+    text-align: left;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+
+tbody td {
+    padding: 17px 18px;
+
+    border-top: 1px solid #edf0f1;
+
+    color: #344247;
+
+    font-size: 14px;
+
+    vertical-align: middle;
+}
+
+
+tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+
+tbody tr:hover {
+    background: #fafcfc;
+}
+
+
+/* =========================================================
+   CONTRAT
+========================================================= */
+
+.contract-number {
+    color: #075b5f;
+
+    font-weight: 700;
+}
+
+
+.property-reference {
+    margin-top: 4px;
+
+    color: #849197;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   LOCATAIRE
+========================================================= */
+
+.tenant-name {
+    font-weight: 600;
+
+    color: #344247;
+}
+
+
+.muted {
+    color: #8a969b;
+}
+
+
+/* =========================================================
+   DATE
+========================================================= */
+
+.date-main {
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   MONTANT
+========================================================= */
+
+.amount {
+    color: #075b5f;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   BADGES STATUT
+========================================================= */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+
+    padding: 6px 11px;
+
+    border-radius: 20px;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+
+.status-paid {
+    background: #dff4e8;
+
+    color: #197044;
+}
+
+
+.status-pending {
+    background: #fff1cf;
+
+    color: #8a6200;
+}
+
+
+.status-late {
+    background: #fde1e1;
+
+    color: #a63232;
+}
+
+
+.status-cancelled {
+    background: #eceff1;
+
+    color: #5e686d;
+}
+
+
+.status-refund {
+    background: #e9e0f8;
+
+    color: #68439b;
+}
+
+
+.status-default {
+    background: #eef2f3;
+
+    color: #59666b;
+}
+
+
+/* =========================================================
+   AUCUN PAIEMENT
+========================================================= */
+
+.empty-state {
+    padding: 75px 30px;
+
+    text-align: center;
+
+    color: #78868c;
+}
+
+
+.empty-icon {
+    margin-bottom: 18px;
+
+    color: #14969a;
+
+    font-size: 45px;
+}
+
+
+.empty-state h3 {
+    margin: 0 0 8px;
+
+    color: #075b5f;
+
+    font-size: 20px;
+}
+
+
+.empty-state p {
+    margin: 0;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1200px) {
+
+    .stats-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+}
+
+
+@media (max-width: 900px) {
+
+    .main-content {
+        margin-left: 0;
+
+        padding: 25px 20px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .page-header h1 {
+        font-size: 27px;
+    }
+}
+
+/* =========================================================
+   TABLEAU DES REVENUS
+   ========================================================= */
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.revenus-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+.revenus-table thead {
+    background: #f4f7f8;
+}
+
+.revenus-table th {
+    padding: 15px 14px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 700;
+    color: #526568;
+    border-bottom: 1px solid #e1e8e9;
+}
+
+.revenus-table td {
+    padding: 17px 14px;
+    border-bottom: 1px solid #edf1f2;
+    font-size: 14px;
+    color: #374151;
+    vertical-align: middle;
+}
+
+.revenus-table tbody tr:hover {
+    background: #fafcfc;
+}
+
+
+/* Bien */
+
+.property-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.property-cell strong {
+    color: #173b3d;
+}
+
+.property-cell span {
+    color: #7a8789;
+    font-size: 13px;
+}
+
+
+/* Montant */
+
+.amount {
+    font-weight: 700;
+    color: #075b5f !important;
+    white-space: nowrap;
+}
+
+
+/* Statuts */
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 6px 11px;
+    border-radius: 20px;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+.status-paid {
+    background: #e5f5ec;
+    color: #207044;
+}
+
+.status-pending {
+    background: #fff4dc;
+    color: #93620c;
+}
+
+.status-late {
+    background: #fde8e8;
+    color: #a52a2a;
+}
+
+.status-cancelled {
+    background: #eeeeee;
+    color: #666666;
+}
+
+.status-refund {
+    background: #eee8fa;
+    color: #65499a;
+}
+
+.status-default {
+    background: #edf1f2;
+    color: #526568;
+}
+
+/* =========================================================
+   FILTRES REVENUS
+========================================================= */
+
+.filters-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+}
+
+.revenus-filters {
+    display: flex;
+    align-items: flex-end;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.filter-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #526568;
+}
+
+.filter-group select {
+    min-width: 170px;
+    height: 44px;
+    padding: 0 12px;
+    border: 1px solid #d9e2e3;
+    border-radius: 9px;
+    background: #ffffff;
+    color: #263b3d;
+    font-size: 14px;
+    outline: none;
+}
+
+.filter-group select:focus {
+    border-color: #14969a;
+}
+
+.filter-button,
+.reset-button {
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 18px;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.filter-button {
+    border: none;
+    background: #075b5f;
+    color: #ffffff;
+}
+
+.filter-button:hover {
+    background: #064c4f;
+}
+
+.reset-button {
+    border: 1px solid #d9e2e3;
+    background: #ffffff;
+    color: #526568;
+}
+
+.reset-button:hover {
+    background: #f4f7f8;
+}
+
+
+/* =========================================================
+   PÉRIODE
+========================================================= */
+
+.period-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: #eef8f8;
+    border-radius: 10px;
+    color: #075b5f;
+    font-size: 14px;
+}
+
+.period-info i {
+    font-size: 16px;
+}
+
+
+/* =========================================================
+   GRAPHIQUE
+========================================================= */
+
+.chart-card {
+    margin-bottom: 30px;
+}
+
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 350px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .revenus-filters {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .filter-group {
+        width: 100%;
+    }
+
+    .filter-group select,
+    .filter-button,
+    .reset-button {
+        width: 100%;
+    }
+
+    .chart-container {
+        height: 300px;
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .filters-card {
+        padding: 16px;
+    }
+
+    .period-info {
+        align-items: flex-start;
+    }
+
+    .chart-container {
+        height: 260px;
+    }
+
+}

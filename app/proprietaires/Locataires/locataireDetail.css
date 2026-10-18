@@ -1,0 +1,770 @@
+/* =========================================================
+   STYLES SPECIFIQUES A LA PAGE DETAIL LOCATAIRE
+   ========================================================= */
+
+
+/* =========================================================
+   CONTENEUR PRINCIPAL
+   ========================================================= */
+
+   
+.locataire-detail-back {
+    margin-bottom: 24px;
+}
+
+.locataire-detail-back a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #2563eb;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.locataire-detail-back a:hover {
+    text-decoration: underline;
+}
+
+
+/* =========================================================
+   PROFIL DU LOCATAIRE
+   ========================================================= */
+
+.locataire-detail-profile {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+
+    padding: 24px;
+    margin-bottom: 24px;
+
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+
+.locataire-detail-avatar {
+    width: 82px;
+    height: 82px;
+    min-width: 82px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #e8f0fe;
+    color: #2563eb;
+
+    font-size: 28px;
+    font-weight: 700;
+}
+
+
+.locataire-detail-profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+
+.locataire-detail-profile-info h2 {
+    margin: 0;
+
+    color: #111827;
+
+    font-size: 25px;
+    font-weight: 700;
+}
+
+
+.locataire-detail-profile-info a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    color: #6b7280;
+
+    text-decoration: none;
+    font-size: 14px;
+}
+
+
+.locataire-detail-profile-info a:hover {
+    color: #2563eb;
+}
+
+
+/* =========================================================
+   STATUT
+   ========================================================= */
+
+.locataire-detail-status {
+    margin: 2px 0;
+}
+
+
+.locataire-status-badge {
+    display: inline-flex;
+    align-items: center;
+
+    padding: 5px 11px;
+
+    border-radius: 999px;
+
+    background: #dcfce7;
+    color: #166534;
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   STATISTIQUES
+   ========================================================= */
+
+.locataire-detail-stats {
+    display: grid;
+
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+
+    gap: 18px;
+
+    margin-bottom: 28px;
+}
+
+
+.locataire-detail-stat-card {
+    display: flex;
+    align-items: center;
+
+    gap: 15px;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+
+    padding: 20px;
+
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+
+.locataire-detail-stat-icon {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 12px;
+
+    background: #eff6ff;
+    color: #2563eb;
+
+    font-size: 19px;
+}
+
+
+.locataire-detail-stat-card span {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: #6b7280;
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+
+.locataire-detail-stat-card strong {
+    display: block;
+
+    color: #111827;
+
+    font-size: 17px;
+    font-weight: 700;
+
+    word-break: break-word;
+}
+
+
+/* =========================================================
+   SECTIONS
+   ========================================================= */
+
+.locataire-detail-section {
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+
+    padding: 24px;
+
+    margin-bottom: 24px;
+
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+
+.locataire-detail-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    margin-bottom: 22px;
+}
+
+
+.locataire-detail-section-header h2 {
+    margin: 0 0 5px;
+
+    color: #111827;
+
+    font-size: 19px;
+    font-weight: 700;
+}
+
+
+.locataire-detail-section-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 13px;
+}
+
+
+.locataire-detail-section-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background: #eff6ff;
+    color: #2563eb;
+
+    font-size: 17px;
+}
+
+
+/* =========================================================
+   INFORMATIONS
+   ========================================================= */
+
+.locataire-detail-grid {
+    display: grid;
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 18px 24px;
+}
+
+
+.locataire-detail-field {
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+
+    padding: 14px 0;
+
+    border-bottom: 1px solid #f0f0f0;
+}
+
+
+.locataire-detail-field span {
+    color: #6b7280;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    text-transform: uppercase;
+}
+
+
+.locataire-detail-field strong {
+    color: #111827;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    line-height: 1.5;
+
+    word-break: break-word;
+}
+
+
+.locataire-detail-field-wide {
+    grid-column: 1 / -1;
+}
+
+
+/* =========================================================
+   CONTACT
+   ========================================================= */
+
+.locataire-detail-contact-grid {
+    display: grid;
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 18px;
+}
+
+
+.locataire-detail-contact-card {
+    display: flex;
+    align-items: center;
+
+    gap: 15px;
+
+    padding: 18px;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+
+    text-decoration: none;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+}
+
+
+.locataire-detail-contact-card:hover {
+    transform: translateY(-2px);
+
+    border-color: #bfdbfe;
+
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.07);
+}
+
+
+.contact-card-icon {
+    width: 45px;
+    height: 45px;
+    min-width: 45px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background: #eff6ff;
+    color: #2563eb;
+
+    font-size: 17px;
+}
+
+
+.locataire-detail-contact-card span {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: #6b7280;
+
+    font-size: 12px;
+}
+
+
+.locataire-detail-contact-card strong {
+    display: block;
+
+    color: #111827;
+
+    font-size: 14px;
+
+    word-break: break-word;
+}
+
+
+/* =========================================================
+   CONTRATS
+   ========================================================= */
+
+.locataire-contract-list {
+    display: flex;
+    flex-direction: column;
+
+    gap: 18px;
+}
+
+
+.locataire-contract-detail-card {
+    border: 1px solid #e5e7eb;
+
+    border-radius: 14px;
+
+    padding: 20px;
+
+    background: #fafafa;
+}
+
+
+.locataire-contract-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    gap: 20px;
+
+    padding-bottom: 18px;
+
+    margin-bottom: 18px;
+
+    border-bottom: 1px solid #e5e7eb;
+}
+
+
+.locataire-contract-number {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #2563eb;
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+
+.locataire-contract-detail-header h3 {
+    margin: 0 0 6px;
+
+    color: #111827;
+
+    font-size: 17px;
+}
+
+
+.locataire-contract-detail-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 13px;
+}
+
+
+.locataire-contract-detail-header p strong {
+    color: #374151;
+}
+
+
+/* =========================================================
+   STATUTS CONTRATS
+   ========================================================= */
+
+.contract-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 6px 12px;
+
+    border-radius: 999px;
+
+    white-space: nowrap;
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+
+.status-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+
+.status-draft {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+
+.status-expired {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+
+.status-renewed {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+
+.status-terminated {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+
+.status-default {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+
+/* =========================================================
+   INFORMATIONS DU CONTRAT
+   ========================================================= */
+
+.locataire-contract-detail-grid {
+    display: grid;
+
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    gap: 16px;
+}
+
+
+.locataire-contract-detail-grid > div {
+    display: flex;
+    flex-direction: column;
+
+    gap: 5px;
+
+    padding: 12px;
+
+    background: #ffffff;
+
+    border: 1px solid #eeeeee;
+
+    border-radius: 9px;
+}
+
+
+.locataire-contract-detail-grid span {
+    color: #6b7280;
+
+    font-size: 11px;
+    font-weight: 600;
+
+    text-transform: uppercase;
+}
+
+
+.locataire-contract-detail-grid strong {
+    color: #111827;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    word-break: break-word;
+}
+
+
+.locataire-contract-detail-grid .contract-price {
+    color: #2563eb;
+
+    font-size: 16px;
+}
+
+
+/* =========================================================
+   AUCUN CONTRAT
+   ========================================================= */
+
+.locataire-detail-empty {
+    text-align: center;
+
+    padding: 40px 20px;
+
+    background: #f9fafb;
+
+    border: 1px dashed #d1d5db;
+
+    border-radius: 12px;
+
+    color: #6b7280;
+}
+
+
+.locataire-detail-empty i {
+    margin-bottom: 12px;
+
+    font-size: 30px;
+
+    color: #9ca3af;
+}
+
+
+.locataire-detail-empty h3 {
+    margin: 0 0 6px;
+
+    color: #374151;
+
+    font-size: 17px;
+}
+
+
+.locataire-detail-empty p {
+    margin: 0;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   BOUTON RETOUR
+   ========================================================= */
+
+.locataire-detail-bottom {
+    margin-top: 10px;
+
+    padding-bottom: 30px;
+}
+
+
+.locataire-detail-back-button {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 10px 16px;
+
+    background: #ffffff;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 9px;
+
+    color: #374151;
+
+    text-decoration: none;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+
+.locataire-detail-back-button:hover {
+    background: #f9fafb;
+
+    border-color: #9ca3af;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1200px) {
+
+    .locataire-detail-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .locataire-contract-detail-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+
+@media (max-width: 900px) {
+
+    .locataire-detail-profile {
+        padding: 20px;
+    }
+
+    .locataire-detail-contact-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+@media (max-width: 700px) {
+
+    .locataire-detail-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .locataire-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .locataire-detail-field-wide {
+        grid-column: auto;
+    }
+
+    .locataire-contract-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .locataire-detail-profile {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .locataire-detail-section {
+        padding: 18px;
+    }
+
+    .locataire-detail-section-header {
+        align-items: flex-start;
+    }
+
+    .locataire-contract-detail-header {
+        flex-direction: column;
+    }
+}
+
+
+@media (max-width: 480px) {
+
+    .locataire-detail-avatar {
+        width: 65px;
+        height: 65px;
+        min-width: 65px;
+
+        font-size: 23px;
+    }
+
+    .locataire-detail-profile-info h2 {
+        font-size: 21px;
+    }
+
+    .locataire-detail-stat-card {
+        padding: 16px;
+    }
+
+    .locataire-detail-section {
+        padding: 15px;
+    }
+
+    .locataire-detail-contact-card {
+        padding: 14px;
+    }
+
+    .locataire-contract-detail-card {
+        padding: 15px;
+    }
+}
