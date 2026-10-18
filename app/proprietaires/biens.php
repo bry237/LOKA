@@ -82,8 +82,6 @@ $stmt->execute([
     $idProprietaire
 ]);
 
-$stmt = $pdo->prepare($sql);
-$stmt->execute([$idProprietaire]);
 
 $biens = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -176,17 +174,22 @@ function getImageUrl(?string $url): ?string
             Paiements
         </a>
 
-        <a href="/LOKA/app/proprietaires/quittances.php">
+        <a href="/LOKA/app/proprietaires/Quittances/quittances.php">
             <i class="fa-solid fa-receipt"></i>
             Quittances
         </a>
 
-        <a href="/LOKA/app/proprietaires/documents.php">
-            <i class="fa-solid fa-folder-open"></i>
-            Documents
-        </a>
+         <a
+                href="/LOKA/app/proprietaires/Documents/documents.php"
+            >
 
-        <a href="/LOKA/app/proprietaires/parametres.php">
+                <i class="fa-solid fa-folder-open"></i>
+
+                Documents
+
+            </a>
+
+        <a href="/LOKA/app/proprietaires/Parametres/parametres.php">
             <i class="fa-solid fa-gear"></i>
             Paramètres
         </a>

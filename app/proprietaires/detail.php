@@ -931,6 +931,353 @@ $success = isset($_GET['success']);
 
         }
 
+        /* =====================================================
+   FENÊTRE DE CONFIRMATION DE SUPPRESSION
+===================================================== */
+
+.delete-modal {
+    position: fixed;
+
+    inset: 0;
+
+    display: none;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 20px;
+
+    z-index: 9999;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Fenêtre visible
+|--------------------------------------------------------------------------
+*/
+
+.delete-modal.active {
+    display: flex;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Fond sombre
+|--------------------------------------------------------------------------
+*/
+
+.delete-modal-overlay {
+    position: absolute;
+
+    inset: 0;
+
+    background: rgba(15, 23, 42, 0.55);
+
+    backdrop-filter: blur(3px);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Boîte
+|--------------------------------------------------------------------------
+*/
+
+.delete-modal-box {
+    position: relative;
+
+    z-index: 2;
+
+    width: 100%;
+
+    max-width: 450px;
+
+    padding: 32px;
+
+    background: #FFFFFF;
+
+    border-radius: 22px;
+
+    text-align: center;
+
+    box-shadow:
+        0 25px 70px rgba(0, 0, 0, 0.20);
+
+    animation: deleteModalAppear 0.2s ease;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Animation
+|--------------------------------------------------------------------------
+*/
+
+@keyframes deleteModalAppear {
+
+    from {
+
+        opacity: 0;
+
+        transform:
+            translateY(15px)
+            scale(0.96);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform:
+            translateY(0)
+            scale(1);
+
+    }
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Icône
+|--------------------------------------------------------------------------
+*/
+
+.delete-modal-icon {
+
+    width: 68px;
+
+    height: 68px;
+
+    margin: 0 auto 20px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #FEE2E2;
+
+    color: #DC2626;
+
+    font-size: 26px;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Titre
+|--------------------------------------------------------------------------
+*/
+
+.delete-modal-box h2 {
+
+    margin: 0 0 15px;
+
+    color: #172525;
+
+    font-size: 24px;
+
+    font-weight: 700;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Message
+|--------------------------------------------------------------------------
+*/
+
+.delete-modal-message {
+
+    margin: 0;
+
+    color: #64748B;
+
+    font-size: 15px;
+
+    line-height: 1.6;
+}
+
+
+.delete-modal-message strong {
+
+    color: #172525;
+
+    font-weight: 700;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Avertissement
+|--------------------------------------------------------------------------
+*/
+
+.delete-modal-warning {
+
+    margin: 12px 0 25px;
+
+    color: #DC2626;
+
+    font-size: 13px;
+
+    font-weight: 600;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Boutons
+|--------------------------------------------------------------------------
+*/
+
+.delete-modal-actions {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 12px;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Bouton Annuler
+|--------------------------------------------------------------------------
+*/
+
+.delete-modal-cancel {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 12px 20px;
+
+    border: 1px solid #D1D5DB;
+
+    border-radius: 10px;
+
+    background: #FFFFFF;
+
+    color: #475569;
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+
+.delete-modal-cancel:hover {
+
+    background: #F8FAFC;
+
+    border-color: #CBD5E1;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Bouton confirmer
+|--------------------------------------------------------------------------
+*/
+
+.delete-modal-confirm {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    padding: 12px 20px;
+
+    border-radius: 10px;
+
+    background: #DC2626;
+
+    color: #FFFFFF;
+
+    text-decoration: none;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.delete-modal-confirm:hover {
+
+    background: #B91C1C;
+
+    transform: translateY(-1px);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Responsive
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 600px) {
+
+    .delete-modal-box {
+
+        padding: 25px;
+
+        border-radius: 18px;
+
+    }
+
+
+    .delete-modal-actions {
+
+        flex-direction: column;
+
+        width: 100%;
+
+    }
+
+
+    .delete-modal-cancel,
+    .delete-modal-confirm {
+
+        width: 100%;
+
+        box-sizing: border-box;
+
+    }
+
+}
+
     </style>
 
 </head>
@@ -1626,21 +1973,109 @@ $success = isset($_GET['success']);
         </a>
 
 
-        <a
-            href="supprimer.php?id=<?= $idBien ?>"
-            class="detail-action detail-action-danger"
-            onclick="return confirm('Voulez-vous vraiment supprimer ce bien ?');"
-        >
-
-            <i class="fa-solid fa-trash"></i>
-
-            Supprimer
-
-        </a>
+      <button
+    type="button"
+    class="detail-action detail-action-danger"
+    id="deletePropertyButton"
+>
+    <i class="fa-solid fa-trash"></i>
+    Supprimer
+</button>
 
 
     </div>
 
+
+</div>
+
+<!-- =====================================================
+     FENÊTRE DE CONFIRMATION DE SUPPRESSION
+====================================================== -->
+
+<div
+    class="delete-modal"
+    id="deleteModal"
+    aria-hidden="true"
+>
+
+    <div class="delete-modal-overlay"></div>
+
+    <div
+        class="delete-modal-box"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="deleteModalTitle"
+    >
+
+        <!-- Icône -->
+
+        <div class="delete-modal-icon">
+
+            <i class="fa-solid fa-trash"></i>
+
+        </div>
+
+
+        <!-- Titre -->
+
+        <h2 id="deleteModalTitle">
+            Supprimer ce bien ?
+        </h2>
+
+
+        <!-- Message -->
+
+        <p class="delete-modal-message">
+
+            Êtes-vous sûr de vouloir supprimer
+
+            <strong>
+                <?= e($bien['titre']) ?>
+            </strong>
+
+            ?
+
+        </p>
+
+
+        <!-- Avertissement -->
+
+        <p class="delete-modal-warning">
+
+            Cette action retirera ce bien de votre liste.
+
+        </p>
+
+
+        <!-- Actions -->
+
+        <div class="delete-modal-actions">
+
+            <button
+                type="button"
+                class="delete-modal-cancel"
+                id="cancelDelete"
+            >
+
+                Annuler
+
+            </button>
+
+
+            <a
+                href="supprimer.php?id=<?= $idBien ?>"
+                class="delete-modal-confirm"
+            >
+
+                <i class="fa-solid fa-trash"></i>
+
+                Supprimer le bien
+
+            </a>
+
+        </div>
+
+    </div>
 
 </div>
 
@@ -1952,6 +2387,134 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 });
+
+/*
+|--------------------------------------------------------------------------
+| FENÊTRE DE CONFIRMATION DE SUPPRESSION
+|--------------------------------------------------------------------------
+*/
+
+const deletePropertyButton =
+    document.getElementById('deletePropertyButton');
+
+const deleteModal =
+    document.getElementById('deleteModal');
+
+const cancelDelete =
+    document.getElementById('cancelDelete');
+
+const deleteModalOverlay =
+    document.querySelector('.delete-modal-overlay');
+
+
+/*
+|--------------------------------------------------------------------------
+| Ouvrir la fenêtre
+|--------------------------------------------------------------------------
+*/
+
+if (deletePropertyButton && deleteModal) {
+
+    deletePropertyButton.addEventListener(
+        'click',
+        function () {
+
+            deleteModal.classList.add('active');
+
+            deleteModal.setAttribute(
+                'aria-hidden',
+                'false'
+            );
+
+        }
+    );
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Fermer la fenêtre
+|--------------------------------------------------------------------------
+*/
+
+function closeDeleteModal() {
+
+    if (!deleteModal) {
+
+        return;
+
+    }
+
+
+    deleteModal.classList.remove('active');
+
+    deleteModal.setAttribute(
+        'aria-hidden',
+        'true'
+    );
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Bouton Annuler
+|--------------------------------------------------------------------------
+*/
+
+if (cancelDelete) {
+
+    cancelDelete.addEventListener(
+        'click',
+        function () {
+
+            closeDeleteModal();
+
+        }
+    );
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Cliquer sur le fond
+|--------------------------------------------------------------------------
+*/
+
+if (deleteModalOverlay) {
+
+    deleteModalOverlay.addEventListener(
+        'click',
+        function () {
+
+            closeDeleteModal();
+
+        }
+    );
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Touche Échap
+|--------------------------------------------------------------------------
+*/
+
+document.addEventListener(
+    'keydown',
+    function (event) {
+
+        if (event.key === 'Escape') {
+
+            closeDeleteModal();
+
+        }
+
+    }
+);
 
 </script>
 

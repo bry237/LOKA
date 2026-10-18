@@ -739,7 +739,11 @@ foreach ($contrats as $contrat) {
     <aside class="sidebar">
 
         <div class="sidebar-logo">
-            <h2>LOKA</h2>
+             <div class="logo">
+        <h2>LOKA</h2>
+        <p>Gestion immobilière</p>
+    </div>
+
         </div>
 
        
@@ -814,9 +818,9 @@ foreach ($contrats as $contrat) {
 
             </a>
 
-
+    
             <a
-                href="/LOKA/app/proprietaires/quittances.php"
+                href="/LOKA/app/proprietaires/Quittances/quittances.php"
             >
 
                 <i class="fa-solid fa-receipt"></i>
@@ -826,8 +830,8 @@ foreach ($contrats as $contrat) {
             </a>
 
 
-            <a
-                href="/LOKA/app/proprietaires/documents.php"
+           <a
+                href="/LOKA/app/proprietaires/Documents/documents.php"
             >
 
                 <i class="fa-solid fa-folder-open"></i>
@@ -838,7 +842,7 @@ foreach ($contrats as $contrat) {
 
 
             <a
-                href="/LOKA/app/proprietaires/parametres.php"
+                href="/LOKA/app/proprietaires/Parametres/parametres.php"
             >
 
                 <i class="fa-solid fa-gear"></i>

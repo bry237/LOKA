@@ -1,0 +1,760 @@
+.filters-card {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+}
+
+.search-box {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+/* =========================================================
+   PAGE QUITTANCES
+   ========================================================= */
+
+.main-content {
+    margin-left: 250px;
+    padding: 35px;
+    min-height: 100vh;
+    background: #f4f7f8;
+}
+
+
+/* =========================================================
+   EN-TÊTE
+   ========================================================= */
+
+.page-header {
+    margin-bottom: 30px;
+}
+
+.page-header h1 {
+    margin: 0 0 8px;
+    color: #173b3d;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.page-header p {
+    margin: 0;
+    color: #6b7c7d;
+    font-size: 15px;
+}
+
+
+/* =========================================================
+   STATISTIQUES
+   ========================================================= */
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: #ffffff;
+    border: 1px solid #e5eeee;
+    border-radius: 18px;
+    padding: 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 6px 18px rgba(20, 70, 72, 0.05);
+}
+
+.stat-icon {
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    border-radius: 14px;
+    background: #e7f4f4;
+    color: #075b5f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 21px;
+}
+
+.stat-label {
+    display: block;
+    margin-bottom: 6px;
+    color: #718182;
+    font-size: 13px;
+}
+
+.stat-value {
+    display: block;
+    color: #173b3d;
+    font-size: 23px;
+    font-weight: 700;
+}
+
+.stat-date {
+    font-size: 20px;
+}
+
+
+/* =========================================================
+   FILTRES
+   ========================================================= */
+
+.filters-card {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    margin-bottom: 22px;
+    box-shadow: none;
+}
+
+.filters-header {
+    margin-bottom: 20px;
+}
+
+.filters-header h2 {
+    margin: 0 0 6px;
+    color: #173b3d;
+    font-size: 19px;
+}
+
+.filters-header p {
+    margin: 0;
+    color: #718182;
+    font-size: 14px;
+}
+
+.filters-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.search-group {
+    width: 100%;
+}
+
+.search-box {
+    width: 100%;
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    left: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #075b5f;
+    font-size: 20px;
+    pointer-events: none;
+}
+
+.search-box input {
+    width: 100%;
+    height: 54px;
+    box-sizing: border-box;
+    padding: 0 24px 0 58px;
+    border: 1px solid #d5dede;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #263f40;
+    font-size: 17px;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-box input::placeholder {
+    color: #7c898a;
+}
+
+.search-box input:focus {
+    border-color: #14969a;
+    box-shadow: 0 0 0 3px rgba(20, 150, 154, 0.10);
+}
+
+
+/* =========================================================
+   OPTIONS FILTRES
+   ========================================================= */
+
+.filter-options {
+    display: flex;
+    align-items: flex-end;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.filter-group label {
+    color: #405657;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.filter-group select {
+    min-width: 180px;
+    height: 44px;
+    padding: 0 13px;
+    border: 1px solid #d9e4e4;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #263f40;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+}
+
+.filter-group select:focus {
+    border-color: #14969a;
+    box-shadow: 0 0 0 3px rgba(20, 150, 154, 0.10);
+}
+
+
+/* =========================================================
+   BOUTONS
+   ========================================================= */
+
+.filter-actions {
+    display: flex;
+    align-items: center;
+
+    /* ESPACE ENTRE LE MOIS ET LES BOUTONS */
+    margin-left: 22px;
+
+    gap: 12px;
+}
+
+.filter-button,
+.reset-button {
+    height: 44px;
+    padding: 0 17px;
+    border-radius: 10px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    text-decoration: none;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.filter-button {
+    border: none;
+    background: #075b5f;
+    color: #ffffff;
+}
+
+.filter-button:hover {
+    background: #064d50;
+}
+
+.reset-button {
+    border: 1px solid #d9e4e4;
+    background: #ffffff;
+    color: #405657;
+}
+
+.reset-button:hover {
+    background: #f3f7f7;
+}
+
+/* =========================================================
+   RÉSUMÉ DES RÉSULTATS
+   ========================================================= */
+
+.result-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 15px;
+    padding: 0 3px;
+    color: #687879;
+    font-size: 14px;
+}
+
+.result-summary strong {
+    color: #173b3d;
+}
+
+.filtered-amount {
+    color: #687879;
+}
+
+
+/* =========================================================
+   CARTE TABLEAU
+   ========================================================= */
+
+.quittances-card {
+    background: #ffffff;
+    border: 1px solid #e5eeee;
+    border-radius: 18px;
+    box-shadow: 0 6px 18px rgba(20, 70, 72, 0.05);
+    overflow: hidden;
+}
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.quittances-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1050px;
+}
+
+.quittances-table thead {
+    background: #f7fafa;
+}
+
+.quittances-table th {
+    padding: 16px 18px;
+    text-align: left;
+    color: #526566;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.quittances-table td {
+    padding: 17px 18px;
+    border-top: 1px solid #edf2f2;
+    color: #405657;
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.quittances-table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.quittances-table tbody tr:hover {
+    background: #fafcfc;
+}
+
+
+/* =========================================================
+   NUMÉRO QUITTANCE
+   ========================================================= */
+
+.quittance-number {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.quittance-number > i {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 10px;
+    background: #e7f4f4;
+    color: #075b5f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quittance-number strong {
+    display: block;
+    color: #173b3d;
+    font-size: 14px;
+}
+
+.quittance-number span {
+    display: block;
+    margin-top: 4px;
+    color: #8a999a;
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   LOCATAIRE
+   ========================================================= */
+
+.tenant-name {
+    display: block;
+    color: #263f40;
+    font-weight: 600;
+}
+
+.tenant-label {
+    display: block;
+    margin-top: 4px;
+    color: #8a999a;
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   BIEN
+   ========================================================= */
+
+.property-info strong {
+    display: block;
+    color: #263f40;
+    font-weight: 600;
+}
+
+.property-info span {
+    display: block;
+    margin-top: 4px;
+    color: #8a999a;
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   PÉRIODE
+   ========================================================= */
+
+.period-info {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+}
+
+.period-info span {
+    color: #526566;
+    font-size: 13px;
+}
+
+.period-info i {
+    color: #9aa8a9;
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   MONTANT
+   ========================================================= */
+
+.amount {
+    color: #075b5f;
+    font-size: 15px;
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   DATE
+   ========================================================= */
+
+.date-value {
+    color: #526566;
+    white-space: nowrap;
+}
+
+.muted {
+    color: #9aa8a9;
+}
+
+
+/* =========================================================
+   PDF
+   ========================================================= */
+
+.pdf-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 12px;
+    border-radius: 9px;
+    background: #fff1f1;
+    color: #b42323;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background-color 0.2s ease;
+}
+
+.pdf-button:hover {
+    background: #ffe2e2;
+}
+
+.no-pdf {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #9aa8a9;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   ÉTAT VIDE
+   ========================================================= */
+
+.empty-state {
+    padding: 70px 30px;
+    text-align: center;
+}
+
+.empty-icon {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 18px;
+    border-radius: 18px;
+    background: #e7f4f4;
+    color: #075b5f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 27px;
+}
+
+.empty-state h2 {
+    margin: 0 0 8px;
+    color: #263f40;
+    font-size: 20px;
+}
+
+.empty-state p {
+    margin: 0 0 20px;
+    color: #7b898a;
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1200px) {
+
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+@media (max-width: 900px) {
+
+    .main-content {
+        margin-left: 0;
+        padding: 25px 18px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filters-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-group {
+        width: 100%;
+    }
+
+    .filter-group,
+    .filter-group select {
+        width: 100%;
+    }
+
+    .filter-actions {
+        width: 100%;
+    }
+
+    .filter-button,
+    .reset-button {
+        flex: 1;
+    }
+
+    .result-summary {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 7px;
+    }
+
+}
+
+@media (max-width: 600px) {
+
+    .page-header h1 {
+        font-size: 27px;
+    }
+
+    .stat-card {
+        padding: 18px;
+    }
+
+    .filters-card {
+        padding: 18px;
+    }
+
+}
+
+.search-box {
+    width: 100%;
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    left: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #075b5f;
+    font-size: 20px;
+    pointer-events: none;
+}
+
+.search-box input {
+    width: 100%;
+    height: 54px;
+    box-sizing: border-box;
+    padding: 0 24px 0 58px;
+    border: 1px solid #d5dede;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #263f40;
+    font-size: 17px;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-box input::placeholder {
+    color: #7c898a;
+}
+
+.search-box input:focus {
+    border-color: #14969a;
+    box-shadow: 0 0 0 3px rgba(20, 150, 154, 0.10);
+}
+
+@media (max-width: 900px) {
+
+    .filter-options {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-group {
+        width: 100%;
+    }
+
+    .filter-group select {
+        width: 100%;
+    }
+
+    .filter-actions {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 8px;
+    }
+
+    .filter-button,
+    .reset-button {
+        flex: 1;
+
+        /* =========================================================
+   DOCUMENTS PDF
+   ========================================================= */
+
+.pdf-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.pdf-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 38px;
+    padding: 8px 12px;
+    border-radius: 9px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.view-pdf {
+    background: #e8f5f5;
+    color: #075b5f;
+    border: 1px solid #c9e4e5;
+}
+
+.view-pdf:hover {
+    background: #d8eeee;
+    transform: translateY(-1px);
+}
+
+.download-pdf {
+    background: #075b5f;
+    color: #ffffff;
+    border: 1px solid #075b5f;
+}
+
+.download-pdf:hover {
+    background: #064b4f;
+    transform: translateY(-1px);
+}
+
+.no-pdf {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #8a9698;
+    font-size: 13px;
+    font-weight: 500;
+}
+    }
+}
+
+@media (max-width: 700px) {
+
+    .pdf-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .pdf-button {
+        width: 100%;
+    }
+}
+
+.pdf-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+
+    /* espace avec la ligne de quittance */
+    margin-top: 14px;
+
+    flex-wrap: wrap;
+}

@@ -860,7 +860,7 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
 
 
             <a
-                href="/LOKA/app/proprietaires/mes_revenus.php"
+                href="/LOKA/app/proprietaires/Revenus/revenus.php"
             >
 
                 <i class="fa-solid fa-wallet"></i>
@@ -871,7 +871,7 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
 
 
             <a
-                href="/LOKA/app/proprietaires/paiements.php"
+                href="/LOKA/app/proprietaires/Paiements/index.php"
             >
 
                 <i class="fa-solid fa-credit-card"></i>
@@ -882,7 +882,7 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
 
 
             <a
-                href="/LOKA/app/proprietaires/quittances.php"
+                href="/LOKA/app/proprietaires/Quittances/quittances.php"
             >
 
                 <i class="fa-solid fa-receipt"></i>
@@ -893,7 +893,7 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
 
 
             <a
-                href="/LOKA/app/proprietaires/documents.php"
+                href="/LOKA/app/proprietaires/Documents/documents.php"
             >
 
                 <i class="fa-solid fa-folder-open"></i>
@@ -904,7 +904,7 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
 
 
             <a
-                href="/LOKA/app/proprietaires/parametres.php"
+                href="/LOKA/app/proprietaires/Parametres/parametres.php"
             >
 
                 <i class="fa-solid fa-gear"></i>

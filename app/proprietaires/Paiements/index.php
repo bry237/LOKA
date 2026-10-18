@@ -378,7 +378,7 @@ $activePage = 'paiements';
 
 
             <a
-                href="/LOKA/app/proprietaires/quittances.php"
+                href="/LOKA/app/proprietaires/Quittances/quittances.php"
             >
 
                 <i class="fa-solid fa-receipt"></i>
@@ -388,8 +388,8 @@ $activePage = 'paiements';
             </a>
 
 
-            <a
-                href="/LOKA/app/proprietaires/documents.php"
+         <a
+                href="/LOKA/app/proprietaires/Documents/documents.php"
             >
 
                 <i class="fa-solid fa-folder-open"></i>
@@ -400,7 +400,7 @@ $activePage = 'paiements';
 
 
             <a
-                href="/LOKA/app/proprietaires/parametres.php"
+                href="/LOKA/app/proprietaires/Parametres/parametres.php"
             >
 
                 <i class="fa-solid fa-gear"></i>
