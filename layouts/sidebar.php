@@ -39,7 +39,10 @@ $navSoon = static function (string $label, string $svg) use ($navActive): string
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1M9 17h1M14 17h1"/></svg>
         Agences
       </a></li>
-      <?= $navSoon('Biens', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>') ?>
+      <li class="nav-item"><a class="nav-link<?= $navActive('Biens') ?>" href="../biens/index.php">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
+        Biens
+      </a></li>
       <li class="nav-item"><a class="nav-link<?= $navActive('Abonnements') ?>" href="../abonnements/index.php">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
         Abonnements
@@ -52,7 +55,10 @@ $navSoon = static function (string $label, string $svg) use ($navActive): string
 
     <div class="nav-section-label">ANALYSE &amp; SÉCURITÉ</div>
     <ul class="nav">
-      <?= $navSoon('Statistiques', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>') ?>
+      <li class="nav-item"><a class="nav-link<?= $navActive('Statistiques') ?>" href="../statistiques/index.php">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+        Statistiques
+      </a></li>
       <li class="nav-item"><a class="nav-link<?= $navActive('Journal') ?>" href="../audit/index.php">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M9 7h7M9 11h5"/></svg>
         Journal d'audit
