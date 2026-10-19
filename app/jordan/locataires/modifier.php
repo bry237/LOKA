@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="content">
         <header class="topbar">
             <div>
-                <a href="detail.php?id=<?= $id ?>" class="eyebrow">← Retour aux détails</a>
+                <a href="detail.php?id=<?= $id ?>" class="eyebrow"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><polyline points="15 18 9 12 15 6"/></svg>Retour aux détails</a>
                 <h1>Modifier : <?= htmlspecialchars($locataire['nom'] . ' ' . $locataire['prenom'], ENT_QUOTES, 'UTF-8') ?></h1>
             </div>
         </header>

@@ -83,11 +83,11 @@ $renderResults = function () use ($documents): void {
                         <td><?= date('d/m/Y H:i', strtotime($doc['created_at'])) ?></td>
                         <td class="actions-col">
                             <div class="actions">
-                                <a href="/LOKA/app/jordan/documents/telecharger.php?id=<?= $doc['id_document'] ?>" class="btn-icon" target="_blank" title="Télécharger">⬇️</a>
+                                <a href="/LOKA/app/jordan/documents/telecharger.php?id=<?= $doc['id_document'] ?>" class="btn-icon" target="_blank" title="Télécharger"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 19h16"/></svg></a>
                                 <form method="POST" action="/LOKA/app/jordan/documents/supprimer.php" class="inline-form" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce document ?');">
                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Auth::csrfToken(), ENT_QUOTES, 'UTF-8') ?>">
                                     <input type="hidden" name="id_document" value="<?= $doc['id_document'] ?>">
-                                    <button type="submit" class="btn-icon text-danger" title="Supprimer">🗑️</button>
+                                    <button type="submit" class="btn-icon text-danger" title="Supprimer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg></button>
                                 </form>
                             </div>
                         </td>

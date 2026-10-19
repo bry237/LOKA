@@ -45,7 +45,7 @@ $interventions = $db->query("SELECT id_intervention, titre FROM intervention WHE
     <div class="content">
         <header class="topbar">
             <div class="topbar-left">
-                <a href="/LOKA/app/jordan/documents/index.php" class="back-link">← Retour</a>
+                <a href="/LOKA/app/jordan/documents/index.php" class="back-link"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><polyline points="15 18 9 12 15 6"/></svg>Retour</a>
                 <span class="eyebrow">Documents</span>
                 <h1>Importer un document</h1>
             </div>

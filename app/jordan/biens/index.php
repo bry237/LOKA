@@ -20,19 +20,19 @@ $renderResults = function () use ($properties, $statusLabels, $statusClasses, $r
 	?>
 	<div class="stats">
 		<div class="card stat">
-			<div class="stat__top"><span>Total des biens</span><span class="stat__icon">⌂</span></div>
+			<div class="stat__top"><span>Total des biens</span><span class="stat__icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></span></div>
 			<div class="stat__value"><?= count($properties) ?></div>
 		</div>
 		<div class="card stat">
-			<div class="stat__top"><span>Disponibles</span><span class="stat__icon">✓</span></div>
+			<div class="stat__top"><span>Disponibles</span><span class="stat__icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></div>
 			<div class="stat__value"><?= count(array_filter($properties, static fn(array $p): bool => $p['statut'] === 'AVAILABLE')) ?></div>
 		</div>
 		<div class="card stat">
-			<div class="stat__top"><span>Occupés</span><span class="stat__icon">▣</span></div>
+			<div class="stat__top"><span>Occupés</span><span class="stat__icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1M9 17h1M14 17h1"/></svg></span></div>
 			<div class="stat__value"><?= count(array_filter($properties, static fn(array $p): bool => $p['statut'] === 'OCCUPIED')) ?></div>
 		</div>
 		<div class="card stat">
-			<div class="stat__top"><span>Surface totale</span><span class="stat__icon">↗</span></div>
+			<div class="stat__top"><span>Surface totale</span><span class="stat__icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg></span></div>
 			<div class="stat__value"><?= number_format(array_sum(array_map(static fn(array $p): float => (float) $p['surface'], $properties)), 0, ',', ' ') ?> m²</div>
 		</div>
 	</div>
@@ -76,7 +76,7 @@ $renderResults = function () use ($properties, $statusLabels, $statusClasses, $r
 		</div>
 		<?php if ($properties === []): ?>
 			<div class="empty">
-				<div class="empty__icon">⌂</div>
+				<div class="empty__icon"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></div>
 				<strong>Aucun bien trouvé</strong>
 				<div>Modifiez vos filtres ou ajoutez votre premier bien.</div>
 			</div>

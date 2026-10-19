@@ -36,7 +36,7 @@ if (!$isModal): ?>
     <div class="content">
         <header class="topbar">
             <div>
-                <a href="index.php" class="eyebrow">← Retour aux locataires</a>
+                <a href="index.php" class="eyebrow"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><polyline points="15 18 9 12 15 6"/></svg>Retour aux locataires</a>
                 <h1>Nouveau locataire</h1>
             </div>
         </header>

@@ -63,11 +63,11 @@ $interventionStatusLabels = ['OPEN' => 'Ouverte', 'ASSIGNED' => 'Assignée', 'IN
 				<!-- KPI principaux -->
 				<div class="stats">
 					<div class="card stat">
-						<div class="stat__top"><span>Biens gérés</span><span class="stat__icon">⌂</span></div>
+						<div class="stat__top"><span>Biens gérés</span><span class="stat__icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></span></div>
 						<div class="stat__value"><?= (int) $propertyStats['total'] ?></div>
 					</div>
 					<div class="card stat">
-						<div class="stat__top"><span>Taux d'occupation</span><span class="stat__icon">📊</span></div>
+						<div class="stat__top"><span>Taux d'occupation</span><span class="stat__icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12.5" y="8" width="3" height="10"/><rect x="18" y="5" width="3" height="13"/></svg></span></div>
 						<div class="stat__value"><?= number_format($occupancyRate, 1, ',', '') ?> %</div>
 					</div>
 					<div class="card stat">
@@ -75,7 +75,7 @@ $interventionStatusLabels = ['OPEN' => 'Ouverte', 'ASSIGNED' => 'Assignée', 'IN
 						<div class="stat__value"><?= number_format($monthlyRevenue, 2, ',', ' ') ?> €</div>
 					</div>
 					<div class="card stat">
-						<div class="stat__top"><span>Impayés</span><span class="stat__icon" style="<?= (int) $overdue['nombre'] > 0 ? 'background:var(--danger-light);color:var(--danger);' : '' ?>">⚠</span></div>
+						<div class="stat__top"><span>Impayés</span><span class="stat__icon" style="<?= (int) $overdue['nombre'] > 0 ? 'background:var(--danger-light);color:var(--danger);' : '' ?>"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 17h.01"/></svg></span></div>
 						<div class="stat__value" style="<?= (int) $overdue['nombre'] > 0 ? 'color:var(--danger);' : '' ?>"><?= (int) $overdue['nombre'] ?></div>
 					</div>
 				</div>
@@ -83,19 +83,19 @@ $interventionStatusLabels = ['OPEN' => 'Ouverte', 'ASSIGNED' => 'Assignée', 'IN
 				<!-- KPI secondaires -->
 				<div class="stats" style="margin-bottom:24px;">
 					<div class="card stat">
-						<div class="stat__top"><span>Contrats actifs</span><span class="stat__icon">▣</span></div>
+						<div class="stat__top"><span>Contrats actifs</span><span class="stat__icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg></span></div>
 						<div class="stat__value"><?= (int) $contractStats['actifs'] ?></div>
 					</div>
 					<div class="card stat">
-						<div class="stat__top"><span>Locataires</span><span class="stat__icon">👤</span></div>
+						<div class="stat__top"><span>Locataires</span><span class="stat__icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span></div>
 						<div class="stat__value"><?= $tenantCount ?></div>
 					</div>
 					<div class="card stat">
-						<div class="stat__top"><span>Propriétaires</span><span class="stat__icon">♙</span></div>
+						<div class="stat__top"><span>Propriétaires</span><span class="stat__icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="14.5" r="3.5"/><path d="m10 12 8-8M15.5 3.5l3 3M18.5 6.5l3 3"/></svg></span></div>
 						<div class="stat__value"><?= $ownerCount ?></div>
 					</div>
 					<div class="card stat">
-						<div class="stat__top"><span>Interventions ouvertes</span><span class="stat__icon">⚒</span></div>
+						<div class="stat__top"><span>Interventions ouvertes</span><span class="stat__icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94Z"/></svg></span></div>
 						<div class="stat__value"><?= $openInterventions ?></div>
 					</div>
 				</div>

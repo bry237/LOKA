@@ -50,7 +50,7 @@ $renderResults = function () use ($owners): void {
 		</div>
 		<?php if ($owners === []): ?>
 			<div class="empty">
-				<div class="empty__icon">♙</div>
+				<div class="empty__icon"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="14.5" r="3.5"/><path d="m10 12 8-8M15.5 3.5l3 3M18.5 6.5l3 3"/></svg></div>
 				<strong>Aucun propriétaire trouvé</strong>
 				<div>Ajoutez votre premier propriétaire ou modifiez votre recherche.</div>
 			</div>
