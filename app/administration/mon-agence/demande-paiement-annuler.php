@@ -4,7 +4,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 3) . '/core/Authorization.php';
 require_once __DIR__ . '/MonAgenceController.php';
 
-$currentUser = Authorization::requireRole('Administrateur agence');
+$currentUser = Authorization::requireRole('Administrateur agence', 'Comptable');
 $idAgence = (int) $currentUser['id_agence'];
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

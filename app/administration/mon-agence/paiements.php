@@ -5,7 +5,7 @@ require_once dirname(__DIR__, 3) . '/core/Authorization.php';
 require_once __DIR__ . '/MonAgenceController.php';
 require_once __DIR__ . '/team-presentation.php';
 
-$currentUser = Authorization::requireRole('Administrateur agence');
+$currentUser = Authorization::requireRole('Administrateur agence', 'Comptable');
 $idAgence = (int) $currentUser['id_agence'];
 
 $filters = [
@@ -37,7 +37,9 @@ require dirname(__DIR__, 3) . '/layouts/header.php';
         <h1>Paiements</h1>
         <p>L'échéancier et les encaissements de votre agence.</p>
       </div>
+      <?php if ($currentUser['role_nom'] === 'Administrateur agence'): ?>
       <a class="btn btn-primary" href="echeance-ajouter.php" data-modal>+ Nouvelle échéance</a>
+      <?php endif; ?>
     </div>
 
     <?php if (isset($_GET['success'])): ?>

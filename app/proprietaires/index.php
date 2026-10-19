@@ -567,15 +567,7 @@ foreach ($resultats as $ligne) {
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="../../assets/js/proprietaire.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="proprietaire.js"></script>
-
-    <pre>
-<?php print_r($labels); ?>
-<?php print_r($datas); ?>
-</pre>
 
 </body>
 

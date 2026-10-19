@@ -94,7 +94,7 @@ final class AuthController
 			'Administrateur plateforme' => '../administration/dashboard/index.php',
 			'Administrateur agence' => '../administration/mon-agence/index.php',
 			'Gestionnaire immobilier' => '../jordan/dashboard/index.php',
-			'Comptable' => '../paiements/index.php',
+			'Comptable' => '../administration/mon-agence/paiements.php',
 			'Proprietaire' => '../proprietaires/index.php',
 			'Locataire' => '../locataires/index.php',
 			'Technicien' => '../maintenance/index.php',

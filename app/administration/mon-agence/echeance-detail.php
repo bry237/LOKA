@@ -5,7 +5,7 @@ require_once dirname(__DIR__, 3) . '/core/Authorization.php';
 require_once __DIR__ . '/MonAgenceController.php';
 require_once __DIR__ . '/team-presentation.php';
 
-$currentUser = Authorization::requireRole('Administrateur agence');
+$currentUser = Authorization::requireRole('Administrateur agence', 'Comptable');
 $idAgence = (int) $currentUser['id_agence'];
 
 $isModal = (($_GET['modal'] ?? $_POST['modal'] ?? '') === '1');

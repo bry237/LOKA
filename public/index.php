@@ -1,3 +1,3 @@
 <?php
-header('Location: ../auth.html');
+header('Location: ../index.html');
 exit;
