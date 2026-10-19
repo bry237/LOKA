@@ -119,7 +119,7 @@ if ($nom !== '') {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Mes documents - LOKA</title>
+    <title>Mes documents | LOKA</title>
 
     <link
         rel="stylesheet"

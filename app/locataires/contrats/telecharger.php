@@ -13,7 +13,7 @@ function afficherErreur(string $message, int $code = 404): void
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Document indisponible - LOKA</title>
+        <title>Document indisponible | LOKA</title>
         <link rel="stylesheet" href="../locataire.css">
         <link rel="stylesheet" href="contrats.css">
     </head>

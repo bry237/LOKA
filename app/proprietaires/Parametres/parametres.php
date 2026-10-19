@@ -342,7 +342,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Paramètres - LOKA</title>
+    <title>Paramètres | LOKA</title>
 
     <!-- CSS PRINCIPAL DU PROPRIETAIRE -->
 

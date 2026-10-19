@@ -313,7 +313,7 @@ $success = isset($_GET['success']);
     >
 
     <title>
-        <?= e($bien['titre']) ?> - LOKA
+        <?= e($bien['titre']) ?> | LOKA
     </title>
 
 

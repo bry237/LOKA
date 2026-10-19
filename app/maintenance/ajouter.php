@@ -95,7 +95,7 @@ function e(?string $value): string
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Signaler un problème - LOKA</title>
+    <title>Signaler un problème | LOKA</title>
 
     <!-- CSS commun LOKA -->
     <link

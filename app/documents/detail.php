@@ -159,7 +159,7 @@ if ($nom !== '') {
             ?? $document['nom_original']
             ?? 'Document'
         ) ?>
-        - LOKA
+        | LOKA
     </title>
 
     <link

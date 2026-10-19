@@ -255,7 +255,7 @@ $activePage = 'paiements';
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Paiements - LOKA</title>
+    <title>Paiements | LOKA</title>
 
     <!-- CSS PRINCIPAL DU PROPRIETAIRE -->
 

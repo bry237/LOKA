@@ -30,7 +30,7 @@ $adresse = e($locataire['adresse']);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Espace locataire - LOKA</title>
+    <title>Espace locataire | LOKA</title>
 
     <link rel="stylesheet" href="./locataire.css">
 </head>

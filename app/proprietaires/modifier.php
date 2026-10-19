@@ -1011,7 +1011,7 @@ if ($successParam === 'image_primary') {
     >
 
     <title>
-        Modifier le bien - LOKA
+        Modifier le bien | LOKA
     </title>
 
 

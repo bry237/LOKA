@@ -18,7 +18,7 @@ $locatairesConcernes = count(array_unique(array_column($data, 'locataire_nom')))
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Rapport - Impayés | LOKA</title>
+    <title>Rapport · Impayés | LOKA</title>
     <link rel="stylesheet" href="/LOKA/public/assets/css/global.css">
     <link rel="stylesheet" href="/LOKA/app/jordan/biens/bien.css">
 </head>

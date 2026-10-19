@@ -122,7 +122,7 @@ function getImageUrl(?string $url): ?string
 
 <meta charset="UTF-8">
 
-<title>Mes biens</title>
+<title>Mes biens | LOKA</title>
 
 <link rel="stylesheet" href="proprietaire.css">
 

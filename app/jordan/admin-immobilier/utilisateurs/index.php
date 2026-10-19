@@ -55,7 +55,7 @@ if ($isAjax) {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Utilisateurs | LOKA Admin</title>
+    <title>Utilisateurs | LOKA</title>
     <link rel="stylesheet" href="/LOKA/app/jordan/biens/bien.css">
 </head>
 <body>

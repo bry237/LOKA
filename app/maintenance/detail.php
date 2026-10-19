@@ -116,7 +116,7 @@ $priorite = $priorites[$intervention['priorite']] ?? $intervention['priorite'];
     >
 
     <title>
-        Détail de la demande - LOKA
+        Détail de la demande | LOKA
     </title>
 
     <link

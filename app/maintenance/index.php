@@ -71,7 +71,7 @@ if ($nom !== '') {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Maintenance - LOKA</title>
+    <title>Maintenance | LOKA</title>
 
     <link rel="stylesheet" href="../locataires/locataire.css">
 

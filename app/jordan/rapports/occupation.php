@@ -29,7 +29,7 @@ foreach($biens as $b) {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Rapport - Occupation | LOKA</title>
+    <title>Rapport · Occupation | LOKA</title>
     <link rel="stylesheet" href="/LOKA/public/assets/css/global.css">
     <link rel="stylesheet" href="/LOKA/app/jordan/biens/bien.css">
 </head>

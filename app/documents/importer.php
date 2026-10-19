@@ -378,7 +378,7 @@ if ($nom !== '') {
     >
 
     <title>
-        Ajouter un document - LOKA
+        Ajouter un document | LOKA
     </title>
 
     <link

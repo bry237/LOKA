@@ -303,7 +303,7 @@ foreach ($contrats as $contrat) {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Mes contrats - LOKA</title>
+    <title>Mes contrats | LOKA</title>
 
     <link
         rel="stylesheet"

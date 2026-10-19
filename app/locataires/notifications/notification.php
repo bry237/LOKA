@@ -102,7 +102,7 @@ function statutClass(string $statut): string
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Notifications - LOKA</title>
+    <title>Notifications | LOKA</title>
 
     <link rel="stylesheet" href="notification.css">
 

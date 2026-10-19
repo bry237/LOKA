@@ -10,7 +10,7 @@ $roles = $model->findAll();
 <html lang="fr">
 <head>
     <meta charset="utf-8">
-    <title>Rôles | LOKA Admin</title>
+    <title>Rôles | LOKA</title>
     <link rel="stylesheet" href="/LOKA/public/assets/css/global.css">
     <link rel="stylesheet" href="/LOKA/app/jordan/biens/bien.css">
 </head>

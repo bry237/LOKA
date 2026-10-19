@@ -60,7 +60,7 @@ function checked($value): string
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Rechercher un logement - LOKA</title>
+    <title>Rechercher un logement | LOKA</title>
 
     <link rel="stylesheet" href="./locataire.css">
 

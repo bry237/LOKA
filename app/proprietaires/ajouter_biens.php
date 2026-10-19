@@ -1010,7 +1010,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     >
 
     <title>
-        Ajouter un bien - LOKA
+        Ajouter un bien | LOKA
     </title>
 
 

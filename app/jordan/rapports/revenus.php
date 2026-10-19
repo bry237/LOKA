@@ -21,7 +21,7 @@ $moyenneMensuelle = count($data) > 0 ? $totalEncaisse / count($data) : 0;
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Rapport - Revenus | LOKA</title>
+    <title>Rapport · Revenus | LOKA</title>
     <link rel="stylesheet" href="/LOKA/public/assets/css/global.css">
     <link rel="stylesheet" href="/LOKA/app/jordan/biens/bien.css">
 </head>

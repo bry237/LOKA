@@ -49,7 +49,7 @@ $montantRestant = $controller->getMontantRestant(
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>Virement bancaire - LOKA</title>
+    <title>Virement bancaire | LOKA</title>
 
     <link rel="stylesheet"
           href="paiement.css">

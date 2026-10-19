@@ -270,7 +270,7 @@ foreach ($resultats as $ligne) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>LOKA | Dashboard Propriétaire</title>
+    <title>Dashboard Propriétaire | LOKA</title>
 
     <link rel="stylesheet" href="proprietaire.css">
 

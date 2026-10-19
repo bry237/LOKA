@@ -52,7 +52,7 @@ $dateEcheance = !empty($echeance['date_echeance'])
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>Payer - LOKA</title>
+    <title>Payer | LOKA</title>
 
     <link rel="stylesheet"
           href="paiement.css">

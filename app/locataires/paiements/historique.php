@@ -23,7 +23,7 @@ $nombrePaiements = $controller->getNombrePaiements();
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>Historique des paiements - LOKA</title>
+    <title>Historique des paiements | LOKA</title>
 
     <link rel="stylesheet"
           href="paiement.css">

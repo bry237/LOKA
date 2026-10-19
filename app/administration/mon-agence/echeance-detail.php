@@ -62,7 +62,7 @@ if (!$isModal) require dirname(__DIR__, 3) . '/layouts/header.php';
     <?php endif; ?>
 
     <div class="page-header">
-      <h1><?= htmlspecialchars($echeance['contrat_numero'] . ' — ' . $echeance['bien_titre'], ENT_QUOTES, 'UTF-8') ?></h1>
+      <h1><?= htmlspecialchars($echeance['contrat_numero'] . ' · ' . $echeance['bien_titre'], ENT_QUOTES, 'UTF-8') ?></h1>
     </div>
 
     <?php if ($successMessage): ?>

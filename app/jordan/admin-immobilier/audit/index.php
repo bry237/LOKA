@@ -7,7 +7,7 @@ $user = Authorization::requireRole('Administrateur plateforme', 'Administrateur 
 <html lang="fr">
 <head>
     <meta charset="utf-8">
-    <title>Journal d'Audit | LOKA Admin</title>
+    <title>Journal d'audit | LOKA</title>
     <link rel="stylesheet" href="/LOKA/public/assets/css/global.css">
     <link rel="stylesheet" href="/LOKA/app/jordan/biens/bien.css">
 </head>

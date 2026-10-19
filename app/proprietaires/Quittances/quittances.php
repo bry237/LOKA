@@ -412,7 +412,7 @@ $activePage = 'quittances';
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Mes quittances - LOKA</title>
+    <title>Mes quittances | LOKA</title>
 
 
     <!-- CSS PRINCIPAL -->

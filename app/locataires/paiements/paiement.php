@@ -216,7 +216,7 @@ if ($prochaineEcheance !== null) {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Mes paiements - LOKA</title>
+    <title>Mes paiements | LOKA</title>
 
     <link
         rel="stylesheet"

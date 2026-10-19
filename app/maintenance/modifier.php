@@ -159,7 +159,7 @@ $initiales = strtoupper(
     >
 
     <title>
-        Modifier la demande - LOKA
+        Modifier la demande | LOKA
     </title>
 
     <link

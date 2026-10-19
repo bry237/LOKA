@@ -70,7 +70,7 @@ $totalQuittances = count($quittances);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Mes quittances - LOKA</title>
+    <title>Mes quittances | LOKA</title>
 
     <link rel="stylesheet" href="quittance.css">
 </head>
