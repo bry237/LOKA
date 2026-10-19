@@ -7,47 +7,18 @@ require_once dirname(__DIR__, 3) . '/core/Authorization.php';
 
 $controller = new NotificationController();
 
-/*
- * Utilisateur connecté
- */
 $user = Authorization::requireRole('Locataire');
 
-/*
- * Notifications
- */
 $notifications = $controller->getMyNotifications();
 $unreadCount = $controller->getUnreadCount();
 
-/*
- * Informations utilisateur pour l'en-tête
- */
 $prenom = (string) ($user['prenom'] ?? '');
 $nom = (string) ($user['nom'] ?? '');
-
-$initiales = '';
-
-if ($prenom !== '') {
-    $initiales .= mb_strtoupper(mb_substr($prenom, 0, 1));
-}
-
-if ($nom !== '') {
-    $initiales .= mb_strtoupper(mb_substr($nom, 0, 1));
-}
-
-if ($initiales === '') {
-    $initiales = 'L';
-}
-
-
-/* =========================================================
-   FONCTIONS
-========================================================= */
 
 function e(?string $value): string
 {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
-
 
 function dateFr(?string $date): string
 {
@@ -57,587 +28,82 @@ function dateFr(?string $date): string
 
     $timestamp = strtotime($date);
 
-    if ($timestamp === false) {
-        return e($date);
-    }
-
-    return date('d/m/Y à H:i', $timestamp);
+    return $timestamp === false ? e($date) : date('d/m/Y à H:i', $timestamp);
 }
-
 
 function statutLabel(string $statut): string
 {
     return match ($statut) {
-        'READ'    => 'Lue',
-        'SENT'    => 'Envoyée',
+        'READ' => 'Lue',
+        'SENT' => 'Envoyée',
         'PENDING' => 'En attente',
-        'FAILED'  => 'Échec',
-        default   => $statut,
+        'FAILED' => 'Échec',
+        default => $statut,
     };
 }
 
-
-function statutClass(string $statut): string
+function statutTone(string $statut): string
 {
     return match ($statut) {
-        'READ'    => 'read',
-        'SENT'    => 'sent',
-        'PENDING' => 'pending',
-        'FAILED'  => 'failed',
-        default   => '',
+        'READ' => 'inactif',
+        'SENT' => 'actif',
+        'PENDING' => 'attente',
+        'FAILED' => 'suspendu',
+        default => 'inactif',
     };
 }
 
+$pageTitle = 'Notifications';
+$activeNav = 'Notifications';
+$sidebarFile = 'sidebar-locataire.php';
+$greetingTitle = 'Notifications';
+$greetingSubtitle = 'Consultez les messages et informations qui vous sont destinés.';
+$profileName = trim($prenom . ' ' . $nom) ?: 'Locataire';
+$profileRole = 'Locataire';
+$profileInitials = mb_strtoupper(mb_substr($prenom, 0, 1) . mb_substr($nom, 0, 1)) ?: 'L';
+$extraHead = '<link rel="stylesheet" href="/LOKA/app/administration/mon-agence/dashboard.css">';
+
+require dirname(__DIR__, 3) . '/layouts/header.php';
 ?>
-
-<!DOCTYPE html>
-<html lang="fr">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Notifications | LOKA</title>
-
-    <link rel="stylesheet" href="notification.css">
-
-    <style>
-
-        /* =====================================================
-           CONTENU NOTIFICATIONS
-        ===================================================== */
-
-        .notifications-page {
-            width: 100%;
-            padding: 40px;
-        }
-
-
-        /* =====================================================
-           COMPTEUR
-        ===================================================== */
-
-        .notification-counter {
-            display: inline-block;
-            margin-top: 15px;
-            padding: 8px 15px;
-            background: #111;
-            color: #fff;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-
-        /* =====================================================
-           LISTE
-        ===================================================== */
-
-        .notification-list {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-
-        /* =====================================================
-           CARTE
-        ===================================================== */
-
-        .notification-card {
-            width: 100%;
-            padding: 22px;
-            background: #fff;
-            border: 1px solid #e5e5e5;
-            border-radius: 14px;
-            transition: 0.2s ease;
-        }
-
-        .notification-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.07);
-        }
-
-        .notification-card.unread {
-            border-left: 5px solid #0F8B8D;
-            background: #fafafa;
-        }
-
-
-        /* =====================================================
-           HAUT DE LA CARTE
-        ===================================================== */
-
-        .notification-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 20px;
-        }
-
-        .notification-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .notification-title h3 {
-            margin: 0;
-            color: #043F42;
-            font-size: 18px;
-            font-weight: 700;
-        }
-
-        .unread-dot {
-            width: 9px;
-            height: 9px;
-            flex-shrink: 0;
-            border-radius: 50%;
-            background: #0F8B8D;
-            display: inline-block;
-        }
-
-
-        /* =====================================================
-           MESSAGE
-        ===================================================== */
-
-        .notification-message {
-            margin: 15px 0;
-            color: #444;
-            line-height: 1.6;
-            font-size: 15px;
-        }
-
-
-        /* =====================================================
-           PIED
-        ===================================================== */
-
-        .notification-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #eeeeee;
-        }
-
-        .notification-date {
-            color: #777;
-            font-size: 13px;
-        }
-
-
-        /* =====================================================
-           STATUT
-        ===================================================== */
-
-        .notification-status {
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .notification-status.read {
-            background: #eeeeee;
-            color: #555;
-        }
-
-        .notification-status.sent {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-
-        .notification-status.pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .notification-status.failed {
-            background: #f8d7da;
-            color: #842029;
-        }
-
-
-        /* =====================================================
-           BOUTON
-        ===================================================== */
-
-        .notification-action {
-            display: inline-block;
-            margin-top: 15px;
-            padding: 9px 16px;
-            border: 1px solid #0F8B8D;
-            border-radius: 7px;
-            background: #0F8B8D;
-            color: #fff;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 14px;
-            transition: 0.2s ease;
-        }
-
-        .notification-action:hover {
-            background: #075E63;
-            border-color: #075E63;
-        }
-
-
-        /* =====================================================
-           AUCUNE NOTIFICATION
-        ===================================================== */
-
-        .empty-notifications {
-            width: 100%;
-            padding: 50px 30px;
-            background: #fff;
-            border: 1px solid #e5e5e5;
-            border-radius: 14px;
-            text-align: center;
-        }
-
-        .empty-notifications .empty-icon {
-            margin-bottom: 15px;
-            font-size: 45px;
-        }
-
-        .empty-notifications h2 {
-            margin-bottom: 10px;
-            color: #043F42;
-        }
-
-        .empty-notifications p {
-            margin: 0;
-            color: #777;
-        }
-
-
-        /* =====================================================
-           RESPONSIVE
-        ===================================================== */
-
-        @media (max-width: 650px) {
-
-            .notifications-page {
-                padding: 20px;
-            }
-
-            .notification-top,
-            .notification-footer {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-        }
-
-    </style>
-
-</head>
-
-
-<body>
-
-<div class="page-container">
-
-
-    <!-- =====================================================
-         SIDEBAR
-    ===================================================== -->
-
-    <aside class="sidebar">
-
-        <div class="logo">
-            LOKA
+    <?php if ($unreadCount > 0): ?>
+      <div class="feedback" style="background:#E3F4F4;color:var(--dark);border:1px solid #C7E5E5;">
+        <?= $unreadCount ?> notification<?= $unreadCount > 1 ? 's' : '' ?> non lue<?= $unreadCount > 1 ? 's' : '' ?>
+      </div>
+    <?php endif; ?>
+
+    <?php if (empty($notifications)): ?>
+      <div class="panel">
+        <div class="empty-state" style="padding:48px 20px;">
+          <div class="empty-state-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+          <h4>Aucune notification</h4>
+          <p>Vous n'avez actuellement aucune notification.</p>
         </div>
-
-        <nav>
-
-            <a href="../index.php">
-                <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>
-                <span>Accueil</span>
-            </a>
-
-            <a href="../detail.php">
-                <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
-                <span>Mon profil</span>
-            </a>
-
-            <a href="../logement.php">
-                <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></span>
-                <span>Mon logement</span>
-            </a>
-
-            <a href="../recherche.php">
-                <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
-                <span>Recherche</span>
-            </a>
-
-            <a href="/LOKA/app/locataires/contrats/index.php">
-
-                <span class="nav-icon">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
-                </span>
-
-                <span>
-                    Mon contrat
-                </span>
-            </a>
-
-            <a href="/LOKA/app/locataires/paiements/paiement.php">
-                <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
-                <span>Mes paiements</span>
-            </a>
-
-            <a href="../../maintenance/index.php">
-                <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94Z"/></svg></span>
-                <span>Maintenance</span>
-            </a>
-
-            <a href="../../documents/index.php">
-                <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg></span>
-                <span>Documents</span>
-            </a>
-
-            <a href="/LOKA/app/locataires/quittances/index.php"
-               >
-                <span class="menu-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M9 7h7M9 11h5M9 15h3"/></svg></span>
-                <span>Quittances</span>
-            </a>
-
-            <a href="notifications.php" class="active">
-                <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
-                <span>Notifications</span>
-            </a>
-
-        </nav>
-
-        <div class="sidebar-bottom">
-
-            <a href="/LOKA/app/authentification/deconnexion.php">
-                <span class="menu-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span>
-                <span>Déconnexion</span>
-            </a>
-
-        </div>
-
-    </aside>
-
-
-    <!-- =====================================================
-         CONTENU PRINCIPAL
-    ===================================================== -->
-
-    <main class="main-content">
-
-
-        <!-- =================================================
-             EN-TÊTE IDENTIQUE AUX AUTRES PAGES
-        ================================================= -->
-
-        <header class="topbar">
-
-            <div class="topbar-left">
-
-                <h2>
-                    Notifications
-                </h2>
-
-                <p>
-                    Consultez les messages et informations qui vous sont destinés.
-                </p>
-
-                <?php if ($unreadCount > 0): ?>
-
-                    <div class="notification-counter">
-
-                        <?= $unreadCount ?>
-
-                        notification<?= $unreadCount > 1 ? 's' : '' ?>
-
-                        non lue<?= $unreadCount > 1 ? 's' : '' ?>
-
-                    </div>
-
-                <?php endif; ?>
-
+      </div>
+    <?php else: ?>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <?php foreach ($notifications as $notification): ?>
+          <?php
+          $isUnread = ($notification['statut'] ?? '') !== 'READ';
+          $statut = (string) ($notification['statut'] ?? '');
+          ?>
+          <div class="panel" style="padding:18px;<?= $isUnread ? 'border-left:3px solid var(--primary);' : '' ?>">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <?php if ($isUnread): ?><span style="width:7px;height:7px;border-radius:50%;background:var(--primary);flex-shrink:0;"></span><?php endif; ?>
+                <strong style="font-size:14px;color:var(--heading);"><?= e($notification['titre'] ?? 'Notification') ?></strong>
+              </div>
+              <span class="status-badge <?= statutTone($statut) ?>"><?= e(statutLabel($statut)) ?></span>
             </div>
-
-
-            <!-- =============================================
-                 UTILISATEUR
-            ============================================== -->
-
-            <div class="user-info">
-
-                <div class="avatar">
-                    <?= e($initiales) ?>
-                </div>
-
-                <div class="user-details">
-
-                    <strong>
-                        <?= e(trim($prenom . ' ' . $nom)) ?>
-                    </strong>
-
-                    <span>
-                        Locataire
-                    </span>
-
-                </div>
-
+            <p style="margin:10px 0 0;font-size:13px;color:var(--text);line-height:1.5;"><?= nl2br(e($notification['message'] ?? '')) ?></p>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+              <span style="font-size:11.5px;color:#8AA0A0;"><?= dateFr($notification['created_at'] ?? null) ?></span>
+              <?php if ($isUnread): ?>
+                <a href="NotificationLire.php?id=<?= (int) $notification['id_notification'] ?>" class="btn btn-primary btn-sm">Lire la notification</a>
+              <?php endif; ?>
             </div>
-
-        </header>
-
-
-        <!-- =================================================
-             CONTENU
-        ================================================= -->
-
-        <section class="notifications-page">
-
-
-            <?php if (empty($notifications)): ?>
-
-                <div class="empty-notifications">
-
-                    <div class="empty-icon">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                    </div>
-
-                    <h2>
-                        Aucune notification
-                    </h2>
-
-                    <p>
-                        Vous n'avez actuellement aucune notification.
-                    </p>
-
-                </div>
-
-
-            <?php else: ?>
-
-
-                <section class="notification-list">
-
-
-                    <?php foreach ($notifications as $notification): ?>
-
-                        <?php
-
-                        $isUnread =
-                            ($notification['statut'] ?? '') !== 'READ';
-
-                        $statut =
-                            (string) ($notification['statut'] ?? '');
-
-                        ?>
-
-
-                        <article
-                            class="notification-card <?= $isUnread ? 'unread' : '' ?>"
-                        >
-
-
-                            <!-- TITRE -->
-
-                            <div class="notification-top">
-
-                                <div class="notification-title">
-
-                                    <?php if ($isUnread): ?>
-
-                                        <span
-                                            class="unread-dot"
-                                            title="Notification non lue"
-                                        ></span>
-
-                                    <?php endif; ?>
-
-
-                                    <h3>
-                                        <?= e($notification['titre'] ?? 'Notification') ?>
-                                    </h3>
-
-                                </div>
-
-
-                                <span
-                                    class="notification-status <?= e(statutClass($statut)) ?>"
-                                >
-                                    <?= e(statutLabel($statut)) ?>
-                                </span>
-
-                            </div>
-
-
-                            <!-- MESSAGE -->
-
-                            <div class="notification-message">
-
-                                <?= nl2br(
-                                    e($notification['message'] ?? '')
-                                ) ?>
-
-                            </div>
-
-
-                            <!-- DATE -->
-
-                            <div class="notification-footer">
-
-                                <span class="notification-date">
-
-                                    <?= dateFr(
-                                        $notification['created_at'] ?? null
-                                    ) ?>
-
-                                </span>
-
-                            </div>
-
-
-                            <!-- BOUTON -->
-
-                            <?php if ($isUnread): ?>
-
-                                <a
-                                    href="lire-notification.php?id=<?= (int) $notification['id_notification'] ?>"
-                                    class="notification-action"
-                                >
-                                    Lire la notification
-                                </a>
-
-                            <?php endif; ?>
-
-
-                        </article>
-
-
-                    <?php endforeach; ?>
-
-
-                </section>
-
-
-            <?php endif; ?>
-
-
-        </section>
-
-    </main>
-
-</div>
-
-</body>
-
-</html>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+<?php
+require dirname(__DIR__, 3) . '/layouts/footer.php';

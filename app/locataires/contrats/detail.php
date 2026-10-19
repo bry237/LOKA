@@ -6,44 +6,149 @@ $controller = new ContratController();
 $locataire = $controller->getLocataire();
 $prenom = (string) ($locataire['prenom'] ?? '');
 $nom = (string) ($locataire['nom'] ?? '');
-$initiales = mb_strtoupper(mb_substr($prenom, 0, 1) . mb_substr($nom, 0, 1));
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: 0;
 $contrat = $controller->getContrat($id);
 if (!$contrat) { http_response_code(404); exit('Contrat introuvable ou accès non autorisé.'); }
 function h(?string $value): string { return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
 function dateFr(?string $date): string { if (!$date) return '—'; $t = strtotime($date); return $t ? date('d/m/Y à H:i', $t) : '—'; }
-$statut = (string)($contrat['statut_signature'] ?? 'EN_ATTENTE');
+$statut = (string) ($contrat['statut_signature'] ?? 'EN_ATTENTE');
 $messages = [
     'signature' => 'La signature simulée a été enregistrée.',
     'depot' => 'Votre PDF a été déposé. Il est en attente de vérification par l’agence.',
 ];
-$success = $messages[(string)($_GET['success'] ?? '')] ?? null;
-$error = isset($_GET['error']) ? (string)$_GET['error'] : null;
+$success = $messages[(string) ($_GET['success'] ?? '')] ?? null;
+$error = isset($_GET['error']) ? (string) $_GET['error'] : null;
 $bloque = in_array($statut, ['VALIDE'], true);
+$statutTone = ($statut === 'VALIDE' || $statut === 'SIGNE_SIMULATION') ? 'actif' : 'attente';
+$statutLabel = match ($statut) {
+    'SIGNE_SIMULATION' => 'Signé (simulation)',
+    'DEPOSE' => 'PDF déposé · à vérifier',
+    'VALIDE' => 'Validé par l’agence',
+    'REFUSE' => 'À corriger',
+    default => 'En attente de signature',
+};
+
+$pageTitle = 'Contrat ' . $contrat['numero'];
+$activeNav = 'Mon contrat';
+$sidebarFile = 'sidebar-locataire.php';
+$greetingTitle = 'Détail du contrat';
+$greetingSubtitle = 'Gérez votre contrat de location.';
+$profileName = trim($prenom . ' ' . $nom);
+$profileRole = 'Locataire';
+$profileInitials = mb_strtoupper(mb_substr($prenom, 0, 1) . mb_substr($nom, 0, 1)) ?: 'L';
+$extraHead = '<link rel="stylesheet" href="/LOKA/app/locataires/ops.css?v=' . filemtime(dirname(__DIR__) . '/ops.css') . '">';
+
+require dirname(__DIR__, 3) . '/layouts/header.php';
 ?>
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Contrat <?= h($contrat['numero']) ?> - LOKA</title><link rel="stylesheet" href="../locataire.css"><link rel="stylesheet" href="contrats.css"></head><body><div class="layout contrats-layout">
-<aside class="sidebar">
-  <div class="logo">LOKA</div>
-  <nav>
-    <a href="/LOKA/app/locataires/index.php"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span><span>Accueil</span></a>
-    <a href="/LOKA/app/locataires/detail.php"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span><span>Mon profil</span></a>
-    <a href="/LOKA/app/locataires/logement.php"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></span><span>Mon logement</span></a>
-    <a href="/LOKA/app/locataires/recherche.php"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span><span>Recherche</span></a>
-    <a class="active" href="index.php"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg></span><span>Mon contrat</span></a>
-    <a href="/LOKA/app/locataires/paiements/paiement.php"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span>Mes paiements</span></a>
-    <a href="/LOKA/app/maintenance/index.php"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94Z"/></svg></span><span>Maintenance</span></a>
-    <a href="/LOKA/app/locataires/quittances/index.php"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M9 7h7M9 11h5M9 15h3"/></svg></span><span>Quittances</span></a>
-    <a href="/LOKA/app/locataires/notifications/notification.php"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span><span>Notifications</span></a>
-  </nav>
-  <div class="sidebar-bottom"><a href="/LOKA/app/authentification/deconnexion.php"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span><span>Déconnexion</span></a></div>
-</aside>
-<main class="main-content">
-<header class="topbar"><div class="topbar-left"><h2>Détail du contrat</h2><p>Gérez votre contrat de location</p></div><div class="user-info"><div class="user-details"><strong><?= h($prenom . ' ' . $nom) ?></strong><span>Locataire</span></div><div class="avatar"><?= h($initiales ?: 'L') ?></div></div></header>
-<div class="content contrats-content">
-<a class="back" href="index.php"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Retour à mes contrats</a><div class="heading"><div><p class="eyebrow">CONTRAT DE LOCATION</p><h1>Contrat <?= h($contrat['numero']) ?></h1><p class="muted"><?= h($contrat['titre_bien'] ?: $contrat['reference_bien'] ?: 'Logement') ?></p></div><span class="badge <?= $statut === 'VALIDE' || $statut === 'SIGNE_SIMULATION' ? 'success' : 'pending' ?>"><?= h(match($statut) {'SIGNE_SIMULATION'=>'Signé (simulation)','DEPOSE'=>'PDF déposé · à vérifier','VALIDE'=>'Validé par l’agence','REFUSE'=>'À corriger',default=>'En attente de signature'}) ?></span></div>
-<?php if ($success): ?><div class="alert success-alert"><?= h($success) ?></div><?php endif; ?><?php if ($error): ?><div class="alert error-alert"><?= h($error) ?></div><?php endif; ?>
-<div class="detail-grid"><section class="panel"><h2>Informations du contrat</h2><dl class="details"><div><dt>Numéro</dt><dd><?= h($contrat['numero']) ?></dd></div><div><dt>Date de début</dt><dd><?= h(dateFr($contrat['date_debut'] ?? null)) ?></dd></div><div><dt>Date de fin</dt><dd><?= h(dateFr($contrat['date_fin'] ?? null)) ?></dd></div><div><dt>Loyer mensuel</dt><dd><?= number_format((float)$contrat['loyer'], 2, ',', ' ') ?> €</dd></div><div><dt>Charges mensuelles</dt><dd><?= number_format((float)$contrat['charges'], 2, ',', ' ') ?> €</dd></div><div><dt>Dépôt de garantie</dt><dd><?= number_format((float)$contrat['depot_garantie'], 2, ',', ' ') ?> €</dd></div></dl><div class="actions"><a class="button" href="telecharger.php?id=<?= $id ?>&type=original">Télécharger le contrat original</a><?php if (!empty($contrat['chemin_pdf_signe'])): ?><a class="button secondary" href="telecharger.php?id=<?= $id ?>&type=signe">Télécharger mon PDF déposé</a><?php endif; ?></div></section>
-<section class="panel"><h2>Signature en ligne</h2><p class="muted">Cette fonction sert à démontrer le parcours utilisateur dans le projet scolaire. Elle n’utilise aucun prestataire et ne constitue pas une signature électronique juridiquement garantie.</p><?php if (!empty($contrat['nom_signataire'])): ?><div class="signature-record"><span class="record-label">Nom saisi</span><strong><?= h($contrat['nom_signataire']) ?></strong><span class="record-label">Date d’enregistrement</span><strong><?= h(dateFr($contrat['date_signature'] ?? null)) ?></strong><span class="record-label">Statut</span><strong><?= h($statut === 'VALIDE' ? 'Validé par l’agence' : 'Signé (simulation)') ?></strong></div><?php endif; ?>
-<?php if (!$bloque && $statut !== 'DEPOSE'): ?><form method="post" action="action.php" class="form"><input type="hidden" name="csrf_token" value="<?= h($controller->token()) ?>"><input type="hidden" name="id_contrat" value="<?= $id ?>"><input type="hidden" name="action" value="signer"><label for="nom_signataire">Nom complet du signataire</label><input id="nom_signataire" name="nom_signataire" type="text" maxlength="255" required value="<?= h($contrat['nom_signataire'] ?? ($controller->getLocataire()['prenom'].' '.$controller->getLocataire()['nom'])) ?>"><label class="check"><input type="checkbox" name="consentement" value="1" required><span>Je confirme avoir pris connaissance du contrat et souhaite enregistrer cette signature de démonstration.</span></label><button class="button" type="submit">Confirmer la signature simulée</button></form><?php elseif ($statut === 'DEPOSE'): ?><p class="muted">Votre PDF a été déposé. Attendez la vérification de l’agence avant de recommencer.</p><?php else: ?><p class="muted">Le contrat a été validé par l’agence. La signature est verrouillée.</p><?php endif; ?></section>
-<section class="panel upload-panel"><h2>Déposer un contrat signé</h2><p class="muted">Si vous avez signé le document hors de LOKA, vous pouvez transmettre ici le PDF signé. Format PDF uniquement, 10 Mo maximum.</p><?php if (!$bloque): ?><form method="post" action="action.php" enctype="multipart/form-data" class="form"><input type="hidden" name="csrf_token" value="<?= h($controller->token()) ?>"><input type="hidden" name="id_contrat" value="<?= $id ?>"><input type="hidden" name="action" value="deposer"><input type="hidden" name="MAX_FILE_SIZE" value="10485760"><label for="contrat_signe">Fichier PDF signé</label><input id="contrat_signe" name="contrat_signe" type="file" accept="application/pdf,.pdf" required><button class="button" type="submit">Envoyer le PDF signé</button></form><?php else: ?><p>Le contrat est validé. Le dépôt est fermé.</p><?php endif; ?><?php if (!empty($contrat['nom_fichier_signe'])): ?><div class="file-info"><strong>Dernier fichier envoyé</strong><span><?= h($contrat['nom_fichier_signe']) ?></span><span class="muted">Déposé le <?= h(dateFr($contrat['date_depot'] ?? null)) ?></span></div><?php endif; ?></section></div>
-<div class="notice"><strong>À savoir :</strong> « Signé (simulation) » signifie que LOKA a enregistré une confirmation. « PDF déposé » signifie qu’un fichier a été transmis. Seule une vérification effectuée par l’agence peut faire passer le dossier à « Validé par l’agence » dans la gestion administrative.</div></div></main></div></body></html>
+    <a class="detail-back" href="index.php">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Retour à mes contrats
+    </a>
+
+    <div class="detail-header">
+      <div class="detail-identity">
+        <div>
+          <p class="panel-sub" style="margin:0 0 2px;">CONTRAT DE LOCATION</p>
+          <h1 class="detail-name">Contrat <?= h($contrat['numero']) ?></h1>
+          <p class="detail-sub"><?= h($contrat['titre_bien'] ?: $contrat['reference_bien'] ?: 'Logement') ?></p>
+        </div>
+      </div>
+      <span class="status-badge <?= $statutTone ?>"><?= h($statutLabel) ?></span>
+    </div>
+
+    <?php if ($success): ?><div class="feedback success"><?= h($success) ?></div><?php endif; ?>
+    <?php if ($error): ?><div class="feedback error"><?= h($error) ?></div><?php endif; ?>
+
+    <div class="detail-grid">
+      <div class="detail-col">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Informations du contrat</div></div>
+          <div class="info-list">
+            <div class="info-row"><span class="info-label">Numéro</span><span class="info-value"><?= h($contrat['numero']) ?></span></div>
+            <div class="info-row"><span class="info-label">Date de début</span><span class="info-value"><?= h(dateFr($contrat['date_debut'] ?? null)) ?></span></div>
+            <div class="info-row"><span class="info-label">Date de fin</span><span class="info-value"><?= h(dateFr($contrat['date_fin'] ?? null)) ?></span></div>
+            <div class="info-row"><span class="info-label">Loyer mensuel</span><span class="info-value"><?= number_format((float) $contrat['loyer'], 2, ',', ' ') ?> €</span></div>
+            <div class="info-row"><span class="info-label">Charges mensuelles</span><span class="info-value"><?= number_format((float) $contrat['charges'], 2, ',', ' ') ?> €</span></div>
+            <div class="info-row"><span class="info-label">Dépôt de garantie</span><span class="info-value"><?= number_format((float) $contrat['depot_garantie'], 2, ',', ' ') ?> €</span></div>
+          </div>
+          <div class="form-actions">
+            <a class="btn btn-primary" href="telecharger.php?id=<?= $id ?>&type=original">Télécharger le contrat original</a>
+            <?php if (!empty($contrat['chemin_pdf_signe'])): ?>
+              <a class="btn" href="telecharger.php?id=<?= $id ?>&type=signe">Télécharger mon PDF déposé</a>
+            <?php endif; ?>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:18px;">
+          <div class="panel-header"><div class="panel-title">Déposer un contrat signé</div></div>
+          <p style="padding:0 18px;font-size:12.5px;color:var(--text);">Si vous avez signé le document hors de LOKA, vous pouvez transmettre ici le PDF signé. Format PDF uniquement, 10 Mo maximum.</p>
+          <?php if (!$bloque): ?>
+            <form method="post" action="action.php" enctype="multipart/form-data">
+              <input type="hidden" name="csrf_token" value="<?= h($controller->token()) ?>">
+              <input type="hidden" name="id_contrat" value="<?= $id ?>">
+              <input type="hidden" name="action" value="deposer">
+              <input type="hidden" name="MAX_FILE_SIZE" value="10485760">
+              <div class="form-grid full">
+                <div class="form-field">
+                  <label for="contrat_signe">Fichier PDF signé</label>
+                  <input id="contrat_signe" name="contrat_signe" type="file" accept="application/pdf,.pdf" required>
+                </div>
+              </div>
+              <div class="form-actions"><button class="btn btn-primary" type="submit">Envoyer le PDF signé</button></div>
+            </form>
+          <?php else: ?>
+            <p style="padding:0 18px 18px;font-size:13px;color:var(--text);">Le contrat est validé. Le dépôt est fermé.</p>
+          <?php endif; ?>
+          <?php if (!empty($contrat['nom_fichier_signe'])): ?>
+            <div class="info-list">
+              <div class="info-row"><span class="info-label">Dernier fichier envoyé</span><span class="info-value"><?= h($contrat['nom_fichier_signe']) ?></span></div>
+              <div class="info-row"><span class="info-label">Déposé le</span><span class="info-value"><?= h(dateFr($contrat['date_depot'] ?? null)) ?></span></div>
+            </div>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <div class="detail-col">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Signature en ligne</div></div>
+          <p style="padding:0 18px;font-size:12.5px;color:var(--text);">Cette fonction sert à démontrer le parcours utilisateur dans le projet scolaire. Elle n’utilise aucun prestataire et ne constitue pas une signature électronique juridiquement garantie.</p>
+          <?php if (!empty($contrat['nom_signataire'])): ?>
+            <div class="info-list">
+              <div class="info-row"><span class="info-label">Nom saisi</span><span class="info-value"><?= h($contrat['nom_signataire']) ?></span></div>
+              <div class="info-row"><span class="info-label">Date d’enregistrement</span><span class="info-value"><?= h(dateFr($contrat['date_signature'] ?? null)) ?></span></div>
+              <div class="info-row"><span class="info-label">Statut</span><span class="info-value"><?= h($statut === 'VALIDE' ? 'Validé par l’agence' : 'Signé (simulation)') ?></span></div>
+            </div>
+          <?php endif; ?>
+          <?php if (!$bloque && $statut !== 'DEPOSE'): ?>
+            <form method="post" action="action.php">
+              <input type="hidden" name="csrf_token" value="<?= h($controller->token()) ?>">
+              <input type="hidden" name="id_contrat" value="<?= $id ?>">
+              <input type="hidden" name="action" value="signer">
+              <div class="form-grid full">
+                <div class="form-field">
+                  <label for="nom_signataire">Nom complet du signataire</label>
+                  <input id="nom_signataire" name="nom_signataire" type="text" maxlength="255" required value="<?= h($contrat['nom_signataire'] ?? ($prenom . ' ' . $nom)) ?>">
+                </div>
+                <label class="filter-checkbox" style="align-items:flex-start;">
+                  <input type="checkbox" name="consentement" value="1" required style="margin-top:3px;">
+                  <span>Je confirme avoir pris connaissance du contrat et souhaite enregistrer cette signature de démonstration.</span>
+                </label>
+              </div>
+              <div class="form-actions"><button class="btn btn-primary" type="submit">Confirmer la signature simulée</button></div>
+            </form>
+          <?php elseif ($statut === 'DEPOSE'): ?>
+            <p style="padding:0 18px 18px;font-size:13px;color:var(--text);">Votre PDF a été déposé. Attendez la vérification de l’agence avant de recommencer.</p>
+          <?php else: ?>
+            <p style="padding:0 18px 18px;font-size:13px;color:var(--text);">Le contrat a été validé par l’agence. La signature est verrouillée.</p>
+          <?php endif; ?>
+        </div>
+
+        <div class="panel" style="margin-top:18px;">
+          <p style="padding:14px 18px;font-size:12px;color:var(--text);line-height:1.5;">
+            <strong>À savoir :</strong> « Signé (simulation) » signifie que LOKA a enregistré une confirmation. « PDF déposé » signifie qu’un fichier a été transmis. Seule une vérification effectuée par l’agence peut faire passer le dossier à « Validé par l’agence » dans la gestion administrative.
+          </p>
+        </div>
+      </div>
+    </div>
+<?php
+require dirname(__DIR__, 3) . '/layouts/footer.php';

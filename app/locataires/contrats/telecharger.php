@@ -7,35 +7,29 @@ require_once __DIR__ . '/ContratController.php';
 function afficherErreur(string $message, int $code = 404): void
 {
     http_response_code($code);
+
+    $pageTitle = 'Document indisponible';
+    $activeNav = 'Mon contrat';
+    $sidebarFile = 'sidebar-locataire.php';
+    $greetingTitle = 'Document indisponible';
+    $greetingSubtitle = '';
+    $profileName = '';
+    $profileRole = 'Locataire';
+    $profileInitials = '';
+    $extraHead = '<link rel="stylesheet" href="/LOKA/app/administration/mon-agence/dashboard.css">';
+
+    require dirname(__DIR__, 3) . '/layouts/header.php';
     ?>
-    <!DOCTYPE html>
-    <html lang="fr">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Document indisponible | LOKA</title>
-        <link rel="stylesheet" href="../locataire.css">
-        <link rel="stylesheet" href="contrats.css">
-    </head>
-    <body>
-        <main style="max-width:700px;margin:80px auto;padding:30px;">
-            <div class="housing-card-empty">
-                <h2>Document indisponible</h2>
-                <p><?= htmlspecialchars(
-                    $message,
-                    ENT_QUOTES | ENT_SUBSTITUTE,
-                    'UTF-8'
-                ) ?></p>
-                <p>
-                    <a class="button" href="index.php">
-                        Retour à mes contrats
-                    </a>
-                </p>
-            </div>
-        </main>
-    </body>
-    </html>
+    <div class="panel">
+      <div class="empty-state" style="padding:48px 20px;">
+        <div class="empty-state-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg></div>
+        <h4>Document indisponible</h4>
+        <p><?= htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+        <a href="index.php" class="btn btn-primary" style="margin-top:16px;">Retour à mes contrats</a>
+      </div>
+    </div>
     <?php
+    require dirname(__DIR__, 3) . '/layouts/footer.php';
     exit;
 }
 

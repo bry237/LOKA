@@ -13,8 +13,9 @@ $profileName ??= '';
 $profileRole ??= '';
 $profileInitials ??= '';
 // La recherche globale (search.php) n'interroge que les agences/utilisateurs de toute la plateforme :
-// réservée à l'Administrateur plateforme, donc masquée sur les pages "admin agence" (sidebar-agence.php).
-$showGlobalSearch = ($sidebarFile ?? 'sidebar.php') !== 'sidebar-agence.php';
+// réservée à l'Administrateur plateforme (sidebar.php), masquée pour tous les autres espaces
+// (admin agence, locataire, propriétaire, maintenance, documents...).
+$showGlobalSearch = ($sidebarFile ?? 'sidebar.php') === 'sidebar.php';
 // Jeton CSRF pour les actions JS de la topbar (marquer une notification comme lue) : certaines
 // pages hôtes (le Dashboard, par exemple) n'en génèrent pas elles-mêmes pour leurs propres
 // formulaires, donc la topbar porte le sien plutôt que de dépendre d'une variable $csrfToken

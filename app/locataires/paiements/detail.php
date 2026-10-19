@@ -5,12 +5,9 @@ declare(strict_types=1);
 require_once __DIR__ . '/PaiementController.php';
 
 $controller = new PaiementController();
+$locataire = $controller->getCurrentLocataire();
 
-$idEcheance = filter_input(
-    INPUT_GET,
-    'id',
-    FILTER_VALIDATE_INT
-);
+$idEcheance = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 
 if (!$idEcheance) {
     http_response_code(400);
@@ -28,557 +25,81 @@ $montantRestant = $controller->getMontantRestant($idEcheance);
 
 $statut = (string) ($echeance['statut'] ?? 'PENDING');
 
-switch ($statut) {
-    case 'PAID':
-        $statutLabel = 'Payée';
-        $statutClass = 'status-paid';
-        break;
-
-    case 'LATE':
-        $statutLabel = 'En retard';
-        $statutClass = 'status-late';
-        break;
-
-    case 'CANCELLED':
-        $statutLabel = 'Annulée';
-        $statutClass = 'status-cancelled';
-        break;
-
-    default:
-        $statutLabel = 'À payer';
-        $statutClass = 'status-pending';
-        break;
-}
+[$statutLabel, $statutTone] = match ($statut) {
+    'PAID' => ['Payée', 'actif'],
+    'LATE' => ['En retard', 'suspendu'],
+    'CANCELLED' => ['Annulée', 'inactif'],
+    default => ['À payer', 'attente'],
+};
 
 $montantTotal = (float) ($echeance['montant_total'] ?? 0);
-
-$dateDebut = !empty($echeance['periode_debut'])
-    ? date('d/m/Y', strtotime($echeance['periode_debut']))
-    : '-';
-
-$dateFin = !empty($echeance['periode_fin'])
-    ? date('d/m/Y', strtotime($echeance['periode_fin']))
-    : '-';
-
-$dateEcheance = !empty($echeance['date_echeance'])
-    ? date('d/m/Y', strtotime($echeance['date_echeance']))
-    : '-';
+$dateDebut = !empty($echeance['periode_debut']) ? date('d/m/Y', strtotime($echeance['periode_debut'])) : '-';
+$dateFin = !empty($echeance['periode_fin']) ? date('d/m/Y', strtotime($echeance['periode_fin'])) : '-';
+$dateEcheance = !empty($echeance['date_echeance']) ? date('d/m/Y', strtotime($echeance['date_echeance'])) : '-';
 
 $retourPaiement = (string) ($_GET['paiement'] ?? '');
-
 $messagesRetour = [
-    'success' => ['flash-success', 'Paiement reçu, merci ! Votre quittance est disponible dans « Quittances ».'],
-    'pending' => ['flash-info', 'Paiement en cours de confirmation par la banque. Cette page se mettra à jour dès sa validation.'],
-    'cancel'  => ['flash-warning', 'Paiement annulé : aucun montant n’a été débité.'],
-    'error'   => ['flash-error', 'Le paiement n’a pas pu être vérifié. Si vous avez été débité, contactez votre agence.'],
+    'success' => ['success', 'Paiement reçu, merci ! Votre quittance est disponible dans « Quittances ».'],
+    'pending' => ['success', 'Paiement en cours de confirmation par la banque. Cette page se mettra à jour dès sa validation.'],
+    'cancel' => ['error', 'Paiement annulé : aucun montant n’a été débité.'],
+    'error' => ['error', 'Le paiement n’a pas pu être vérifié. Si vous avez été débité, contactez votre agence.'],
 ];
 
 $loyer = (float) ($echeance['montant_loyer'] ?? 0);
 $charges = (float) ($echeance['montant_charges'] ?? 0);
+
+$prenom = trim((string) ($locataire['prenom'] ?? ''));
+$nom = trim((string) ($locataire['nom'] ?? ''));
+
+$pageTitle = 'Détail du paiement';
+$activeNav = 'Mes paiements';
+$sidebarFile = 'sidebar-locataire.php';
+$greetingTitle = 'Détail de l’échéance';
+$greetingSubtitle = 'Période du ' . $dateDebut . ' au ' . $dateFin . '.';
+$profileName = trim($prenom . ' ' . $nom) ?: 'Locataire';
+$profileRole = 'Locataire';
+$profileInitials = mb_strtoupper(mb_substr($prenom, 0, 1) . mb_substr($nom, 0, 1)) ?: 'L';
+$extraHead = '<link rel="stylesheet" href="/LOKA/app/locataires/ops.css?v=' . filemtime(dirname(__DIR__) . '/ops.css') . '">';
+
+require dirname(__DIR__, 3) . '/layouts/header.php';
 ?>
+    <a class="detail-back" href="paiement.php">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Retour à mes paiements
+    </a>
 
-<!DOCTYPE html>
-<html lang="fr">
+    <?php if (isset($messagesRetour[$retourPaiement])): ?>
+      <div class="feedback <?= $messagesRetour[$retourPaiement][0] ?>"><?= htmlspecialchars($messagesRetour[$retourPaiement][1], ENT_QUOTES, 'UTF-8') ?></div>
+    <?php endif; ?>
 
-<head>
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <p class="panel-sub" style="margin:0 0 2px;">DÉTAIL DE L'ÉCHÉANCE</p>
+          <div class="panel-title">Échéance de loyer</div>
+        </div>
+        <span class="status-badge <?= $statutTone ?>"><?= htmlspecialchars($statutLabel, ENT_QUOTES, 'UTF-8') ?></span>
+      </div>
 
-    <meta charset="UTF-8">
+      <div class="mini-stats cols-4" style="padding:4px 18px 18px;">
+        <div class="mini-stat"><div class="num" style="font-size:14px;"><?= htmlspecialchars($dateEcheance, ENT_QUOTES, 'UTF-8') ?></div><div class="lbl">Date d'échéance</div></div>
+        <div class="mini-stat"><div class="num" style="font-size:14px;"><?= htmlspecialchars((string) ($echeance['numero_contrat'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></div><div class="lbl">Contrat</div></div>
+        <div class="mini-stat"><div class="num"><?= number_format($loyer, 0, ',', ' ') ?> €</div><div class="lbl">Loyer</div></div>
+        <div class="mini-stat"><div class="num"><?= number_format($charges, 0, ',', ' ') ?> €</div><div class="lbl">Charges</div></div>
+      </div>
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+      <div class="info-list">
+        <div class="info-row"><span class="info-label">Montant total</span><span class="info-value"><?= number_format($montantTotal, 2, ',', ' ') ?> €</span></div>
+        <div class="info-row"><span class="info-label">Montant restant</span><span class="info-value"><?= number_format($montantRestant, 2, ',', ' ') ?> €</span></div>
+        <div class="info-row"><span class="info-label">À payer</span><span class="info-value" style="font-size:16px;"><?= number_format($montantRestant, 2, ',', ' ') ?> €</span></div>
+      </div>
 
-    <title>Détail du paiement | LOKA</title>
-
-    <link rel="stylesheet"
-          href="paiement.css">
-
-    <style>
-
-        .payment-detail-container {
-            padding: 35px 34px;
-        }
-
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-            color: #0f8b8d;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .back-link:hover {
-            color: #075e63;
-        }
-
-        .detail-card {
-            background: white;
-            border: 1px solid #dde8e8;
-            border-radius: 16px;
-            padding: 30px;
-            box-shadow: 0 3px 12px rgba(4, 63, 66, 0.04);
-        }
-
-        .detail-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 20px;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #dde8e8;
-        }
-
-        .detail-header h1 {
-            color: #043f42;
-            font-size: 24px;
-            margin-bottom: 7px;
-        }
-
-        .detail-header p {
-            color: #687878;
-            font-size: 13px;
-        }
-
-        .detail-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 18px;
-        }
-
-        .detail-item {
-            padding: 16px;
-            background: #f6f9f9;
-            border-radius: 10px;
-        }
-
-        .detail-item span {
-            display: block;
-            margin-bottom: 6px;
-            color: #687878;
-            font-size: 12px;
-        }
-
-        .detail-item strong {
-            color: #043f42;
-            font-size: 15px;
-        }
-
-        .amount-box {
-            margin-top: 25px;
-            padding: 20px;
-            background: #effbfa;
-            border-radius: 12px;
-        }
-
-        .amount-line {
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-            padding: 7px 0;
-            color: #687878;
-            font-size: 13px;
-        }
-
-        .amount-line.total {
-            margin-top: 8px;
-            padding-top: 14px;
-            border-top: 1px solid #d8eeee;
-            color: #043f42;
-            font-size: 16px;
-            font-weight: 700;
-        }
-
-        .detail-actions {
-            margin-top: 25px;
-            display: flex;
-            gap: 10px;
-        }
-
-        @media (max-width: 650px) {
-
-            .payment-detail-container {
-                padding: 25px 20px;
-            }
-
-            .detail-header {
-                flex-direction: column;
-            }
-
-            .detail-grid {
-                grid-template-columns: 1fr;
-            }
-
-        }
-
-            .payment-flash {
-            margin-bottom: 20px;
-            padding: 13px 16px;
-            border-radius: 10px;
-            font-size: 13px;
-            border: 1px solid transparent;
-        }
-
-        .flash-success { background: #e8f8ef; border-color: #b7e4c7; color: #1b6b3a; }
-        .flash-info    { background: #effbfa; border-color: #bfe6e4; color: #075e63; }
-        .flash-warning { background: #fff7e6; border-color: #f5deb3; color: #8a5a00; }
-        .flash-error   { background: #fdf0f0; border-color: #f3c2c2; color: #a12a2a; }
-
-    </style>
-
-</head>
-
-<body>
-
-        <aside class="sidebar">
-
-    <div class="logo">
-        LOKA
+      <div class="form-actions">
+        <?php if ($montantRestant > 0 && $statut !== 'CANCELLED'): ?>
+          <a href="payer.php?id=<?= $idEcheance ?>" class="btn btn-primary">Payer cette échéance</a>
+        <?php endif; ?>
+        <a href="historique.php" class="btn">Voir mon historique</a>
+      </div>
     </div>
-
-
-    <nav class="sidebar-menu">
-
-        <a
-            href="../index.php"
-            class="menu-item"
-        >
-            <span class="menu-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>
-            <span>Accueil</span>
-        </a>
-
-
-        <a
-            href="../detail.php"
-            class="menu-item"
-        >
-            <span class="menu-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
-            <span>Mon profil</span>
-        </a>
-
-
-        <a
-            href="../logement.php"
-            class="menu-item"
-        >
-            <span class="menu-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></span>
-            <span>Mon logement</span>
-        </a>
-
-
-        <a
-            href="../recherche.php"
-            class="menu-item"
-        >
-            <span class="menu-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
-            <span>Recherche</span>
-        </a>
-
-
-        <a href="/LOKA/app/locataires/contrats/index.php">
-
-                <span class="nav-icon">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
-                </span>
-
-                <span>
-                    Mon contrat
-                </span>
-            </a>
-
-
-        <!-- PAGE ACTIVE -->
-
-        <a
-            href="paiement.php"
-            class="menu-item active"
-        >
-            <span class="menu-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
-            <span>Mes paiements</span>
-        </a>
-
-
-        <a
-            href="/LOKA/app/maintenance/index.php"
-            class="menu-item"
-        >
-            <span class="menu-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94Z"/></svg></span>
-            <span>Maintenance</span>
-        </a>
-
-
-        <a
-            href="/LOKA/app/documents/index.php"
-            class="menu-item"
-        >
-            <span class="menu-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg></span>
-            <span>Documents</span>
-        </a>
-
-        <a href="/LOKA/app/locataires/quittances/index.php"
-              >
-                <span class="menu-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M9 7h7M9 11h5M9 15h3"/></svg></span>
-                <span>Quittances</span>
-            </a>
-
-
-        <a
-            href="../notifications/notification.php"
-            class="menu-item"
-        >
-            <span class="menu-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
-            <span>Notifications</span>
-        </a>
-
-    </nav>
-
-    <div class="sidebar-bottom">
-
-            <a href="/LOKA/app/authentification/deconnexion.php">
-                <span class="menu-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span>
-                <span>Déconnexion</span>
-            </a>
-
-        </div>
-
-</aside>
-
-<div class="main-content">
-
-    <header class="top-header">
-
-        <div class="welcome">
-
-            <h1>
-                Bonjour Pascale
-                <span class="wave"></span>
-           </h1>
-
-            <p>
-                Bienvenue dans votre espace locataire
-            </p>
-
-        </div>
-
-        <div class="user-information">
-
-            <div class="avatar">
-                PN
-            </div>
-
-            <div class="user-name">
-                <strong>Pascale NGASSA</strong>
-                <span>Locataire</span>
-            </div>
-
-        </div>
-
-    </header>
-
-
-    <main class="page-container">
-
-        <section class="payment-detail-container">
-
-            <a href="paiement.php"
-               class="back-link">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Retour à mes paiements
-            </a>
-
-
-                        <?php if (isset($messagesRetour[$retourPaiement])): ?>
-                <div class="payment-flash <?= $messagesRetour[$retourPaiement][0] ?>" role="status">
-                    <?= htmlspecialchars($messagesRetour[$retourPaiement][1]) ?>
-                </div>
-            <?php endif; ?>
-
-            <div class="detail-card">
-
-                <div class="detail-header">
-
-                    <div>
-
-                        <span class="section-label">
-                            DÉTAIL DE L'ÉCHÉANCE
-                        </span>
-
-                        <h1>
-                            Échéance de loyer
-                       </h1>
-
-                        <p>
-                            Période du
-                            <?= htmlspecialchars($dateDebut) ?>
-                            au
-                            <?= htmlspecialchars($dateFin) ?>
-                        </p>
-
-                    </div>
-
-
-                    <span class="status-badge <?= $statutClass ?>">
-                        <?= htmlspecialchars($statutLabel) ?>
-                    </span>
-
-                </div>
-
-
-                <div class="detail-grid">
-
-                    <div class="detail-item">
-
-                        <span>
-                            Date d'échéance
-                        </span>
-
-                        <strong>
-                            <?= htmlspecialchars($dateEcheance) ?>
-                        </strong>
-
-                    </div>
-
-
-                    <div class="detail-item">
-
-                        <span>
-                            Contrat
-                        </span>
-
-                        <strong>
-                            <?= htmlspecialchars(
-                                (string) ($echeance['numero_contrat'] ?? '-')
-                            ) ?>
-                        </strong>
-
-                    </div>
-
-
-                    <div class="detail-item">
-
-                        <span>
-                            Loyer
-                        </span>
-
-                        <strong>
-                            <?= number_format(
-                                $loyer,
-                                2,
-                                ',',
-                                ' '
-                            ) ?> €
-                        </strong>
-
-                    </div>
-
-
-                    <div class="detail-item">
-
-                        <span>
-                            Charges
-                        </span>
-
-                        <strong>
-                            <?= number_format(
-                                $charges,
-                                2,
-                                ',',
-                                ' '
-                            ) ?> €
-                        </strong>
-
-                    </div>
-
-                </div>
-
-
-                <div class="amount-box">
-
-                    <div class="amount-line">
-
-                        <span>
-                            Montant total
-                        </span>
-
-                        <strong>
-                            <?= number_format(
-                                $montantTotal,
-                                2,
-                                ',',
-                                ' '
-                            ) ?> €
-                        </strong>
-
-                    </div>
-
-
-                    <div class="amount-line">
-
-                        <span>
-                            Montant restant
-                        </span>
-
-                        <strong>
-                            <?= number_format(
-                                $montantRestant,
-                                2,
-                                ',',
-                                ' '
-                            ) ?> €
-                        </strong>
-
-                    </div>
-
-
-                    <div class="amount-line total">
-
-                        <span>
-                            À payer
-                        </span>
-
-                        <strong>
-                            <?= number_format(
-                                $montantRestant,
-                                2,
-                                ',',
-                                ' '
-                            ) ?> €
-                        </strong>
-
-                    </div>
-
-                </div>
-
-
-                <div class="detail-actions">
-
-                    <?php if ($montantRestant > 0 && $statut !== 'CANCELLED'): ?>
-
-                        <a href="payer.php?id=<?= $idEcheance ?>"
-                           class="button button-primary">
-
-                            Payer cette échéance
-
-                        </a>
-
-                    <?php endif; ?>
-
-
-                    <a href="historique.php"
-                       class="button button-secondary">
-
-                        Voir mon historique
-
-                    </a>
-
-                </div>
-
-            </div>
-
-        </section>
-
-    </main>
-
-</div>
-
-</body>
-
-</html>
+<?php
+require dirname(__DIR__, 3) . '/layouts/footer.php';
