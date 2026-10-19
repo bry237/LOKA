@@ -893,7 +893,7 @@ function checked($value): string
 
                                 <p class="housing-location">
 
-                                    📍
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M12 21s-6-5.686-6-10a6 6 0 0 1 12 0c0 4.314-6 10-6 10Z"/><circle cx="12" cy="11" r="2.5"/></svg>
 
                                     <?= e($logement['code_postal']) ?>
 
@@ -904,13 +904,13 @@ function checked($value): string
                                 <div class="housing-characteristics">
 
                                     <span>
-                                        📐
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
                                         <?= e((string) $logement['surface']) ?>
                                         m²
                                     </span>
 
                                     <span>
-                                        🛏️
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M2 20v-7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v7"/><path d="M2 13V7a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M12 9V7a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4"/><path d="M2 20h20"/></svg>
                                         <?= e((string) $logement['nombre_pieces']) ?>
                                         pièce(s)
                                     </span>

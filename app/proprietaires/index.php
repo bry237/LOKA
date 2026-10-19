@@ -360,7 +360,6 @@ foreach ($resultats as $ligne) {
                         Bonjour,
                         <?= htmlspecialchars($prenom) ?>
                         <?= htmlspecialchars($nom) ?>
-                        👋
                     </h1>
 
                     <p>Bienvenue sur votre espace propriétaire.</p>

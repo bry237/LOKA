@@ -936,7 +936,7 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
                 href="/LOKA/app/proprietaires/Contrat/contrat.php"
                 class="detail-contrat-back"
             >
-                ← Retour à mes contrats
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><polyline points="15 18 9 12 15 6"/></svg>Retour à mes contrats
             </a>
 
 
@@ -1436,14 +1436,14 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
     href="/LOKA/app/proprietaires/Contrat/modifierContrat.php?id=<?= (int) $contrat['id_contrat'] ?>"
     class="contrat-action-button contrat-action-primary"
 >
-    ✏️ Modifier le contrat
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:4px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Modifier le contrat
 </a>
 
 <?php if (in_array($contrat['statut'], ['ACTIVE', 'EXPIRED'], true)): ?> <a
                 href="/LOKA/app/proprietaires/Contrat/renouvelerContrat.php?id=<?= (int) $contrat['id_contrat'] ?>"
                 class="contrat-action-button contrat-action-secondary"
             >
-                🔄 Renouveler le contrat
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:4px;"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3 21 9 15 9"/></svg>Renouveler le contrat
             </a>
 
         <?php endif; ?>
@@ -1472,14 +1472,14 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
             rel="noopener noreferrer"
             class="contrat-action-button contrat-action-secondary"
         >
-            📄 Voir le PDF
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:4px;"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>Voir le PDF
         </a>
 
         <a
             href="/LOKA/app/proprietaires/gerer_pdf_contrat.php?id=<?= (int) $contrat['id_contrat'] ?>"
             class="contrat-action-button contrat-action-secondary"
         >
-            🔄 Remplacer le PDF
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:4px;"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3 21 9 15 9"/></svg>Remplacer le PDF
         </a>
 
         <a
@@ -1487,7 +1487,7 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
             class="contrat-action-button contrat-action-danger"
             onclick="return confirm('Voulez-vous vraiment supprimer le PDF de ce contrat ?');"
         >
-            🗑️ Supprimer le PDF
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:4px;"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg>Supprimer le PDF
         </a>
 
     </div>
@@ -1495,7 +1495,7 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
 <?php else: ?>
 
     <div class="contrat-document-empty">
-        <span class="contrat-document-icon">📄</span>
+        <span class="contrat-document-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg></span>
 
         <div>
             <strong>Aucun PDF</strong>
@@ -1509,7 +1509,7 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
             href="/LOKA/app/proprietaires/Contrat/gererPdfContrat.php?id=<?= (int) $contrat['id_contrat'] ?>"
             class="contrat-action-button contrat-action-primary"
         >
-            📤 Ajouter le PDF
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:4px;"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M4 5h16"/></svg>Ajouter le PDF
         </a>
 
     </div>

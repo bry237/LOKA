@@ -308,7 +308,7 @@ if ($nom !== '') {
                     <div class="housing-address">
 
                         <div class="housing-info-icon">
-                            📍
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.686-6-10a6 6 0 0 1 12 0c0 4.314-6 10-6 10Z"/><circle cx="12" cy="11" r="2.5"/></svg>
                         </div>
 
                         <div>

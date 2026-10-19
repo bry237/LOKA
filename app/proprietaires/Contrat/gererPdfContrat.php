@@ -652,13 +652,13 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
         href="/LOKA/app/proprietaires/Contrat/detailContrat.php?id=<?= (int) $contrat['id_contrat'] ?>"
         class="pdf-contrat-back"
     >
-        ← Retour au contrat
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><polyline points="15 18 9 12 15 6"/></svg>Retour au contrat
     </a>
 
     <div class="pdf-contrat-header">
 
         <h1>
-            📄 Gestion du PDF
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px;"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>Gestion du PDF
         </h1>
 
         <p>
@@ -738,7 +738,7 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
                 <div class="pdf-actuel-info">
 
                     <span class="pdf-icon">
-                        📄
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
                     </span>
 
                     <div>
@@ -761,7 +761,7 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
                     rel="noopener noreferrer"
                     class="pdf-button pdf-button-secondary"
                 >
-                    📄 Voir le PDF
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:4px;"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>Voir le PDF
                 </a>
 
             </div>
@@ -808,7 +808,7 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
                     type="submit"
                     class="pdf-button pdf-button-primary"
                 >
-                    📤
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:4px;"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M4 5h16"/></svg>
                     <?= $pdfUrl
                         ? 'Remplacer le PDF'
                         : 'Enregistrer le PDF'

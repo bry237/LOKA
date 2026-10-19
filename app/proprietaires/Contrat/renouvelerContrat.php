@@ -778,13 +778,13 @@ $frequenceLabels = [
         href="/LOKA/app/proprietaires/Contrat/detailContrat.php?id=<?= (int) $contrat['id_contrat'] ?>"
         class="renouveler-contrat-back"
     >
-        ← Retour au contrat
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><polyline points="15 18 9 12 15 6"/></svg>Retour au contrat
     </a>
 
     <div class="renouveler-contrat-header">
 
         <h1>
-            🔄 Renouveler le contrat
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px;"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3 21 9 15 9"/></svg>Renouveler le contrat
         </h1>
 
         <p>
@@ -1038,7 +1038,7 @@ $frequenceLabels = [
                     type="submit"
                     class="btn-renouveler btn-save"
                 >
-                    🔄 Créer le renouvellement
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:4px;"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3 21 9 15 9"/></svg>Créer le renouvellement
                 </button>
 
             </div>

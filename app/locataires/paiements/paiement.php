@@ -469,7 +469,7 @@ if ($prochaineEcheance !== null) {
             <div class="stat-card">
 
                 <div class="stat-icon">
-                    📅
+                    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2.5"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                 </div>
 
                 <div class="stat-content">
@@ -507,7 +507,7 @@ if ($prochaineEcheance !== null) {
             <div class="stat-card">
 
                 <div class="stat-icon">
-                    💰
+                    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                 </div>
 
                 <div class="stat-content">
@@ -737,7 +737,7 @@ if ($prochaineEcheance !== null) {
             <div class="history-card">
 
                 <div class="history-icon">
-                    📋
+                    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
                 </div>
 
 

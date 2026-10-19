@@ -868,7 +868,7 @@ foreach ($contrats as $contrat) {
                 href="/LOKA/app/proprietaires/index.php"
                 class="contrats-back"
             >
-                ← Retour au tableau de bord
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><polyline points="15 18 9 12 15 6"/></svg>Retour au tableau de bord
             </a>
 
 
@@ -894,7 +894,7 @@ foreach ($contrats as $contrat) {
                 <div class="contrat-stat-card">
 
                     <div class="contrat-stat-icon">
-                        📄
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
                     </div>
 
                     <div class="contrat-stat-content">
@@ -915,7 +915,7 @@ foreach ($contrats as $contrat) {
                 <div class="contrat-stat-card">
 
                     <div class="contrat-stat-icon">
-                        ✓
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                     </div>
 
                     <div class="contrat-stat-content">
@@ -985,7 +985,7 @@ foreach ($contrats as $contrat) {
 
                 <div class="contrat-search-wrapper">
 
-                    <span>🔎</span>
+                    <span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
 
                     <input
                         type="search"
@@ -1004,7 +1004,7 @@ foreach ($contrats as $contrat) {
                 <div class="contrats-empty">
 
                     <div class="contrats-empty-icon">
-                        📄
+                        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
                     </div>
 
                     <h3>
@@ -1243,7 +1243,7 @@ foreach ($contrats as $contrat) {
                                     href="/LOKA/app/proprietaires/Contrat/detailContrat.php?id=<?= (int) $contrat['id_contrat'] ?>"
                                     class="contrat-button"
                                 >
-                                    Voir le contrat →
+                                    Voir le contrat <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:2px;"><polyline points="9 18 15 12 9 6"/></svg>
                                 </a>
 
                             </div>

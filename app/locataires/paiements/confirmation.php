@@ -206,7 +206,7 @@ $montantRestant = $controller->getMontantRestant(
             <div class="confirmation-card">
 
                 <div class="confirmation-icon">
-                    🏦
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/><path d="M4 10h16"/></svg>
                 </div>
 
 
