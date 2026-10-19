@@ -106,7 +106,7 @@ final class DashboardModel
 		)->fetchColumn();
 		if ($pending > 0) {
 			$alerts[] = [
-				'icon' => '⏳', 'tone' => 'amber',
+				'icon' => 'clock', 'tone' => 'amber',
 				'title' => $pending . ' agence' . ($pending > 1 ? 's' : '') . " en attente d'activation",
 				'sub' => 'Inscrites depuis plus de 48h',
 				'url' => '/LOKA/app/administration/agences/index.php?status=PENDING',
@@ -118,7 +118,7 @@ final class DashboardModel
 		)->fetchColumn();
 		if ($deactivated > 0) {
 			$alerts[] = [
-				'icon' => '⛔', 'tone' => 'red',
+				'icon' => 'warning', 'tone' => 'red',
 				'title' => $deactivated . ' compte' . ($deactivated > 1 ? 's' : '') . ' récemment désactivés',
 				'sub' => 'Sans réactivation depuis 7 jours',
 				'url' => '/LOKA/app/administration/utilisateurs/index.php?status=INACTIVE',
@@ -130,7 +130,7 @@ final class DashboardModel
 		)->fetchColumn();
 		if ($expiring > 0) {
 			$alerts[] = [
-				'icon' => '⏰', 'tone' => 'blue',
+				'icon' => 'clock', 'tone' => 'blue',
 				'title' => $expiring . ' abonnement' . ($expiring > 1 ? 's' : '') . ' arrivent à expiration',
 				'sub' => "D'ici 7 jours",
 				'url' => '/LOKA/app/administration/agences/index.php',
@@ -139,7 +139,7 @@ final class DashboardModel
 
 		if (!$alerts) {
 			$alerts[] = [
-				'icon' => '✓', 'tone' => 'green',
+				'icon' => 'check', 'tone' => 'green',
 				'title' => 'Aucune alerte système en cours',
 				'sub' => 'Dernière vérification : à l’instant',
 				'url' => null,

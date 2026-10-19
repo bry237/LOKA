@@ -167,8 +167,8 @@ $montantRestant = $controller->getMontantRestant(
 
             <h1>
                 Bonjour Pascale
-                <span class="wave">👋</span>
-            </h1>
+                <span class="wave"></span>
+           </h1>
 
             <p>
                 Bienvenue dans votre espace locataire
@@ -217,7 +217,7 @@ $montantRestant = $controller->getMontantRestant(
 
                 <h1>
                     Effectuer votre virement
-                </h1>
+               </h1>
 
 
                 <p>
