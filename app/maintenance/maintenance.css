@@ -1,0 +1,694 @@
+/* =========================================================
+   MAINTENANCE - STYLE LOKA
+   Complément de locataire.css
+   ========================================================= */
+
+
+/* =========================================================
+   VARIABLES
+   Même charte que locataire.css
+   ========================================================= */
+
+.maintenance-page {
+    --maintenance-primary: #0F8B8D;
+    --maintenance-primary-dark: #075E63;
+    --maintenance-primary-deep: #043F42;
+    --maintenance-primary-pale: #EFFBFA;
+    --maintenance-background: #F6F9F9;
+    --maintenance-white: #FFFFFF;
+    --maintenance-text: #263636;
+    --maintenance-text-light: #687878;
+    --maintenance-border: #DDE8E8;
+}
+
+
+/* =========================================================
+   BOUTON "SIGNALER UN PROBLÈME"
+   ========================================================= */
+
+.maintenance-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 13px 20px;
+
+    border: none;
+    border-radius: 9px;
+
+    background: #0F8B8D;
+    color: #FFFFFF;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    white-space: nowrap;
+
+    cursor: pointer;
+
+    text-decoration: none;
+
+    transition: 0.2s ease;
+}
+
+.maintenance-btn:hover {
+    background: #075E63;
+}
+
+
+/* =========================================================
+   CARTE MAINTENANCE
+   Même style que housing-card de locataire.css
+   ========================================================= */
+
+.maintenance-card {
+    width: 100%;
+    box-sizing: border-box;
+
+    background: #FFFFFF;
+
+    border: 1px solid #DDE8E8;
+    border-radius: 14px;
+
+    box-shadow: 0 4px 15px rgba(4, 63, 66, 0.04);
+
+    padding: 28px 32px 32px;
+}
+
+
+/* =========================================================
+   EN-TÊTE DE LA CARTE
+   ========================================================= */
+
+.maintenance-card-header {
+    width: 100%;
+}
+
+.maintenance-card-header .section-label {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: #0F8B8D;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    letter-spacing: 1.2px;
+}
+
+.maintenance-card-header h2 {
+    margin: 0 0 8px;
+
+    color: #043F42;
+
+    font-size: 30px;
+    font-weight: 700;
+}
+
+.maintenance-card-header p {
+    margin: 0;
+
+    color: #687878;
+
+    font-size: 16px;
+}
+
+
+/* =========================================================
+   SÉPARATEUR
+   ========================================================= */
+
+.maintenance-card-divider {
+    width: 100%;
+    height: 1px;
+
+    margin-top: 30px;
+
+    background: #DDE8E8;
+}
+
+
+/* =========================================================
+   ÉTAT VIDE
+   Même logique que housing-empty-content
+   ========================================================= */
+
+.maintenance-empty-content {
+    min-height: 330px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    padding: 35px 20px;
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   ICÔNE MAINTENANCE
+   ========================================================= */
+
+.maintenance-empty-icon {
+    width: 40px;
+    height: 40px;
+
+    margin-bottom: 15px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    color: #0F8B8D;
+
+    background: #EFFBFA;
+
+    border-radius: 50%;
+}
+
+.maintenance-empty-icon svg {
+    width: 24px;
+    height: 24px;
+
+    display: block;
+}
+
+
+/* =========================================================
+   TITRE ÉTAT VIDE
+   ========================================================= */
+
+.maintenance-empty-content h3 {
+    margin: 0 0 12px;
+
+    color: #043F42;
+
+    font-size: 27px;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   TEXTE ÉTAT VIDE
+   ========================================================= */
+
+.maintenance-empty-content p {
+    max-width: 650px;
+
+    margin: 0 0 25px;
+
+    color: #687878;
+
+    font-size: 16px;
+
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   LISTE DES DEMANDES
+   ========================================================= */
+
+.maintenance-requests {
+    width: 100%;
+}
+
+
+/* =========================================================
+   UNE DEMANDE
+   ========================================================= */
+
+.maintenance-request {
+    display: flex;
+
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 25px;
+
+    padding: 24px 0;
+
+    border-bottom: 1px solid #DDE8E8;
+}
+
+.maintenance-request:last-child {
+    border-bottom: none;
+}
+
+
+/* =========================================================
+   CONTENU DE LA DEMANDE
+   ========================================================= */
+
+.maintenance-request-content {
+    flex: 1;
+
+    min-width: 0;
+}
+
+.maintenance-request-title {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-bottom: 8px;
+}
+
+.maintenance-request-title h3 {
+    margin: 0;
+
+    color: #043F42;
+
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.maintenance-request-description {
+    margin: 0 0 15px;
+
+    color: #687878;
+
+    font-size: 14px;
+
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   INFORMATIONS DE LA DEMANDE
+   ========================================================= */
+
+.maintenance-request-info {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 18px;
+
+    color: #687878;
+
+    font-size: 13px;
+}
+
+.maintenance-request-info strong {
+    color: #043F42;
+}
+
+
+/* =========================================================
+   BOUTON DÉTAIL
+   ========================================================= */
+
+.maintenance-detail-btn {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 10px 16px;
+
+    border: 1px solid #0F8B8D;
+
+    border-radius: 7px;
+
+    background: #FFFFFF;
+
+    color: #0F8B8D;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    text-decoration: none;
+
+    white-space: nowrap;
+
+    transition: 0.2s ease;
+}
+
+.maintenance-detail-btn:hover {
+    background: #0F8B8D;
+
+    color: #FFFFFF;
+}
+
+
+/* =========================================================
+   STATUTS
+   Même style que les statuts de locataire.css
+   ========================================================= */
+
+.maintenance-status {
+    display: inline-flex;
+
+    align-items: center;
+
+    padding: 5px 11px;
+
+    border-radius: 20px;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+.maintenance-status-open {
+    background: #EFFBFA;
+    color: #075E63;
+}
+
+.maintenance-status-assigned {
+    background: #EFFBFA;
+    color: #075E63;
+}
+
+.maintenance-status-progress {
+    background: #FFF7E6;
+    color: #F59E0B;
+}
+
+.maintenance-status-waiting {
+    background: #FFF7E6;
+    color: #F59E0B;
+}
+
+.maintenance-status-resolved {
+    background: #EAF8EF;
+    color: #16A34A;
+}
+
+.maintenance-status-closed {
+    background: #EAF8EF;
+    color: #16A34A;
+}
+
+.maintenance-status-cancelled {
+    background: #FDECEC;
+    color: #DC2626;
+}
+
+
+/* =========================================================
+   PRIORITÉS
+   ========================================================= */
+
+.maintenance-priority {
+    display: inline-flex;
+
+    align-items: center;
+
+    padding: 5px 11px;
+
+    border-radius: 20px;
+
+    font-size: 11px;
+
+    font-weight: 700;
+}
+
+.maintenance-priority-low {
+    background: #EFFBFA;
+    color: #075E63;
+}
+
+.maintenance-priority-medium {
+    background: #FFF7E6;
+    color: #F59E0B;
+}
+
+.maintenance-priority-high {
+    background: #FDECEC;
+    color: #DC2626;
+}
+
+.maintenance-priority-urgent {
+    background: #FDECEC;
+    color: #991B1B;
+}
+
+
+/* =========================================================
+   FORMULAIRE DE MAINTENANCE
+   ========================================================= */
+
+.maintenance-form-card {
+    width: 100%;
+    max-width: 850px;
+
+    box-sizing: border-box;
+
+    padding: 30px;
+
+    background: #FFFFFF;
+
+    border: 1px solid #DDE8E8;
+
+    border-radius: 16px;
+
+    box-shadow: 0 4px 15px rgba(4, 63, 66, 0.04);
+}
+
+
+/* =========================================================
+   INFORMATIONS LOGEMENT DANS LE FORMULAIRE
+   ========================================================= */
+
+.maintenance-housing-info {
+    margin: 25px 0;
+
+    padding: 20px;
+
+    background: #EFFBFA;
+
+    border: 1px solid #DDF5F4;
+
+    border-radius: 12px;
+}
+
+.maintenance-housing-info h3 {
+    margin: 0 0 10px;
+
+    color: #043F42;
+
+    font-size: 16px;
+}
+
+.maintenance-housing-info p {
+    margin: 4px 0;
+
+    color: #687878;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   MESSAGES
+   ========================================================= */
+
+.maintenance-alert {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 14px 18px;
+
+    margin-bottom: 20px;
+
+    border-radius: 8px;
+
+    font-size: 14px;
+}
+
+.maintenance-alert-error {
+    background: #FEF2F2;
+
+    color: #991B1B;
+
+    border: 1px solid #FECACA;
+}
+
+.maintenance-alert-success {
+    background: #EAF8EF;
+
+    color: #166534;
+
+    border: 1px solid #CDEDD8;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   Même logique que locataire.css
+   ========================================================= */
+
+@media (max-width: 1000px) {
+
+    .maintenance-request {
+        flex-direction: column;
+    }
+
+    .maintenance-detail-btn {
+        align-self: flex-start;
+    }
+
+}
+
+
+@media (max-width: 700px) {
+
+    .maintenance-card {
+        padding: 22px;
+    }
+
+    .maintenance-card-header h2 {
+        font-size: 25px;
+    }
+
+    .maintenance-card-header p {
+        font-size: 14px;
+    }
+
+    .maintenance-empty-content {
+        min-height: 300px;
+
+        padding: 25px 10px;
+    }
+
+    .maintenance-empty-content h3 {
+        font-size: 22px;
+    }
+
+    .maintenance-empty-content p {
+        font-size: 14px;
+    }
+
+    .maintenance-request-info {
+        flex-direction: column;
+
+        gap: 8px;
+    }
+
+    .maintenance-form-card {
+        padding: 22px;
+    }
+
+}
+
+
+@media (max-width: 650px) {
+
+    .maintenance-request-title {
+        align-items: flex-start;
+
+        flex-direction: column;
+
+        gap: 8px;
+    }
+
+}
+
+.maintenance-form-card .form-group {
+    margin-top: 22px;
+}
+
+.maintenance-form-card .form-group label {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #043F42;
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.maintenance-form-card .form-group input,
+.maintenance-form-card .form-group select,
+.maintenance-form-card .form-group textarea {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 12px 14px;
+
+    border: 1px solid #DDE8E8;
+
+    border-radius: 8px;
+
+    background: #FFFFFF;
+
+    color: #263636;
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    outline: none;
+
+    transition: border-color 0.2s ease,
+                box-shadow 0.2s ease;
+}
+
+.maintenance-form-card .form-group input:focus,
+.maintenance-form-card .form-group select:focus,
+.maintenance-form-card .form-group textarea:focus {
+    border-color: #0F8B8D;
+
+    box-shadow: 0 0 0 3px rgba(15, 139, 141, 0.10);
+}
+
+.maintenance-form-card .form-group textarea {
+    resize: vertical;
+
+    min-height: 150px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   BOUTON DÉSACTIVÉ
+   ========================================================= */
+
+.maintenance-btn:disabled {
+    opacity: 0.5;
+
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+.maintenance-btn:disabled:hover {
+    background: #0F8B8D;
+}
+
+
+@media (max-width: 700px) {
+
+    .maintenance-form-card .form-group input,
+    .maintenance-form-card .form-group select,
+    .maintenance-form-card .form-group textarea {
+        font-size: 16px;
+    }
+
+}
+
+.sidebar-bottom {
+    margin-top: auto;
+
+    padding: 15px 19px 20px;
+}
