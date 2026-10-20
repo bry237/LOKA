@@ -54,7 +54,12 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
+          # FTP simple, pas FTPS : incompatibilité connue entre cette action
+          # et le FTPS d'InfinityFree ("Server sent FIN packet unexpectedly").
+          # Acceptable ici — aucun secret ne transite par ce canal,
+          # config/env.local.php (identifiants base de données) est exclu
+          # de l'envoi automatique, voir plus bas.
+          protocol: ftp
           port: 21
           server-dir: /htdocs/LOKA/
           dangerous-clean-slate: false
