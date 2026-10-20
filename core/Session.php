@@ -30,6 +30,25 @@ final class Session
 		session_regenerate_id(true);
 	}
 
+	/**
+	 * Prolonge la durée de vie du cookie de session au-delà de la fermeture du navigateur
+	 * (case "Se souvenir de moi"). Sans cet appel, le cookie reste un cookie de session
+	 * classique (lifetime 0) même si la session en base dure plus longtemps.
+	 */
+	public static function extend(int $seconds): void
+	{
+		self::start();
+		$params = session_get_cookie_params();
+		setcookie(session_name(), session_id(), [
+			'expires' => time() + $seconds,
+			'path' => $params['path'],
+			'domain' => $params['domain'],
+			'secure' => $params['secure'],
+			'httponly' => $params['httponly'],
+			'samesite' => $params['samesite'],
+		]);
+	}
+
 	public static function destroy(): void
 	{
 		if (session_status() !== PHP_SESSION_ACTIVE) {

@@ -47,12 +47,17 @@ final class Auth
 		return $user;
 	}
 
-	public static function createSession(array $user): array
+	private const REMEMBER_ME_SECONDS = 30 * 24 * 60 * 60;
+
+	public static function createSession(array $user, bool $remember = false): array
 	{
 		$db = Database::connection();
 		Session::regenerate();
+		if ($remember) {
+			Session::extend(self::REMEMBER_ME_SECONDS);
+		}
 		$token = bin2hex(random_bytes(32));
-		$expiration = (new DateTimeImmutable('+8 hours'))->format('Y-m-d H:i:s');
+		$expiration = (new DateTimeImmutable($remember ? '+30 days' : '+8 hours'))->format('Y-m-d H:i:s');
 		$insert = $db->prepare(
 			'INSERT INTO session_utilisateur (id_utilisateur, token_hash, adresse_ip, user_agent, date_expiration, date_derniere_activite)
 			 VALUES (:id_utilisateur, :token_hash, :adresse_ip, :user_agent, :date_expiration, NOW())'

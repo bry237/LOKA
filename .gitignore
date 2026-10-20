@@ -1,2 +1,3 @@
 /.htaccess
 /config/stripe_local.php
+/database/backups/

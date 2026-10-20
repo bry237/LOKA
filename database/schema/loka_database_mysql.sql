@@ -364,17 +364,17 @@ CREATE TABLE `document` (
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'NO_AUTO_VALUE_ON_ZERO' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_document_avant_insert` BEFORE INSERT ON `document` FOR EACH ROW BEGIN
-    IF (
-        (NEW.id_bien IS NOT NULL) +
-        (NEW.id_contrat IS NOT NULL) +
-        (NEW.id_proprietaire IS NOT NULL) +
-        (NEW.id_locataire IS NOT NULL) +
-        (NEW.id_intervention IS NOT NULL)
-    ) <> 1 THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Un document doit etre rattache a une seule entite metier.';
-    END IF;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_document_avant_insert` BEFORE INSERT ON `document` FOR EACH ROW BEGIN
+    IF (
+        (NEW.id_bien IS NOT NULL) +
+        (NEW.id_contrat IS NOT NULL) +
+        (NEW.id_proprietaire IS NOT NULL) +
+        (NEW.id_locataire IS NOT NULL) +
+        (NEW.id_intervention IS NOT NULL)
+    ) <> 1 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Un document doit etre rattache a une seule entite metier.';
+    END IF;
 END */;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -390,17 +390,17 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'NO_AUTO_VALUE_ON_ZERO' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_document_avant_update` BEFORE UPDATE ON `document` FOR EACH ROW BEGIN
-    IF (
-        (NEW.id_bien IS NOT NULL) +
-        (NEW.id_contrat IS NOT NULL) +
-        (NEW.id_proprietaire IS NOT NULL) +
-        (NEW.id_locataire IS NOT NULL) +
-        (NEW.id_intervention IS NOT NULL)
-    ) <> 1 THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Un document doit etre rattache a une seule entite metier.';
-    END IF;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_document_avant_update` BEFORE UPDATE ON `document` FOR EACH ROW BEGIN
+    IF (
+        (NEW.id_bien IS NOT NULL) +
+        (NEW.id_contrat IS NOT NULL) +
+        (NEW.id_proprietaire IS NOT NULL) +
+        (NEW.id_locataire IS NOT NULL) +
+        (NEW.id_intervention IS NOT NULL)
+    ) <> 1 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Un document doit etre rattache a une seule entite metier.';
+    END IF;
 END */;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -691,6 +691,23 @@ CREATE TABLE `otp_code` (
   KEY `idx_otp_code_utilisateur` (`id_utilisateur`,`statut`),
   CONSTRAINT `fk_otp_code_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `password_reset`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `password_reset` (
+  `id_password_reset` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_utilisateur` bigint(20) unsigned NOT NULL,
+  `token_hash` varchar(64) NOT NULL,
+  `date_expiration` datetime NOT NULL,
+  `date_utilisation` datetime DEFAULT NULL,
+  `adresse_ip` varchar(45) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id_password_reset`),
+  KEY `idx_password_reset_utilisateur` (`id_utilisateur`),
+  KEY `idx_password_reset_token` (`token_hash`),
+  CONSTRAINT `fk_password_reset_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `paiement`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;

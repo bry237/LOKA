@@ -16,6 +16,9 @@ if (isset($_GET['registered'])) {
 if (isset($_GET['logout'])) {
 	$successMessage = 'Vous êtes maintenant déconnecté.';
 }
+if (isset($_GET['reset'])) {
+	$successMessage = 'Votre mot de passe a été mis à jour. Vous pouvez vous connecter.';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	if ($activePanel === 'login') {

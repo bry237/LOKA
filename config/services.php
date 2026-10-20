@@ -33,4 +33,17 @@ return [
 			'from' => getenv('VONAGE_FROM') ?: 'LOKA',
 		],
 	],
+	'email' => [
+		// 'log' (par défaut) : aucun envoi réel, écrit l'email dans les logs serveur (et le lien de
+		// réinitialisation est affiché directement à l'écran — pratique en local sans serveur SMTP).
+		// 'smtp' : envoi réel via un serveur SMTP, nécessite SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASSWORD/SMTP_FROM.
+		'provider' => getenv('EMAIL_PROVIDER') ?: 'log',
+		'smtp' => [
+			'host' => getenv('SMTP_HOST') ?: '',
+			'port' => (int) (getenv('SMTP_PORT') ?: 587),
+			'user' => getenv('SMTP_USER') ?: '',
+			'password' => getenv('SMTP_PASSWORD') ?: '',
+			'from' => getenv('SMTP_FROM') ?: 'no-reply@loka.fr',
+		],
+	],
 ];
