@@ -108,9 +108,7 @@ CREATE TABLE `agence_abonnement` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id_agence_abonnement`),
   KEY `idx_aa_agence` (`id_agence`),
-  KEY `idx_aa_abonnement` (`id_abonnement`),
-  CONSTRAINT `fk_aa_abonnement` FOREIGN KEY (`id_abonnement`) REFERENCES `abonnement` (`id_abonnement`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_aa_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE
+  KEY `idx_aa_abonnement` (`id_abonnement`)
 ) ENGINE=InnoDB AUTO_INCREMENT=903 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `bien`;
@@ -161,11 +159,7 @@ CREATE TABLE `bien` (
   KEY `idx_bien_adresse` (`id_adresse`),
   KEY `idx_bien_immeuble` (`id_immeuble`),
   KEY `idx_bien_statut` (`statut`),
-  KEY `idx_bien_loyer` (`loyer`),
-  CONSTRAINT `fk_bien_adresse` FOREIGN KEY (`id_adresse`) REFERENCES `adresse` (`id_adresse`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_bien_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_bien_immeuble` FOREIGN KEY (`id_immeuble`) REFERENCES `immeuble` (`id_immeuble`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `fk_bien_type` FOREIGN KEY (`id_type_bien`) REFERENCES `type_bien` (`id_type_bien`) ON UPDATE CASCADE
+  KEY `idx_bien_loyer` (`loyer`)
 ) ENGINE=InnoDB AUTO_INCREMENT=911 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `bien_equipement`;
@@ -176,9 +170,7 @@ CREATE TABLE `bien_equipement` (
   `id_equipement` bigint(20) unsigned NOT NULL,
   `quantite` int(10) unsigned NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_bien`,`id_equipement`),
-  KEY `fk_be_equipement` (`id_equipement`),
-  CONSTRAINT `fk_be_bien` FOREIGN KEY (`id_bien`) REFERENCES `bien` (`id_bien`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_be_equipement` FOREIGN KEY (`id_equipement`) REFERENCES `equipement` (`id_equipement`) ON UPDATE CASCADE
+  KEY `fk_be_equipement` (`id_equipement`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `bien_image`;
@@ -192,8 +184,7 @@ CREATE TABLE `bien_image` (
   `ordre` int(10) unsigned NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id_image`),
-  KEY `idx_bien_image_bien` (`id_bien`),
-  CONSTRAINT `fk_bien_image_bien` FOREIGN KEY (`id_bien`) REFERENCES `bien` (`id_bien`) ON DELETE CASCADE
+  KEY `idx_bien_image_bien` (`id_bien`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `bien_proprietaire`;
@@ -206,9 +197,7 @@ CREATE TABLE `bien_proprietaire` (
   `date_debut` date NOT NULL,
   `date_fin` date DEFAULT NULL,
   PRIMARY KEY (`id_bien`,`id_proprietaire`,`date_debut`),
-  KEY `idx_bp_proprietaire` (`id_proprietaire`),
-  CONSTRAINT `fk_bp_bien` FOREIGN KEY (`id_bien`) REFERENCES `bien` (`id_bien`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_bp_proprietaire` FOREIGN KEY (`id_proprietaire`) REFERENCES `proprietaire` (`id_proprietaire`) ON UPDATE CASCADE
+  KEY `idx_bp_proprietaire` (`id_proprietaire`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `commentaire_intervention`;
@@ -222,9 +211,7 @@ CREATE TABLE `commentaire_intervention` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id_commentaire`),
   KEY `idx_commentaire_intervention` (`id_intervention`),
-  KEY `fk_commentaire_utilisateur` (`id_utilisateur`),
-  CONSTRAINT `fk_commentaire_intervention` FOREIGN KEY (`id_intervention`) REFERENCES `intervention` (`id_intervention`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_commentaire_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE
+  KEY `fk_commentaire_utilisateur` (`id_utilisateur`)
 ) ENGINE=InnoDB AUTO_INCREMENT=904 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `contrat`;
@@ -258,9 +245,7 @@ CREATE TABLE `contrat` (
   KEY `idx_contrat_agence` (`id_agence`),
   KEY `idx_contrat_bien` (`id_bien`),
   KEY `idx_contrat_statut` (`statut`),
-  KEY `idx_contrat_dates` (`date_debut`,`date_fin`),
-  CONSTRAINT `fk_contrat_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_contrat_bien` FOREIGN KEY (`id_bien`) REFERENCES `bien` (`id_bien`) ON UPDATE CASCADE
+  KEY `idx_contrat_dates` (`date_debut`,`date_fin`)
 ) ENGINE=InnoDB AUTO_INCREMENT=907 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `contrat_locataire`;
@@ -273,9 +258,7 @@ CREATE TABLE `contrat_locataire` (
   `date_entree` date DEFAULT NULL,
   `date_sortie` date DEFAULT NULL,
   PRIMARY KEY (`id_contrat`,`id_locataire`),
-  KEY `idx_cl_locataire` (`id_locataire`),
-  CONSTRAINT `fk_cl_contrat` FOREIGN KEY (`id_contrat`) REFERENCES `contrat` (`id_contrat`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_cl_locataire` FOREIGN KEY (`id_locataire`) REFERENCES `locataire` (`id_locataire`) ON UPDATE CASCADE
+  KEY `idx_cl_locataire` (`id_locataire`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `contrat_signature`;
@@ -316,9 +299,7 @@ CREATE TABLE `demande_paiement` (
   PRIMARY KEY (`id_demande`),
   KEY `idx_demande_paiement_echeance` (`id_echeance`),
   KEY `idx_demande_paiement_session` (`stripe_checkout_session_id`),
-  KEY `fk_demande_paiement_agence` (`id_agence`),
-  CONSTRAINT `fk_demande_paiement_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_demande_paiement_echeance` FOREIGN KEY (`id_echeance`) REFERENCES `echeance` (`id_echeance`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `fk_demande_paiement_agence` (`id_agence`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `document`;
@@ -346,13 +327,7 @@ CREATE TABLE `document` (
   KEY `idx_document_contrat` (`id_contrat`),
   KEY `idx_document_proprietaire` (`id_proprietaire`),
   KEY `idx_document_locataire` (`id_locataire`),
-  KEY `idx_document_intervention` (`id_intervention`),
-  CONSTRAINT `fk_document_bien` FOREIGN KEY (`id_bien`) REFERENCES `bien` (`id_bien`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_document_contrat` FOREIGN KEY (`id_contrat`) REFERENCES `contrat` (`id_contrat`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_document_intervention` FOREIGN KEY (`id_intervention`) REFERENCES `intervention` (`id_intervention`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_document_locataire` FOREIGN KEY (`id_locataire`) REFERENCES `locataire` (`id_locataire`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_document_proprietaire` FOREIGN KEY (`id_proprietaire`) REFERENCES `proprietaire` (`id_proprietaire`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_document_type` FOREIGN KEY (`id_type_document`) REFERENCES `type_document` (`id_type_document`) ON DELETE SET NULL ON UPDATE CASCADE
+  KEY `idx_document_intervention` (`id_intervention`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `document_agence`;
@@ -376,9 +351,7 @@ CREATE TABLE `document_agence` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id_document_agence`),
   KEY `idx_document_agence_agence` (`id_agence`),
-  KEY `fk_document_agence_validateur` (`id_utilisateur_validateur`),
-  CONSTRAINT `fk_document_agence_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_document_agence_validateur` FOREIGN KEY (`id_utilisateur_validateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE
+  KEY `fk_document_agence_validateur` (`id_utilisateur_validateur`)
 ) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `document_utilisateur`;
@@ -402,9 +375,7 @@ CREATE TABLE `document_utilisateur` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id_document_utilisateur`),
   KEY `idx_document_utilisateur_utilisateur` (`id_utilisateur`),
-  KEY `fk_document_utilisateur_validateur` (`id_utilisateur_validateur`),
-  CONSTRAINT `fk_document_utilisateur_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_document_utilisateur_validateur` FOREIGN KEY (`id_utilisateur_validateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE
+  KEY `fk_document_utilisateur_validateur` (`id_utilisateur_validateur`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `echeance`;
@@ -424,8 +395,7 @@ CREATE TABLE `echeance` (
   PRIMARY KEY (`id_echeance`),
   UNIQUE KEY `uq_echeance_contrat_periode` (`id_contrat`,`periode_debut`,`periode_fin`),
   KEY `idx_echeance_date` (`date_echeance`),
-  KEY `idx_echeance_statut` (`statut`),
-  CONSTRAINT `fk_echeance_contrat` FOREIGN KEY (`id_contrat`) REFERENCES `contrat` (`id_contrat`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `idx_echeance_statut` (`statut`)
 ) ENGINE=InnoDB AUTO_INCREMENT=910 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `equipement`;
@@ -453,9 +423,7 @@ CREATE TABLE `etat_des_lieux` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id_etat_lieux`),
   KEY `idx_edl_bien` (`id_bien`),
-  KEY `idx_edl_contrat` (`id_contrat`),
-  CONSTRAINT `fk_edl_bien` FOREIGN KEY (`id_bien`) REFERENCES `bien` (`id_bien`),
-  CONSTRAINT `fk_edl_contrat` FOREIGN KEY (`id_contrat`) REFERENCES `contrat` (`id_contrat`)
+  KEY `idx_edl_contrat` (`id_contrat`)
 ) ENGINE=InnoDB AUTO_INCREMENT=903 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `facture_abonnement`;
@@ -475,9 +443,7 @@ CREATE TABLE `facture_abonnement` (
   PRIMARY KEY (`id_facture`),
   KEY `idx_facture_abonnement_agence` (`id_agence`),
   KEY `idx_facture_abonnement_session` (`stripe_checkout_session_id`),
-  KEY `fk_facture_abonnement_abonnement` (`id_abonnement`),
-  CONSTRAINT `fk_facture_abonnement_abonnement` FOREIGN KEY (`id_abonnement`) REFERENCES `abonnement` (`id_abonnement`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_facture_abonnement_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `fk_facture_abonnement_abonnement` (`id_abonnement`)
 ) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `immeuble`;
@@ -494,9 +460,7 @@ CREATE TABLE `immeuble` (
   `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id_immeuble`),
   KEY `idx_immeuble_agence` (`id_agence`),
-  KEY `fk_immeuble_adresse` (`id_adresse`),
-  CONSTRAINT `fk_immeuble_adresse` FOREIGN KEY (`id_adresse`) REFERENCES `adresse` (`id_adresse`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_immeuble_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE
+  KEY `fk_immeuble_adresse` (`id_adresse`)
 ) ENGINE=InnoDB AUTO_INCREMENT=902 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `intervention`;
@@ -527,12 +491,7 @@ CREATE TABLE `intervention` (
   KEY `idx_intervention_assigne` (`id_utilisateur_assigne`),
   KEY `idx_intervention_priorite` (`priorite`),
   KEY `idx_intervention_statut` (`statut`),
-  KEY `fk_intervention_createur` (`id_utilisateur_createur`),
-  CONSTRAINT `fk_intervention_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_intervention_assigne` FOREIGN KEY (`id_utilisateur_assigne`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `fk_intervention_bien` FOREIGN KEY (`id_bien`) REFERENCES `bien` (`id_bien`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_intervention_createur` FOREIGN KEY (`id_utilisateur_createur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `fk_intervention_locataire` FOREIGN KEY (`id_locataire`) REFERENCES `locataire` (`id_locataire`) ON DELETE SET NULL ON UPDATE CASCADE
+  KEY `fk_intervention_createur` (`id_utilisateur_createur`)
 ) ENGINE=InnoDB AUTO_INCREMENT=907 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `journal_audit`;
@@ -554,9 +513,7 @@ CREATE TABLE `journal_audit` (
   KEY `idx_audit_agence` (`id_agence`),
   KEY `idx_audit_utilisateur` (`id_utilisateur`),
   KEY `idx_audit_entite` (`entite`,`id_entite`),
-  KEY `idx_audit_date` (`date_action`),
-  CONSTRAINT `fk_audit_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `fk_audit_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE
+  KEY `idx_audit_date` (`date_action`)
 ) ENGINE=InnoDB AUTO_INCREMENT=355 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `locataire`;
@@ -596,9 +553,7 @@ CREATE TABLE `locataire` (
   KEY `idx_locataire_email` (`email`),
   KEY `idx_locataire_statut` (`statut`),
   KEY `idx_locataire_utilisateur` (`id_utilisateur`),
-  KEY `fk_locataire_utilisateur` (`id_utilisateur`),
-  CONSTRAINT `fk_locataire_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_locataire_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE
+  KEY `fk_locataire_utilisateur` (`id_utilisateur`)
 ) ENGINE=InnoDB AUTO_INCREMENT=909 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `notification`;
@@ -617,8 +572,7 @@ CREATE TABLE `notification` (
   PRIMARY KEY (`id_notification`),
   KEY `idx_notification_utilisateur` (`id_utilisateur`),
   KEY `idx_notification_statut` (`statut`),
-  KEY `idx_notification_date` (`date_envoi`),
-  CONSTRAINT `fk_notification_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `idx_notification_date` (`date_envoi`)
 ) ENGINE=InnoDB AUTO_INCREMENT=918 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `otp_code`;
@@ -636,8 +590,7 @@ CREATE TABLE `otp_code` (
   `date_verification` datetime DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id_otp`),
-  KEY `idx_otp_code_utilisateur` (`id_utilisateur`,`statut`),
-  CONSTRAINT `fk_otp_code_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `idx_otp_code_utilisateur` (`id_utilisateur`,`statut`)
 ) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `password_reset`;
@@ -653,8 +606,7 @@ CREATE TABLE `password_reset` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id_password_reset`),
   KEY `idx_password_reset_utilisateur` (`id_utilisateur`),
-  KEY `idx_password_reset_token` (`token_hash`),
-  CONSTRAINT `fk_password_reset_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `idx_password_reset_token` (`token_hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `paiement`;
@@ -679,10 +631,7 @@ CREATE TABLE `paiement` (
   KEY `idx_paiement_contrat` (`id_contrat`),
   KEY `idx_paiement_locataire` (`id_locataire`),
   KEY `idx_paiement_date` (`date_paiement`),
-  KEY `idx_paiement_statut` (`statut`),
-  CONSTRAINT `fk_paiement_contrat` FOREIGN KEY (`id_contrat`) REFERENCES `contrat` (`id_contrat`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_paiement_echeance` FOREIGN KEY (`id_echeance`) REFERENCES `echeance` (`id_echeance`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_paiement_locataire` FOREIGN KEY (`id_locataire`) REFERENCES `locataire` (`id_locataire`) ON DELETE SET NULL ON UPDATE CASCADE
+  KEY `idx_paiement_statut` (`statut`)
 ) ENGINE=InnoDB AUTO_INCREMENT=909 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `parametre_agence`;
@@ -696,8 +645,7 @@ CREATE TABLE `parametre_agence` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id_parametre`),
-  UNIQUE KEY `uq_parametre_agence` (`id_agence`,`cle`),
-  CONSTRAINT `fk_parametre_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON DELETE CASCADE ON UPDATE CASCADE
+  UNIQUE KEY `uq_parametre_agence` (`id_agence`,`cle`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `parametre_plateforme`;
@@ -737,8 +685,7 @@ CREATE TABLE `photo_bien` (
   `ordre_affichage` int(10) unsigned NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id_photo`),
-  KEY `idx_photo_bien` (`id_bien`),
-  CONSTRAINT `fk_photo_bien` FOREIGN KEY (`id_bien`) REFERENCES `bien` (`id_bien`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `idx_photo_bien` (`id_bien`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `proprietaire`;
@@ -766,9 +713,7 @@ CREATE TABLE `proprietaire` (
   KEY `idx_proprietaire_agence` (`id_agence`),
   KEY `idx_proprietaire_email` (`email`),
   KEY `idx_proprietaire_utilisateur` (`id_utilisateur`),
-  KEY `fk_proprietaire_utilisateur` (`id_utilisateur`),
-  CONSTRAINT `fk_proprietaire_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_proprietaire_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE
+  KEY `fk_proprietaire_utilisateur` (`id_utilisateur`)
 ) ENGINE=InnoDB AUTO_INCREMENT=909 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `quittance`;
@@ -785,8 +730,7 @@ CREATE TABLE `quittance` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id_quittance`),
   UNIQUE KEY `uq_quittance_paiement` (`id_paiement`),
-  UNIQUE KEY `uq_quittance_numero` (`numero`),
-  CONSTRAINT `fk_quittance_paiement` FOREIGN KEY (`id_paiement`) REFERENCES `paiement` (`id_paiement`) ON DELETE CASCADE ON UPDATE CASCADE
+  UNIQUE KEY `uq_quittance_numero` (`numero`)
 ) ENGINE=InnoDB AUTO_INCREMENT=907 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `revision_loyer`;
@@ -803,8 +747,7 @@ CREATE TABLE `revision_loyer` (
   `commentaire` text DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id_revision`),
-  KEY `idx_revision_contrat` (`id_contrat`),
-  CONSTRAINT `fk_revision_contrat` FOREIGN KEY (`id_contrat`) REFERENCES `contrat` (`id_contrat`)
+  KEY `idx_revision_contrat` (`id_contrat`)
 ) ENGINE=InnoDB AUTO_INCREMENT=902 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `role`;
@@ -826,9 +769,7 @@ CREATE TABLE `role_permission` (
   `id_role` bigint(20) unsigned NOT NULL,
   `id_permission` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`id_role`,`id_permission`),
-  KEY `fk_rp_permission` (`id_permission`),
-  CONSTRAINT `fk_rp_permission` FOREIGN KEY (`id_permission`) REFERENCES `permission` (`id_permission`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_rp_role` FOREIGN KEY (`id_role`) REFERENCES `role` (`id_role`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `fk_rp_permission` (`id_permission`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `session_utilisateur`;
@@ -845,8 +786,7 @@ CREATE TABLE `session_utilisateur` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id_session`),
   UNIQUE KEY `uq_session_token` (`token_hash`),
-  KEY `idx_session_utilisateur` (`id_utilisateur`),
-  CONSTRAINT `fk_session_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `idx_session_utilisateur` (`id_utilisateur`)
 ) ENGINE=InnoDB AUTO_INCREMENT=154 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `type_bien`;
@@ -894,9 +834,7 @@ CREATE TABLE `utilisateur` (
   UNIQUE KEY `uq_utilisateur_email` (`email`),
   KEY `idx_utilisateur_agence` (`id_agence`),
   KEY `idx_utilisateur_role` (`id_role`),
-  KEY `idx_utilisateur_statut` (`statut`),
-  CONSTRAINT `fk_utilisateur_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_utilisateur_role` FOREIGN KEY (`id_role`) REFERENCES `role` (`id_role`) ON UPDATE CASCADE
+  KEY `idx_utilisateur_statut` (`statut`)
 ) ENGINE=InnoDB AUTO_INCREMENT=911 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `v_biens_agence`;
@@ -1004,3 +942,70 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
+-- ============================================================
+-- Contraintes de clé étrangère, ajoutées une fois TOUTES les
+-- tables et données en place (indépendant de l'ordre de création
+-- et du support de FOREIGN_KEY_CHECKS par l'hébergeur).
+-- ============================================================
+ALTER TABLE `agence_abonnement` ADD CONSTRAINT `fk_aa_abonnement` FOREIGN KEY (`id_abonnement`) REFERENCES `abonnement` (`id_abonnement`) ON UPDATE CASCADE;
+ALTER TABLE `agence_abonnement` ADD CONSTRAINT `fk_aa_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE;
+ALTER TABLE `bien` ADD CONSTRAINT `fk_bien_adresse` FOREIGN KEY (`id_adresse`) REFERENCES `adresse` (`id_adresse`) ON UPDATE CASCADE;
+ALTER TABLE `bien` ADD CONSTRAINT `fk_bien_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE;
+ALTER TABLE `bien` ADD CONSTRAINT `fk_bien_immeuble` FOREIGN KEY (`id_immeuble`) REFERENCES `immeuble` (`id_immeuble`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `bien` ADD CONSTRAINT `fk_bien_type` FOREIGN KEY (`id_type_bien`) REFERENCES `type_bien` (`id_type_bien`) ON UPDATE CASCADE;
+ALTER TABLE `bien_equipement` ADD CONSTRAINT `fk_be_bien` FOREIGN KEY (`id_bien`) REFERENCES `bien` (`id_bien`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `bien_equipement` ADD CONSTRAINT `fk_be_equipement` FOREIGN KEY (`id_equipement`) REFERENCES `equipement` (`id_equipement`) ON UPDATE CASCADE;
+ALTER TABLE `bien_image` ADD CONSTRAINT `fk_bien_image_bien` FOREIGN KEY (`id_bien`) REFERENCES `bien` (`id_bien`) ON DELETE CASCADE;
+ALTER TABLE `bien_proprietaire` ADD CONSTRAINT `fk_bp_bien` FOREIGN KEY (`id_bien`) REFERENCES `bien` (`id_bien`) ON UPDATE CASCADE;
+ALTER TABLE `bien_proprietaire` ADD CONSTRAINT `fk_bp_proprietaire` FOREIGN KEY (`id_proprietaire`) REFERENCES `proprietaire` (`id_proprietaire`) ON UPDATE CASCADE;
+ALTER TABLE `commentaire_intervention` ADD CONSTRAINT `fk_commentaire_intervention` FOREIGN KEY (`id_intervention`) REFERENCES `intervention` (`id_intervention`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `commentaire_intervention` ADD CONSTRAINT `fk_commentaire_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `contrat` ADD CONSTRAINT `fk_contrat_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE;
+ALTER TABLE `contrat` ADD CONSTRAINT `fk_contrat_bien` FOREIGN KEY (`id_bien`) REFERENCES `bien` (`id_bien`) ON UPDATE CASCADE;
+ALTER TABLE `contrat_locataire` ADD CONSTRAINT `fk_cl_contrat` FOREIGN KEY (`id_contrat`) REFERENCES `contrat` (`id_contrat`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `contrat_locataire` ADD CONSTRAINT `fk_cl_locataire` FOREIGN KEY (`id_locataire`) REFERENCES `locataire` (`id_locataire`) ON UPDATE CASCADE;
+ALTER TABLE `demande_paiement` ADD CONSTRAINT `fk_demande_paiement_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `demande_paiement` ADD CONSTRAINT `fk_demande_paiement_echeance` FOREIGN KEY (`id_echeance`) REFERENCES `echeance` (`id_echeance`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `document` ADD CONSTRAINT `fk_document_bien` FOREIGN KEY (`id_bien`) REFERENCES `bien` (`id_bien`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `document` ADD CONSTRAINT `fk_document_contrat` FOREIGN KEY (`id_contrat`) REFERENCES `contrat` (`id_contrat`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `document` ADD CONSTRAINT `fk_document_intervention` FOREIGN KEY (`id_intervention`) REFERENCES `intervention` (`id_intervention`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `document` ADD CONSTRAINT `fk_document_locataire` FOREIGN KEY (`id_locataire`) REFERENCES `locataire` (`id_locataire`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `document` ADD CONSTRAINT `fk_document_proprietaire` FOREIGN KEY (`id_proprietaire`) REFERENCES `proprietaire` (`id_proprietaire`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `document` ADD CONSTRAINT `fk_document_type` FOREIGN KEY (`id_type_document`) REFERENCES `type_document` (`id_type_document`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `document_agence` ADD CONSTRAINT `fk_document_agence_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `document_agence` ADD CONSTRAINT `fk_document_agence_validateur` FOREIGN KEY (`id_utilisateur_validateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `document_utilisateur` ADD CONSTRAINT `fk_document_utilisateur_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `document_utilisateur` ADD CONSTRAINT `fk_document_utilisateur_validateur` FOREIGN KEY (`id_utilisateur_validateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `echeance` ADD CONSTRAINT `fk_echeance_contrat` FOREIGN KEY (`id_contrat`) REFERENCES `contrat` (`id_contrat`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `etat_des_lieux` ADD CONSTRAINT `fk_edl_bien` FOREIGN KEY (`id_bien`) REFERENCES `bien` (`id_bien`);
+ALTER TABLE `etat_des_lieux` ADD CONSTRAINT `fk_edl_contrat` FOREIGN KEY (`id_contrat`) REFERENCES `contrat` (`id_contrat`);
+ALTER TABLE `facture_abonnement` ADD CONSTRAINT `fk_facture_abonnement_abonnement` FOREIGN KEY (`id_abonnement`) REFERENCES `abonnement` (`id_abonnement`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `facture_abonnement` ADD CONSTRAINT `fk_facture_abonnement_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `immeuble` ADD CONSTRAINT `fk_immeuble_adresse` FOREIGN KEY (`id_adresse`) REFERENCES `adresse` (`id_adresse`) ON UPDATE CASCADE;
+ALTER TABLE `immeuble` ADD CONSTRAINT `fk_immeuble_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE;
+ALTER TABLE `intervention` ADD CONSTRAINT `fk_intervention_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE;
+ALTER TABLE `intervention` ADD CONSTRAINT `fk_intervention_assigne` FOREIGN KEY (`id_utilisateur_assigne`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `intervention` ADD CONSTRAINT `fk_intervention_bien` FOREIGN KEY (`id_bien`) REFERENCES `bien` (`id_bien`) ON UPDATE CASCADE;
+ALTER TABLE `intervention` ADD CONSTRAINT `fk_intervention_createur` FOREIGN KEY (`id_utilisateur_createur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `intervention` ADD CONSTRAINT `fk_intervention_locataire` FOREIGN KEY (`id_locataire`) REFERENCES `locataire` (`id_locataire`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `journal_audit` ADD CONSTRAINT `fk_audit_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `journal_audit` ADD CONSTRAINT `fk_audit_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `locataire` ADD CONSTRAINT `fk_locataire_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE;
+ALTER TABLE `locataire` ADD CONSTRAINT `fk_locataire_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `notification` ADD CONSTRAINT `fk_notification_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `otp_code` ADD CONSTRAINT `fk_otp_code_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `password_reset` ADD CONSTRAINT `fk_password_reset_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `paiement` ADD CONSTRAINT `fk_paiement_contrat` FOREIGN KEY (`id_contrat`) REFERENCES `contrat` (`id_contrat`) ON UPDATE CASCADE;
+ALTER TABLE `paiement` ADD CONSTRAINT `fk_paiement_echeance` FOREIGN KEY (`id_echeance`) REFERENCES `echeance` (`id_echeance`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `paiement` ADD CONSTRAINT `fk_paiement_locataire` FOREIGN KEY (`id_locataire`) REFERENCES `locataire` (`id_locataire`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `parametre_agence` ADD CONSTRAINT `fk_parametre_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `photo_bien` ADD CONSTRAINT `fk_photo_bien` FOREIGN KEY (`id_bien`) REFERENCES `bien` (`id_bien`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `proprietaire` ADD CONSTRAINT `fk_proprietaire_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE;
+ALTER TABLE `proprietaire` ADD CONSTRAINT `fk_proprietaire_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `quittance` ADD CONSTRAINT `fk_quittance_paiement` FOREIGN KEY (`id_paiement`) REFERENCES `paiement` (`id_paiement`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `revision_loyer` ADD CONSTRAINT `fk_revision_contrat` FOREIGN KEY (`id_contrat`) REFERENCES `contrat` (`id_contrat`);
+ALTER TABLE `role_permission` ADD CONSTRAINT `fk_rp_permission` FOREIGN KEY (`id_permission`) REFERENCES `permission` (`id_permission`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `role_permission` ADD CONSTRAINT `fk_rp_role` FOREIGN KEY (`id_role`) REFERENCES `role` (`id_role`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `session_utilisateur` ADD CONSTRAINT `fk_session_utilisateur` FOREIGN KEY (`id_utilisateur`) REFERENCES `utilisateur` (`id_utilisateur`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `utilisateur` ADD CONSTRAINT `fk_utilisateur_agence` FOREIGN KEY (`id_agence`) REFERENCES `agence` (`id_agence`) ON UPDATE CASCADE;
+ALTER TABLE `utilisateur` ADD CONSTRAINT `fk_utilisateur_role` FOREIGN KEY (`id_role`) REFERENCES `role` (`id_role`) ON UPDATE CASCADE;

@@ -57,15 +57,25 @@ Dans le vPanel, section **MySQL Databases** :
    — c'est indiqué dans le vPanel).
 3. Ouvre **phpMyAdmin** (lien disponible dans le vPanel), sélectionne ta base,
    onglet **Importer**, et importe le fichier
-   **`database/schema/loka_database_mysql.no-triggers.sql`** de ce dépôt (pas
-   le fichier `loka_database_mysql.sql` original — les comptes MySQL gratuits
-   d'hébergement mutualisé n'ont pas le droit `TRIGGER`, l'import plante sinon
-   avec une erreur `#1142`). Cette version contient exactement le même schéma
-   (41 tables, données de référence — rôles, types de biens, etc., pas de
-   faux comptes) moins les 2 triggers qui empêchaient un `document` d'être
-   rattaché à zéro ou plusieurs entités à la fois : cette règle reste
-   appliquée côté PHP (`DocumentValidator`), seul le filet de sécurité
-   redondant au niveau base de données saute.
+   **`database/schema/loka_database_mysql.shared-hosting.sql`** de ce dépôt
+   (pas le fichier `loka_database_mysql.sql` original). Deux adaptations par
+   rapport à l'original, toutes deux liées aux limites d'un hébergement
+   mutualisé gratuit :
+   - les 2 triggers de la table `document` sont retirés (droit `TRIGGER`
+     refusé aux comptes MySQL gratuits, erreur `#1142` sinon) — la règle
+     qu'ils imposaient (un document rattaché à une seule entité) reste
+     appliquée côté PHP (`DocumentValidator`), seul le filet de sécurité
+     redondant au niveau base de données saute ;
+   - toutes les tables sont créées **sans** leurs clés étrangères, qui sont
+     ajoutées ensuite via des `ALTER TABLE` une fois que les 41 tables
+     existent toutes — évite l'erreur `#1005 (Errcode 150)` que
+     phpMyAdmin déclenche quand il importe un gros fichier en plusieurs
+     morceaux et perd au passage le `FOREIGN_KEY_CHECKS=0` qui aurait
+     permis de créer les tables dans le désordre.
+
+   (Même schéma au final : 41 tables, mêmes 62 clés étrangères, mêmes
+   données de référence — rôles, types de biens, etc., pas de faux comptes.
+   Testé par un import réel en local avant d'être ajouté au dépôt.)
 
 ## Étape 4 — Choisir la version PHP
 
