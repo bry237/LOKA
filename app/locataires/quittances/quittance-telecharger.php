@@ -6,7 +6,7 @@ ob_start();
 
 try {
     require_once dirname(__DIR__) . '/LocataireController.php';
-    require_once __DIR__ . '/QuittancePdf.php';
+    require_once dirname(__DIR__, 3) . '/core/QuittancePdf.php';
 
     $idPaiement = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 
