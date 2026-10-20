@@ -69,11 +69,13 @@ Dans le vPanel, section **MySQL Databases** :
 
    Pourquoi en 3 fichiers séparés et pas un seul gros fichier ? Deux limites
    des hébergements mutualisés gratuits, rencontrées en conditions réelles :
-   - les comptes MySQL gratuits n'ont pas le droit `TRIGGER` (erreur `#1142`
+   - les comptes MySQL gratuits n'ont ni le droit `TRIGGER` (erreur `#1142`
      sur les 2 triggers de la table `document` — la règle qu'ils imposaient,
      un document rattaché à une seule entité, reste appliquée côté PHP dans
      `DocumentValidator`, seul le filet de sécurité redondant côté base
-     saute) ;
+     saute) ni le droit `CREATE VIEW` (même erreur `#1142` sur la vue
+     `v_biens_agence` — vue de confort jamais utilisée par le code PHP,
+     vérifié, donc simplement absente de ces fichiers, zéro impact) ;
    - phpMyAdmin importe les gros fichiers SQL en plusieurs morceaux et ne
      garantit pas que le `FOREIGN_KEY_CHECKS=0` du début du fichier reste
      actif jusqu'à la fin — un fichier unique fait alors échouer la création
@@ -82,7 +84,7 @@ Dans le vPanel, section **MySQL Databases** :
      création des tables n'a plus aucune importance, quel que soit le
      comportement de l'hébergeur.
 
-   (Même schéma au final que l'original : 41 tables + 1 vue, 62 clés
+   (Même schéma que l'original hormis la vue : 41 tables, 62 clés
    étrangères, mêmes données de référence. Testé par un import réel en 3
    requêtes séparées en local avant d'être ajouté au dépôt.)
 

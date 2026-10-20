@@ -760,26 +760,3 @@ CREATE TABLE `utilisateur` (
   KEY `idx_utilisateur_role` (`id_role`),
   KEY `idx_utilisateur_statut` (`statut`)
 ) ENGINE=InnoDB AUTO_INCREMENT=911 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-DROP TABLE IF EXISTS `v_biens_agence`;
-
-/*!50001 DROP VIEW IF EXISTS `v_biens_agence`*/;
-
-/*!50001 CREATE VIEW `v_biens_agence` AS SELECT
- 1 AS `id_bien`,
-  1 AS `id_agence`,
-  1 AS `agence`,
-  1 AS `reference`,
-  1 AS `titre`,
-  1 AS `type_bien`,
-  1 AS `ville`,
-  1 AS `surface`,
-  1 AS `loyer`,
-  1 AS `charges`,
-  1 AS `statut` */;
-
-/*!50001 DROP VIEW IF EXISTS `v_biens_agence`*/;
-
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `v_biens_agence` AS select `b`.`id_bien` AS `id_bien`,`b`.`id_agence` AS `id_agence`,`a`.`nom` AS `agence`,`b`.`reference` AS `reference`,`b`.`titre` AS `titre`,`tb`.`nom` AS `type_bien`,`ad`.`ville` AS `ville`,`b`.`surface` AS `surface`,`b`.`loyer` AS `loyer`,`b`.`charges` AS `charges`,`b`.`statut` AS `statut` from (((`bien` `b` join `agence` `a` on(`a`.`id_agence` = `b`.`id_agence`)) join `type_bien` `tb` on(`tb`.`id_type_bien` = `b`.`id_type_bien`)) join `adresse` `ad` on(`ad`.`id_adresse` = `b`.`id_adresse`)) where `b`.`deleted_at` is null */;
