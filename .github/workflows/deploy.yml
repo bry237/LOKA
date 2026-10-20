@@ -2,7 +2,12 @@ name: Déploiement LOKA
 
 on:
   push:
-    branches: [main]
+    # Déploie depuis `odyssee` (branche de travail solo), pas `main` (branche
+    # partagée avec l'équipe — main a du travail des coéquipiers pas encore
+    # fusionné ici, pas question d'y toucher juste pour tester le pipeline).
+    # À changer pour `main` le jour où ce travail y est fusionné via le
+    # processus d'équipe normal (PR, etc.).
+    branches: [odyssee]
   workflow_dispatch: {}
 
 jobs:

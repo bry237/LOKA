@@ -1,9 +1,13 @@
 # Déploiement LOKA — pipeline CI/CD gratuit, sans carte bancaire (InfinityFree)
 
-Déploiement automatique : chaque `push` sur `main` déclenche GitHub Actions, qui
-vérifie le code PHP, construit les dépendances Composer, puis envoie tout par
-FTP vers un hébergement mutualisé 100% gratuit. Coût réel : **0 €**, aucune
-carte bancaire requise.
+Déploiement automatique : chaque `push` sur `odyssee` déclenche GitHub
+Actions, qui vérifie le code PHP, construit les dépendances Composer, puis
+envoie tout par FTP vers un hébergement mutualisé 100% gratuit. Coût réel :
+**0 €**, aucune carte bancaire requise.
+
+(Le pipeline se déclenche sur `odyssee`, pas `main` — `main` est la branche
+partagée avec l'équipe et contient du travail des coéquipiers pas encore
+récupéré ici ; voir l'étape 7 en bas de page.)
 
 > Historique : on avait d'abord préparé un déploiement SSH vers un VPS Oracle
 > Cloud (gratuit à vie mais carte requise à l'inscription) — abandonné suite à
@@ -13,7 +17,7 @@ carte bancaire requise.
 ## Vue d'ensemble du pipeline
 
 ```
-toi (git push main) → GitHub Actions
+toi (git push odyssee) → GitHub Actions
                          ├─ job "lint"   : php -l + composer install (vérification)
                          └─ job "deploy" : composer install --no-dev (construit vendor/)
                                             → envoi FTP de tout le projet vers l'hébergeur
@@ -125,17 +129,22 @@ explicitement de l'envoi, voir `.github/workflows/deploy.yml`).
 
 ## Étape 7 — Premier déploiement
 
-Fusionne `odyssee` dans `main` (ou pousse directement sur `main`) :
+Le pipeline se déclenche sur push vers **`odyssee`** (pas `main` — `main` est
+la branche partagée avec l'équipe et contient du travail des coéquipiers pas
+encore récupéré ici ; voir `.github/workflows/deploy.yml`). Pousse simplement
+tes commits :
 
 ```bash
-git checkout main
-git merge odyssee
-git push origin main
+git push origin odyssee
 ```
 
 Va dans l'onglet **Actions** du dépôt GitHub : le workflow "Déploiement LOKA"
 se lance automatiquement, lint puis déploie par FTP. À partir de maintenant,
-**chaque push sur `main` redéploie automatiquement**.
+**chaque push sur `odyssee` redéploie automatiquement**.
+
+(Le jour où ce travail est fusionné dans `main` via le processus d'équipe
+normal, change simplement `branches: [odyssee]` en `branches: [main]` dans
+`.github/workflows/deploy.yml`.)
 
 Teste ensuite : `https://loka-app.infinityfreeapp.com/LOKA/` (remplace par ton
 sous-domaine — le HTTPS gratuit est généralement actif automatiquement, parfois
