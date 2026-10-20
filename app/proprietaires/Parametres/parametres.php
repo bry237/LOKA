@@ -12,7 +12,9 @@ $messageErreur = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = trim((string) ($_POST['action'] ?? ''));
 
-    if ($action === 'modifier_profil') {
+    if (!Auth::verifyCsrf($_POST['csrf_token'] ?? null)) {
+        $messageErreur = 'Votre session a expiré. Rechargez la page.';
+    } elseif ($action === 'modifier_profil') {
         $erreur = $controller->updateProfil($_POST);
         if ($erreur === null) {
             $messageSucces = 'Vos informations ont été mises à jour avec succès.';
@@ -66,6 +68,7 @@ require dirname(__DIR__, 3) . '/layouts/header.php';
       <div class="panel-header"><div class="panel-title">Informations personnelles</div></div>
       <form method="post" action="parametres.php" class="form-grid">
         <input type="hidden" name="action" value="modifier_profil">
+        <input type="hidden" name="csrf_token" value="<?= e(Auth::csrfToken()) ?>">
         <div class="form-field">
           <label for="prenom">Prénom</label>
           <input type="text" id="prenom" name="prenom" value="<?= e($proprietaire['prenom'] ?? '') ?>" required>
@@ -108,6 +111,7 @@ require dirname(__DIR__, 3) . '/layouts/header.php';
       <div class="panel-header"><div class="panel-title">Sécurité</div></div>
       <form method="post" action="parametres.php" class="form-grid">
         <input type="hidden" name="action" value="modifier_mot_de_passe">
+        <input type="hidden" name="csrf_token" value="<?= e(Auth::csrfToken()) ?>">
         <div class="form-field span-2">
           <label for="ancien_mot_de_passe">Ancien mot de passe</label>
           <input type="password" id="ancien_mot_de_passe" name="ancien_mot_de_passe" autocomplete="current-password" required>

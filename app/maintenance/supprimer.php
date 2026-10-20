@@ -26,6 +26,11 @@ if ($intervention['statut'] !== 'OPEN') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!Auth::verifyCsrf($_POST['csrf_token'] ?? null)) {
+        http_response_code(400);
+        exit('Votre session a expiré. Rechargez la page.');
+    }
+
     $success = $controller->deleteRequest($idIntervention);
 
     if ($success) {
@@ -73,6 +78,7 @@ require dirname(__DIR__, 2) . '/layouts/header.php';
 
       <form method="POST">
         <input type="hidden" name="id" value="<?= $idIntervention ?>">
+        <input type="hidden" name="csrf_token" value="<?= e(Auth::csrfToken()) ?>">
         <div class="form-actions">
           <a href="detail.php?id=<?= $idIntervention ?>" class="btn">Annuler</a>
           <button type="submit" class="btn btn-danger">Supprimer</button>

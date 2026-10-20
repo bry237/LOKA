@@ -231,6 +231,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
        VALIDATION
     ====================================================== */
 
+    if (!Auth::verifyCsrf($_POST['csrf_token'] ?? null)) {
+        $errors[] = 'Votre session a expiré. Rechargez la page.';
+    }
+
     if ($numero === '') {
         $errors[] = 'Le numéro du contrat est obligatoire.';
     }
@@ -816,6 +820,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 method="post"
                 action=""
             >
+
+                <input type="hidden" name="csrf_token" value="<?= e(Auth::csrfToken()) ?>">
 
                 <section class="modifier-contrat-card">
 

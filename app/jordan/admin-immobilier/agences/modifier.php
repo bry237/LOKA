@@ -14,9 +14,13 @@ if (!$agence) die("Agence introuvable");
 
 $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!Auth::verifyCsrf($_POST['csrf_token'] ?? null)) {
+        $errors[] = 'Votre session a expiré. Rechargez la page.';
+    }
+
     $controller = new AgenceController();
-    $errors = $controller->validate($_POST);
-    
+    $errors = array_merge($errors, $controller->validate($_POST));
+
     if (empty($errors)) {
         $model->update($id, $_POST);
         header('Location: detail.php?id=' . $id);
@@ -57,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
             <div class="card">
                 <form method="POST" class="card__body form-container">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Auth::csrfToken(), ENT_QUOTES, 'UTF-8') ?>">
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Nom</label>

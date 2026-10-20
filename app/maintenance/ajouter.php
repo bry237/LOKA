@@ -16,7 +16,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description = trim($_POST['description'] ?? '');
     $priorite = $_POST['priorite'] ?? 'MEDIUM';
 
-    if ($titre === '') {
+    if (!Auth::verifyCsrf($_POST['csrf_token'] ?? null)) {
+        $error = 'Votre session a expiré. Rechargez la page.';
+    } elseif ($titre === '') {
         $error = 'Veuillez renseigner le titre du problème.';
     } elseif ($description === '') {
         $error = 'Veuillez décrire le problème.';
@@ -60,6 +62,7 @@ require dirname(__DIR__, 2) . '/layouts/header.php';
         <div class="feedback error" style="margin:14px 18px 0;">Aucun logement actif n'est associé à votre compte.</div>
       <?php endif; ?>
       <form method="POST" action="">
+        <input type="hidden" name="csrf_token" value="<?= e(Auth::csrfToken()) ?>">
         <div class="form-grid full">
           <div class="form-field">
             <label for="titre">Titre du problème</label>

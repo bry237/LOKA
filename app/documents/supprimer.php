@@ -22,6 +22,11 @@ if (!$document) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!Auth::verifyCsrf($_POST['csrf_token'] ?? null)) {
+        http_response_code(400);
+        exit('Votre session a expiré. Rechargez la page.');
+    }
+
     $deletedDocument = $controller->deleteDocument((int) $idDocument);
 
     if (!$deletedDocument) {
@@ -76,6 +81,7 @@ require dirname(__DIR__, 2) . '/layouts/header.php';
         <div class="feedback error">Cette action est irréversible.</div>
       </div>
       <form method="POST" action="supprimer.php?id=<?= (int) $idDocument ?>">
+        <input type="hidden" name="csrf_token" value="<?= e(Auth::csrfToken()) ?>">
         <div class="form-actions">
           <a href="detail.php?id=<?= (int) $idDocument ?>" class="btn">Annuler</a>
           <button type="submit" class="btn btn-danger">Supprimer définitivement</button>

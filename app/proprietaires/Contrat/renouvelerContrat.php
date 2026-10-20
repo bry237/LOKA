@@ -238,6 +238,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     /*
     |--------------------------------------------------------------------------
+    | Vérification CSRF
+    |--------------------------------------------------------------------------
+    */
+
+    if (!Auth::verifyCsrf($_POST['csrf_token'] ?? null)) {
+        $errors[] = 'Votre session a expiré. Rechargez la page.';
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | Validation dates
     |--------------------------------------------------------------------------
     */
@@ -894,6 +904,8 @@ $frequenceLabels = [
         </h2>
 
         <form method="POST">
+
+            <input type="hidden" name="csrf_token" value="<?= e(Auth::csrfToken()) ?>">
 
             <div class="renouveler-form-grid">
 

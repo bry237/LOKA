@@ -213,11 +213,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     /*
     |--------------------------------------------------------------------------
+    | VÉRIFICATION CSRF
+    |--------------------------------------------------------------------------
+    */
+
+    if (!Auth::verifyCsrf($_POST['csrf_token'] ?? null)) {
+
+        $erreur = "Votre session a expiré. Rechargez la page.";
+
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | SUPPRIMER UNE IMAGE
     |--------------------------------------------------------------------------
     */
 
-    if ($action === 'delete_image') {
+    elseif ($action === 'delete_image') {
 
         $idImage = filter_var(
             $_POST['id_image'] ?? null,
@@ -1362,6 +1374,12 @@ if ($successParam === 'image_primary') {
 
                                         <input
                                             type="hidden"
+                                            name="csrf_token"
+                                            value="<?= e(Auth::csrfToken()) ?>"
+                                        >
+
+                                        <input
+                                            type="hidden"
                                             name="action"
                                             value="set_primary"
                                         >
@@ -1393,6 +1411,12 @@ if ($successParam === 'image_primary') {
                                     method="POST"
                                     onsubmit="return confirm('Supprimer cette photo ?');"
                                 >
+
+                                    <input
+                                        type="hidden"
+                                        name="csrf_token"
+                                        value="<?= e(Auth::csrfToken()) ?>"
+                                    >
 
                                     <input
                                         type="hidden"
@@ -1455,6 +1479,7 @@ if ($successParam === 'image_primary') {
         enctype="multipart/form-data"
         class="property-form"
     >
+        <input type="hidden" name="csrf_token" value="<?= e(Auth::csrfToken()) ?>">
 
 
         <input

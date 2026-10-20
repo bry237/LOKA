@@ -190,6 +190,19 @@ if (
 
         /*
         |--------------------------------------------------------------------------
+        | Vérification CSRF
+        |--------------------------------------------------------------------------
+        */
+
+        if (!Auth::verifyCsrf($_POST['csrf_token'] ?? null)) {
+
+            throw new Exception(
+                'Votre session a expiré. Rechargez la page.'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
         | Vérification du fichier
         |--------------------------------------------------------------------------
         */
@@ -781,6 +794,8 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
             method="POST"
             enctype="multipart/form-data"
         >
+
+            <input type="hidden" name="csrf_token" value="<?= e(Auth::csrfToken()) ?>">
 
             <div class="pdf-upload-box">
 

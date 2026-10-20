@@ -315,6 +315,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
 
+        if (!Auth::verifyCsrf($_POST['csrf_token'] ?? null)) {
+
+            throw new Exception(
+                'Votre session a expiré. Rechargez la page.'
+            );
+        }
+
         if ($titre === '') {
 
             throw new Exception(
@@ -1441,6 +1448,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         class="property-form"
     >
 
+        <input type="hidden" name="csrf_token" value="<?= e(Auth::csrfToken()) ?>">
 
         <!-- =================================================
              INFORMATIONS GÉNÉRALES

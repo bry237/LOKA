@@ -57,6 +57,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'La priorité sélectionnée est invalide.';
     }
 
+    if (!Auth::verifyCsrf($_POST['csrf_token'] ?? null)) {
+        $errors[] = 'Votre session a expiré. Rechargez la page.';
+    }
+
     if (empty($errors)) {
         $success = $controller->updateRequest($idIntervention, $titre, $description, $priorite);
 
@@ -102,6 +106,7 @@ require dirname(__DIR__, 2) . '/layouts/header.php';
       <?php endif; ?>
       <form method="POST">
         <input type="hidden" name="id_intervention" value="<?= $idIntervention ?>">
+        <input type="hidden" name="csrf_token" value="<?= e(Auth::csrfToken()) ?>">
         <div class="form-grid full">
           <div class="form-field">
             <label for="titre">Titre du problème</label>
