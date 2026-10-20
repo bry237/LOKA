@@ -57,8 +57,15 @@ Dans le vPanel, section **MySQL Databases** :
    — c'est indiqué dans le vPanel).
 3. Ouvre **phpMyAdmin** (lien disponible dans le vPanel), sélectionne ta base,
    onglet **Importer**, et importe le fichier
-   `database/schema/loka_database_mysql.sql` de ce dépôt (schéma + données de
-   référence uniquement — rôles, types de biens, etc. — pas de faux comptes).
+   **`database/schema/loka_database_mysql.no-triggers.sql`** de ce dépôt (pas
+   le fichier `loka_database_mysql.sql` original — les comptes MySQL gratuits
+   d'hébergement mutualisé n'ont pas le droit `TRIGGER`, l'import plante sinon
+   avec une erreur `#1142`). Cette version contient exactement le même schéma
+   (41 tables, données de référence — rôles, types de biens, etc., pas de
+   faux comptes) moins les 2 triggers qui empêchaient un `document` d'être
+   rattaché à zéro ou plusieurs entités à la fois : cette règle reste
+   appliquée côté PHP (`DocumentValidator`), seul le filet de sécurité
+   redondant au niveau base de données saute.
 
 ## Étape 4 — Choisir la version PHP
 
