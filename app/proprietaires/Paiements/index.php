@@ -1,741 +1,173 @@
 <?php
+
 declare(strict_types=1);
 
-require_once dirname(__DIR__, 3) . '/core/Authorization.php';
+require_once dirname(__DIR__) . '/ProprietaireController.php';
 
-$auth = Authorization::requireRole('Proprietaire');
-
-$config = require dirname(__DIR__, 3) . '/config/database.php';
-
-try {
-    $pdo = new PDO(
-        sprintf(
-            'mysql:host=%s;port=%d;dbname=%s;charset=%s',
-            $config['host'],
-            $config['port'],
-            $config['name'],
-            $config['charset']
-        ),
-        $config['user'],
-        $config['password'],
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
-        ]
-    );
-} catch (PDOException $e) {
-    http_response_code(500);
-    exit('Erreur de connexion à la base de données.');
-}
-
-
-/* =========================================================
-   FONCTIONS
-========================================================= */
+$controller = new ProprietaireController();
+$proprietaire = $controller->getCurrentProprietaire();
+$paiements = $controller->getPaiements();
 
 function e(?string $value): string
 {
-    return htmlspecialchars(
-        $value ?? '',
-        ENT_QUOTES,
-        'UTF-8'
-    );
+    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
 
-
-function formatMoney($value): string
+function formatDate(?string $date): string
 {
-    if ($value === null || $value === '') {
+    if (empty($date)) {
         return '—';
     }
-
-    return number_format(
-        (float) $value,
-        2,
-        ',',
-        ' '
-    ) . ' €';
-}
-
-
-function formatDateFr(?string $date): string
-{
-    if (!$date) {
-        return '—';
-    }
-
     $timestamp = strtotime($date);
 
-    if ($timestamp === false) {
-        return '—';
-    }
-
-    return date('d/m/Y', $timestamp);
+    return $timestamp === false ? '—' : date('d/m/Y', $timestamp);
 }
 
-
-function statutLabel(?string $statut): string
+function formatMontant($montant): string
 {
-    return match (strtoupper((string) $statut)) {
-        'PENDING'   => 'En attente',
-        'PAID'      => 'Payé',
-        'LATE'      => 'En retard',
-        'CANCELLED' => 'Annulé',
-        'REFUND'    => 'Remboursé',
-        default     => $statut ?: 'Non renseigné',
+    return number_format((float) $montant, 2, ',', ' ') . ' €';
+}
+
+function statutPaiementBadge(?string $statut): array
+{
+    return match ($statut) {
+        'PAID' => ['Payé', 'actif'],
+        'PENDING' => ['En attente', 'attente'],
+        'LATE' => ['En retard', 'suspendu'],
+        'CANCELLED' => ['Annulé', 'inactif'],
+        'REFUNDED' => ['Remboursé', 'inactif'],
+        default => [$statut ?: 'Non renseigné', 'inactif'],
     };
 }
-
-
-function statutClass(?string $statut): string
-{
-    return match (strtoupper((string) $statut)) {
-        'PAID'      => 'status-paid',
-        'PENDING'   => 'status-pending',
-        'LATE'      => 'status-late',
-        'CANCELLED' => 'status-cancelled',
-        'REFUND'    => 'status-refund',
-        default     => 'status-default',
-    };
-}
-
 
 function modePaiementLabel(?string $mode): string
 {
-    return match (strtoupper((string) $mode)) {
-        'CASH'          => 'Espèces',
+    return match ($mode) {
+        'CASH' => 'Espèces',
         'BANK_TRANSFER' => 'Virement',
-        'CARD'          => 'Carte',
-        'CHEQUE'        => 'Chèque',
-        default         => $mode ?: '—',
+        'CARD' => 'Carte',
+        'CHEQUE' => 'Chèque',
+        'DIRECT_DEBIT' => 'Prélèvement',
+        default => $mode ?: '—',
     };
 }
 
-
-/* =========================================================
-   UTILISATEUR CONNECTÉ
-========================================================= */
-
-$idUtilisateur = (int) ($auth['id_utilisateur'] ?? 0);
-
-if ($idUtilisateur <= 0) {
-    http_response_code(403);
-    exit('Utilisateur non authentifié.');
+$statutFiltre = (string) ($_GET['statut'] ?? '');
+if ($statutFiltre !== '') {
+    $paiements = array_values(array_filter($paiements, static fn (array $p): bool => ($p['statut'] ?? null) === $statutFiltre));
 }
-
-
-/* =========================================================
-   RÉCUPÉRATION DES PAIEMENTS
-========================================================= */
-
-$sql = "
-    SELECT
-        p.id_paiement,
-        p.id_echeance,
-        p.id_contrat,
-        p.id_locataire,
-        p.montant,
-        p.date_paiement,
-        p.mode_paiement,
-        p.reference_transaction,
-        p.statut,
-        p.commentaire,
-
-        c.numero AS numero_contrat,
-
-        b.id_bien,
-        b.reference AS reference_bien,
-        b.titre AS titre_bien,
-
-        e.periode_debut,
-        e.periode_fin,
-        e.montant_loyer,
-        e.montant_charges,
-        e.montant_total,
-        e.date_echeance,
-        e.statut AS statut_echeance,
-
-        l.nom AS locataire_nom,
-        l.prenom AS locataire_prenom
-
-    FROM paiement p
-
-    INNER JOIN contrat c
-        ON c.id_contrat = p.id_contrat
-
-    INNER JOIN bien b
-        ON b.id_bien = c.id_bien
-
-    INNER JOIN bien_proprietaire bp
-        ON bp.id_bien = b.id_bien
-
-    INNER JOIN proprietaire pr
-        ON pr.id_proprietaire = bp.id_proprietaire
-
-    INNER JOIN utilisateur u
-        ON u.email = pr.email
-
-    LEFT JOIN echeance e
-        ON e.id_echeance = p.id_echeance
-
-    LEFT JOIN locataire l
-        ON l.id_locataire = p.id_locataire
-
-    WHERE u.id_utilisateur = :id_utilisateur
-      AND c.deleted_at IS NULL
-      AND b.deleted_at IS NULL
-
-    ORDER BY
-        p.date_paiement DESC,
-        p.id_paiement DESC
-";
-
-$stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    ':id_utilisateur' => $idUtilisateur,
-]);
-
-$paiements = $stmt->fetchAll();
-
-
-/* =========================================================
-   STATISTIQUES
-========================================================= */
-
-$totalPaiements = count($paiements);
 
 $totalPaye = 0.0;
 $totalAttente = 0.0;
 $totalRetard = 0.0;
-
 $nombrePaye = 0;
 $nombreAttente = 0;
 $nombreRetard = 0;
 
 foreach ($paiements as $paiement) {
-
     $montant = (float) $paiement['montant'];
-    $statut = strtoupper((string) $paiement['statut']);
-
-    if ($statut === 'PAID') {
-        $totalPaye += $montant;
-        $nombrePaye++;
-    }
-
-    if ($statut === 'PENDING') {
-        $totalAttente += $montant;
-        $nombreAttente++;
-    }
-
-    if ($statut === 'LATE') {
-        $totalRetard += $montant;
-        $nombreRetard++;
+    switch ($paiement['statut'] ?? null) {
+        case 'PAID':
+            $totalPaye += $montant;
+            $nombrePaye++;
+            break;
+        case 'PENDING':
+            $totalAttente += $montant;
+            $nombreAttente++;
+            break;
+        case 'LATE':
+            $totalRetard += $montant;
+            $nombreRetard++;
+            break;
     }
 }
 
+$statutLabels = ['PENDING' => 'En attente', 'PAID' => 'Payé', 'LATE' => 'En retard', 'CANCELLED' => 'Annulé', 'REFUNDED' => 'Remboursé'];
 
-/* =========================================================
-   PAGE ACTIVE
-========================================================= */
+$prenom = (string) ($proprietaire['prenom'] ?? '');
+$nom = (string) ($proprietaire['nom'] ?? '');
 
-$activePage = 'paiements';
+$pageTitle = 'Paiements';
+$activeNav = 'Paiements';
+$sidebarFile = 'sidebar-proprietaire.php';
+$greetingTitle = 'Paiements';
+$greetingSubtitle = 'Consultez les paiements liés à vos contrats.';
+$profileName = trim($prenom . ' ' . $nom) ?: 'Propriétaire';
+$profileRole = 'Propriétaire';
+$profileInitials = mb_strtoupper(mb_substr($prenom, 0, 1) . mb_substr($nom, 0, 1)) ?: 'P';
+$extraHead = '<link rel="stylesheet" href="/LOKA/app/administration/mon-agence/dashboard.css">';
 
+require dirname(__DIR__, 3) . '/layouts/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Paiements | LOKA</title>
-
-    <!-- CSS PRINCIPAL DU PROPRIETAIRE -->
-
-    <link
-        rel="stylesheet"
-        href="/LOKA/app/proprietaires/proprietaire.css"
-    >
-
-
-    <!-- CSS SPECIFIQUE AUX Paiements -->
-
-     <link
-        rel="stylesheet"
-        href="/LOKA/app/proprietaires/Paiements/paiements.css"
-    >
-
-
-    <!-- POLICE -->
-
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-    >
-
-
-    <!-- FONT AWESOME -->
-
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-    >
-
-</head>
-
-
-<body>
-
-<div class="dashboard">
-
-    <?php $pageActive = 'paiements'; require dirname(__DIR__) . '/sidebar.php'; ?>
-
-
-
-
-    <!-- =====================================================
-         CONTENU PRINCIPAL
-    ====================================================== -->
-
-    <main class="main-content">
-
-
-        <!-- =================================================
-             EN-TÊTE
-        ================================================== -->
-
-        <header class="page-header">
-
-            <div>
-
-                <h1>
-                    <i class="fa-solid fa-credit-card"></i>
-                    Paiements
-                </h1>
-
-                <p>
-                    Consultez les paiements liés à vos contrats.
-                </p>
-
-            </div>
-
-        </header>
-
-
-        <!-- =================================================
-             STATISTIQUES
-        ================================================== -->
-
-        <section class="stats-grid">
-
-
-            <!-- TOTAL -->
-
-            <div class="stat-card">
-
-                <div class="stat-icon">
-                    <i class="fa-solid fa-credit-card"></i>
-                </div>
-
-                <div class="stat-content">
-
-                    <span class="stat-label">
-                        Total des paiements
-                    </span>
-
-                    <strong class="stat-value">
-                        <?= $totalPaiements ?>
-                    </strong>
-
-                    <span class="stat-description">
-                        paiement(s)
-                    </span>
-
-                </div>
-
-            </div>
-
-
-            <!-- PAYÉ -->
-
-            <div class="stat-card">
-
-                <div class="stat-icon">
-                    <i class="fa-solid fa-circle-check"></i>
-                </div>
-
-                <div class="stat-content">
-
-                    <span class="stat-label">
-                        Montant payé
-                    </span>
-
-                    <strong class="stat-value">
-                        <?= formatMoney($totalPaye) ?>
-                    </strong>
-
-                    <span class="stat-description">
-                        <?= $nombrePaye ?> paiement(s) payé(s)
-                    </span>
-
-                </div>
-
-            </div>
-
-
-            <!-- EN ATTENTE -->
-
-            <div class="stat-card">
-
-                <div class="stat-icon">
-                    <i class="fa-solid fa-clock"></i>
-                </div>
-
-                <div class="stat-content">
-
-                    <span class="stat-label">
-                        En attente
-                    </span>
-
-                    <strong class="stat-value">
-                        <?= formatMoney($totalAttente) ?>
-                    </strong>
-
-                    <span class="stat-description">
-                        <?= $nombreAttente ?> paiement(s)
-                    </span>
-
-                </div>
-
-            </div>
-
-
-            <!-- RETARD -->
-
-            <div class="stat-card">
-
-                <div class="stat-icon">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                </div>
-
-                <div class="stat-content">
-
-                    <span class="stat-label">
-                        En retard
-                    </span>
-
-                    <strong class="stat-value">
-                        <?= formatMoney($totalRetard) ?>
-                    </strong>
-
-                    <span class="stat-description">
-                        <?= $nombreRetard ?> paiement(s)
-                    </span>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <!-- =================================================
-             HISTORIQUE
-        ================================================== -->
-
-        <section class="payments-card">
-
-            <div class="payments-header">
-
-                <div>
-
-                    <h2>
-                        Historique des paiements
-                    </h2>
-
-                    <p>
-                        Liste des paiements associés à vos contrats.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <?php if (!$paiements): ?>
-
-
-                <!-- AUCUN PAIEMENT -->
-
-                <div class="empty-state">
-
-                    <div class="empty-icon">
-                        <i class="fa-solid fa-credit-card"></i>
-                    </div>
-
-                    <h3>
-                        Aucun paiement
-                    </h3>
-
-                    <p>
-                        Aucun paiement n'est actuellement associé
-                        à vos contrats.
-                    </p>
-
-                </div>
-
-
-            <?php else: ?>
-
-
-                <!-- TABLEAU -->
-
-                <div class="table-container">
-
-                    <table>
-
-                        <thead>
-
-                            <tr>
-
-                                <th>
-                                    Contrat
-                                </th>
-
-                                <th>
-                                    Locataire
-                                </th>
-
-                                <th>
-                                    Échéance
-                                </th>
-
-                                <th>
-                                    Montant
-                                </th>
-
-                                <th>
-                                    Date paiement
-                                </th>
-
-                                <th>
-                                    Mode
-                                </th>
-
-                                <th>
-                                    Statut
-                                </th>
-
-                            </tr>
-
-                        </thead>
-
-
-                        <tbody>
-
-                        <?php foreach ($paiements as $paiement): ?>
-
-                            <tr>
-
-
-                                <!-- CONTRAT -->
-
-                                <td>
-
-                                    <div class="contract-number">
-
-                                        <?= e(
-                                            $paiement['numero_contrat']
-                                        ) ?>
-
-                                    </div>
-
-                                    <div class="property-reference">
-
-                                        <?= e(
-                                            $paiement['reference_bien']
-                                        ) ?>
-
-                                        <?php if (
-                                            !empty(
-                                                $paiement['titre_bien']
-                                            )
-                                        ): ?>
-
-                                            —
-                                            <?= e(
-                                                $paiement['titre_bien']
-                                            ) ?>
-
-                                        <?php endif; ?>
-
-                                    </div>
-
-                                </td>
-
-
-                                <!-- LOCATAIRE -->
-
-                                <td>
-
-                                    <?php
-
-                                    $nomLocataire = trim(
-                                        ($paiement['locataire_prenom'] ?? '')
-                                        . ' '
-                                        . ($paiement['locataire_nom'] ?? '')
-                                    );
-
-                                    ?>
-
-                                    <?php if ($nomLocataire !== ''): ?>
-
-                                        <div class="tenant-name">
-
-                                            <?= e(
-                                                $nomLocataire
-                                            ) ?>
-
-                                        </div>
-
-                                    <?php else: ?>
-
-                                        <span class="muted">
-                                            Non renseigné
-                                        </span>
-
-                                    <?php endif; ?>
-
-                                </td>
-
-
-                                <!-- ÉCHÉANCE -->
-
-                                <td>
-
-                                    <div class="date-main">
-
-                                        <?= formatDateFr(
-                                            $paiement['date_echeance']
-                                        ) ?>
-
-                                    </div>
-
-                                    <?php if (
-                                        !empty(
-                                            $paiement['periode_debut']
-                                        )
-                                        &&
-                                        !empty(
-                                            $paiement['periode_fin']
-                                        )
-                                    ): ?>
-
-                                        <div class="property-reference">
-
-                                            <?= formatDateFr(
-                                                $paiement['periode_debut']
-                                            ) ?>
-
-                                            →
-
-                                            <?= formatDateFr(
-                                                $paiement['periode_fin']
-                                            ) ?>
-
-                                        </div>
-
-                                    <?php endif; ?>
-
-                                </td>
-
-
-                                <!-- MONTANT -->
-
-                                <td>
-
-                                    <span class="amount">
-
-                                        <?= formatMoney(
-                                            $paiement['montant']
-                                        ) ?>
-
-                                    </span>
-
-                                </td>
-
-
-                                <!-- DATE PAIEMENT -->
-
-                                <td>
-
-                                    <?= formatDateFr(
-                                        $paiement['date_paiement']
-                                    ) ?>
-
-                                </td>
-
-
-                                <!-- MODE -->
-
-                                <td>
-
-                                    <?= e(
-                                        modePaiementLabel(
-                                            $paiement['mode_paiement']
-                                        )
-                                    ) ?>
-
-                                </td>
-
-
-                                <!-- STATUT -->
-
-                                <td>
-
-                                    <span
-                                        class="badge <?= e(
-                                            statutClass(
-                                                $paiement['statut']
-                                            )
-                                        ) ?>"
-                                    >
-
-                                        <?= e(
-                                            statutLabel(
-                                                $paiement['statut']
-                                            )
-                                        ) ?>
-
-                                    </span>
-
-                                </td>
-
-                            </tr>
-
-                        <?php endforeach; ?>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            <?php endif; ?>
-
-        </section>
-
-
-    </main>
-
-</div>
-
-</body>
-</html>
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-top"><div class="kpi-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg></div></div>
+        <div class="kpi-value"><?= count($paiements) ?></div>
+        <div class="kpi-label">Paiements</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top"><div class="kpi-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div></div>
+        <div class="kpi-value"><?= formatMontant($totalPaye) ?></div>
+        <div class="kpi-label"><?= $nombrePaye ?> payé(s)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top"><div class="kpi-icon amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div>
+        <div class="kpi-value"><?= formatMontant($totalAttente) ?></div>
+        <div class="kpi-label"><?= $nombreAttente ?> en attente</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top"><div class="kpi-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div></div>
+        <div class="kpi-value"><?= formatMontant($totalRetard) ?></div>
+        <div class="kpi-label"><?= $nombreRetard ?> en retard</div>
+      </div>
+    </div>
+
+    <form class="filters-form" method="get" action="index.php">
+      <select class="filter-select" name="statut" onchange="this.form.submit()">
+        <option value="">Tous les statuts</option>
+        <?php foreach ($statutLabels as $key => $label): ?>
+          <option value="<?= e($key) ?>"<?= $statutFiltre === $key ? ' selected' : '' ?>><?= e($label) ?></option>
+        <?php endforeach; ?>
+      </select>
+    </form>
+
+    <div class="panel table-panel">
+      <div class="panel-header"><div class="panel-title">Historique des paiements</div></div>
+      <?php if (empty($paiements)): ?>
+        <div class="empty-state" style="padding:48px 20px;">
+          <div class="empty-state-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg></div>
+          <h4>Aucun paiement</h4>
+          <p>Aucun paiement n'est actuellement associé à vos contrats.</p>
+        </div>
+      <?php else: ?>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>CONTRAT</th><th>LOCATAIRE</th><th>PÉRIODE</th><th>MONTANT</th><th>DATE PAIEMENT</th><th>MODE</th><th>STATUT</th></tr></thead>
+            <tbody>
+              <?php foreach ($paiements as $paiement): ?>
+                <?php
+                [$label, $tone] = statutPaiementBadge($paiement['statut'] ?? null);
+                $nomLocataire = trim(($paiement['locataire_prenom'] ?? '') . ' ' . ($paiement['locataire_nom'] ?? ''));
+                ?>
+                <tr>
+                  <td class="cell-title"><?= e($paiement['numero_contrat'] ?? '—') ?><div class="cell-sub"><?= e($paiement['reference_bien'] ?? '') ?><?= !empty($paiement['titre_bien']) ? ' — ' . e($paiement['titre_bien']) : '' ?></div></td>
+                  <td class="cell-sub"><?= $nomLocataire !== '' ? e($nomLocataire) : 'Non renseigné' ?></td>
+                  <td class="cell-sub">
+                    <?= formatDate($paiement['date_echeance'] ?? null) ?>
+                    <?php if (!empty($paiement['periode_debut']) && !empty($paiement['periode_fin'])): ?>
+                      <div class="cell-sub"><?= formatDate($paiement['periode_debut']) ?> → <?= formatDate($paiement['periode_fin']) ?></div>
+                    <?php endif; ?>
+                  </td>
+                  <td class="cell-price"><?= formatMontant($paiement['montant']) ?></td>
+                  <td class="cell-sub"><?= formatDate($paiement['date_paiement'] ?? null) ?></td>
+                  <td class="cell-sub"><?= e(modePaiementLabel($paiement['mode_paiement'] ?? null)) ?></td>
+                  <td><span class="status-badge <?= $tone ?>"><?= e($label) ?></span></td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      <?php endif; ?>
+    </div>
+<?php
+require dirname(__DIR__, 3) . '/layouts/footer.php';

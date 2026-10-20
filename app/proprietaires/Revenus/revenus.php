@@ -1,1725 +1,259 @@
 <?php
+
 declare(strict_types=1);
 
-require_once dirname(__DIR__, 3) . '/core/Authorization.php';
-require_once dirname(__DIR__, 3) . '/core/Database.php';
+require_once dirname(__DIR__) . '/ProprietaireController.php';
 
-$user = Authorization::requireRole('Proprietaire');
-$pdo = Database::connection();
-
-$idUtilisateur = (int) $user['id_utilisateur'];
-
-/*
-|--------------------------------------------------------------------------
-| PROPRIETAIRE CONNECTE
-|--------------------------------------------------------------------------
-*/
-
-$stmt = $pdo->prepare("
-    SELECT
-        p.id_proprietaire,
-        p.nom,
-        p.prenom,
-        p.email
-    FROM proprietaire p
-    INNER JOIN utilisateur u
-        ON u.email = p.email
-    WHERE u.id_utilisateur = ?
-    LIMIT 1
-");
-
-$stmt->execute([$idUtilisateur]);
-
-$proprietaire = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$proprietaire) {
-    http_response_code(403);
-    exit('Propriétaire introuvable.');
-}
-
-$idProprietaire = (int) $proprietaire['id_proprietaire'];
-
-
-/*
-|--------------------------------------------------------------------------
-| FONCTIONS
-|--------------------------------------------------------------------------
-*/
+$controller = new ProprietaireController();
+$proprietaire = $controller->getCurrentProprietaire();
 
 function e(?string $value): string
 {
-    return htmlspecialchars(
-        $value ?? '',
-        ENT_QUOTES,
-        'UTF-8'
-    );
+    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
 
-
-function formatMoney(float $amount): string
+function formatDate(?string $date): string
 {
-    return number_format(
-        $amount,
-        2,
-        ',',
-        ' '
-    ) . ' €';
+    if (empty($date)) {
+        return '—';
+    }
+    $timestamp = strtotime($date);
+
+    return $timestamp === false ? '—' : date('d/m/Y', $timestamp);
 }
 
-
-function statutLabel(string $statut): string
+function formatMontant($montant): string
 {
-    return match ($statut) {
-
-        'PAID' => 'Payé',
-
-        'PENDING' => 'En attente',
-
-        'LATE' => 'En retard',
-
-        'CANCELLED' => 'Annulé',
-
-        'REFUND' => 'Remboursé',
-
-        default => $statut,
-    };
+    return number_format((float) $montant, 2, ',', ' ') . ' €';
 }
 
-
-function statutClass(string $statut): string
+function statutPaiementBadge(?string $statut): array
 {
     return match ($statut) {
-
-        'PAID' => 'status-paid',
-
-        'PENDING' => 'status-pending',
-
-        'LATE' => 'status-late',
-
-        'CANCELLED' => 'status-cancelled',
-
-        'REFUND' => 'status-refund',
-
-        default => 'status-default',
+        'PAID' => ['Payé', 'actif'],
+        'PENDING' => ['En attente', 'attente'],
+        'LATE' => ['En retard', 'suspendu'],
+        'CANCELLED' => ['Annulé', 'inactif'],
+        'REFUNDED' => ['Remboursé', 'inactif'],
+        default => [$statut ?: 'Non renseigné', 'inactif'],
     };
 }
-
 
 function modePaiementLabel(?string $mode): string
 {
     return match ($mode) {
-
         'CASH' => 'Espèces',
-
         'BANK_TRANSFER' => 'Virement',
-
         'CARD' => 'Carte',
-
         'CHEQUE' => 'Chèque',
-
+        'DIRECT_DEBIT' => 'Prélèvement',
         default => $mode ?: '—',
     };
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| FILTRES
-|--------------------------------------------------------------------------
-|
-| 0 = aucun filtre d'année
-| 0 = aucun filtre de mois
-|
-*/
-
+$moisNoms = [1 => 'Janvier', 2 => 'Février', 3 => 'Mars', 4 => 'Avril', 5 => 'Mai', 6 => 'Juin', 7 => 'Juillet', 8 => 'Août', 9 => 'Septembre', 10 => 'Octobre', 11 => 'Novembre', 12 => 'Décembre'];
 $anneeActuelle = (int) date('Y');
 
-
-$annee = filter_input(
-    INPUT_GET,
-    'annee',
-    FILTER_VALIDATE_INT
-);
-
-if (
-    $annee === false ||
-    $annee === null ||
-    $annee < 2000 ||
-    $annee > 2100
-) {
+$annee = filter_input(INPUT_GET, 'annee', FILTER_VALIDATE_INT);
+if ($annee === false || $annee === null || $annee < 2000 || $annee > 2100) {
     $annee = 0;
 }
 
-
-$mois = filter_input(
-    INPUT_GET,
-    'mois',
-    FILTER_VALIDATE_INT
-);
-
-if (
-    $mois === false ||
-    $mois === null ||
-    $mois < 0 ||
-    $mois > 12
-) {
+$mois = filter_input(INPUT_GET, 'mois', FILTER_VALIDATE_INT);
+if ($mois === false || $mois === null || $mois < 0 || $mois > 12) {
     $mois = 0;
 }
 
-
-$moisNoms = [
-
-    1 => 'Janvier',
-
-    2 => 'Février',
-
-    3 => 'Mars',
-
-    4 => 'Avril',
-
-    5 => 'Mai',
-
-    6 => 'Juin',
-
-    7 => 'Juillet',
-
-    8 => 'Août',
-
-    9 => 'Septembre',
-
-    10 => 'Octobre',
-
-    11 => 'Novembre',
-
-    12 => 'Décembre',
-];
-
-
-/*
-|--------------------------------------------------------------------------
-| PERIODE
-|--------------------------------------------------------------------------
-*/
-
 $dateDebutSql = null;
 $dateFinSql = null;
-
-
-/*
-| Si une année est sélectionnée
-*/
-
 if ($annee > 0) {
-
-    $dateDebut = sprintf(
-        '%04d-01-01',
-        $annee
-    );
-
-    $dateFin = sprintf(
-        '%04d-12-31',
-        $annee
-    );
-
-
-    /*
-    | Si un mois est également sélectionné
-    */
-
+    $dateDebut = sprintf('%04d-01-01', $annee);
+    $dateFin = sprintf('%04d-12-31', $annee);
     if ($mois > 0) {
-
-        $dateDebut = sprintf(
-            '%04d-%02d-01',
-            $annee,
-            $mois
-        );
-
-        $dateFin = date(
-            'Y-m-t',
-            strtotime($dateDebut)
-        );
+        $dateDebut = sprintf('%04d-%02d-01', $annee, $mois);
+        $dateFin = date('Y-m-t', strtotime($dateDebut));
     }
-
-
-    $dateDebutSql =
-        $dateDebut . ' 00:00:00';
-
-    $dateFinSql =
-        $dateFin . ' 23:59:59';
+    $dateDebutSql = $dateDebut . ' 00:00:00';
+    $dateFinSql = $dateFin . ' 23:59:59';
 }
-
-
-/*
-|--------------------------------------------------------------------------
-| LIBELLE DE LA PERIODE
-|--------------------------------------------------------------------------
-*/
 
 if ($annee === 0) {
-
     $periodeLabel = 'Toutes les années';
-
 } elseif ($mois > 0) {
-
-    $periodeLabel =
-        $moisNoms[$mois]
-        . ' '
-        . $annee;
-
+    $periodeLabel = $moisNoms[$mois] . ' ' . $annee;
 } else {
-
-    $periodeLabel =
-        'Année '
-        . $annee;
+    $periodeLabel = 'Année ' . $annee;
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| NOMBRE DE BIENS
-|--------------------------------------------------------------------------
-*/
-
-$stmt = $pdo->prepare("
-    SELECT COUNT(DISTINCT b.id_bien)
-
-    FROM bien b
-
-    INNER JOIN bien_proprietaire bp
-        ON bp.id_bien = b.id_bien
-
-    WHERE bp.id_proprietaire = ?
-
-      AND b.deleted_at IS NULL
-");
-
-$stmt->execute([
-    $idProprietaire
-]);
-
-$nombreBiens = (int) $stmt->fetchColumn();
-
-
-/*
-|--------------------------------------------------------------------------
-| TOTAL GENERAL DES REVENUS
-|--------------------------------------------------------------------------
-|
-| IMPORTANT :
-| Ce total n'est PAS soumis au filtre.
-|
-| Il représente l'ensemble des revenus encaissés
-| par le propriétaire.
-|
-*/
-
-$stmt = $pdo->prepare("
-    SELECT
-        COALESCE(SUM(p.montant), 0)
-
-    FROM paiement p
-
-    INNER JOIN contrat c
-        ON c.id_contrat = p.id_contrat
-
-    INNER JOIN bien b
-        ON b.id_bien = c.id_bien
-
-    INNER JOIN bien_proprietaire bp
-        ON bp.id_bien = b.id_bien
-
-    WHERE bp.id_proprietaire = ?
-
-      AND p.statut = 'PAID'
-
-      AND c.deleted_at IS NULL
-
-      AND b.deleted_at IS NULL
-");
-
-$stmt->execute([
-    $idProprietaire
-]);
-
-$totalRevenus = (float) $stmt->fetchColumn();
-
-
-/*
-|--------------------------------------------------------------------------
-| STATISTIQUES FILTREES
-|--------------------------------------------------------------------------
-*/
-
-$sqlRevenus = "
-    SELECT
-
-        COALESCE(
-            SUM(
-                CASE
-                    WHEN p.statut = 'PAID'
-                    THEN p.montant
-                    ELSE 0
-                END
-            ),
-            0
-        ) AS revenus_encaisses,
-
-        COALESCE(
-            SUM(
-                CASE
-                    WHEN p.statut = 'PENDING'
-                    THEN p.montant
-                    ELSE 0
-                END
-            ),
-            0
-        ) AS revenus_attente,
-
-        COALESCE(
-            SUM(
-                CASE
-                    WHEN p.statut = 'LATE'
-                    THEN p.montant
-                    ELSE 0
-                END
-            ),
-            0
-        ) AS revenus_retard
-
-    FROM paiement p
-
-    INNER JOIN contrat c
-        ON c.id_contrat = p.id_contrat
-
-    INNER JOIN bien b
-        ON b.id_bien = c.id_bien
-
-    INNER JOIN bien_proprietaire bp
-        ON bp.id_bien = b.id_bien
-
-    WHERE bp.id_proprietaire = ?
-
-      AND c.deleted_at IS NULL
-
-      AND b.deleted_at IS NULL
-";
-
-
-$paramsRevenus = [
-    $idProprietaire
-];
-
-
-/*
-|--------------------------------------------------------------------------
-| AJOUT DU FILTRE DATE UNIQUEMENT SI NECESSAIRE
-|--------------------------------------------------------------------------
-*/
-
-if (
-    $dateDebutSql !== null &&
-    $dateFinSql !== null
-) {
-
-    $sqlRevenus .= "
-        AND p.date_paiement >= ?
-        AND p.date_paiement <= ?
-    ";
-
-    $paramsRevenus[] =
-        $dateDebutSql;
-
-    $paramsRevenus[] =
-        $dateFinSql;
-}
-
-
-$stmt = $pdo->prepare(
-    $sqlRevenus
-);
-
-$stmt->execute(
-    $paramsRevenus
-);
-
-$revenus = $stmt->fetch(
-    PDO::FETCH_ASSOC
-);
-
-
-$revenusEncaisses = (float) (
-    $revenus['revenus_encaisses'] ?? 0
-);
-
-$revenusEnAttente = (float) (
-    $revenus['revenus_attente'] ?? 0
-);
-
-$revenusEnRetard = (float) (
-    $revenus['revenus_retard'] ?? 0
-);
-
-
-/*
-|--------------------------------------------------------------------------
-| HISTORIQUE
-|--------------------------------------------------------------------------
-*/
-
-$sqlHistorique = "
-    SELECT
-
-        p.id_paiement,
-
-        p.montant,
-
-        p.date_paiement,
-
-        p.mode_paiement,
-
-        p.statut,
-
-        c.numero AS numero_contrat,
-
-        b.reference AS reference_bien,
-
-        b.titre AS titre_bien,
-
-        l.nom AS locataire_nom,
-
-        l.prenom AS locataire_prenom
-
-    FROM paiement p
-
-    INNER JOIN contrat c
-        ON c.id_contrat = p.id_contrat
-
-    INNER JOIN bien b
-        ON b.id_bien = c.id_bien
-
-    INNER JOIN bien_proprietaire bp
-        ON bp.id_bien = b.id_bien
-
-    LEFT JOIN locataire l
-        ON l.id_locataire = p.id_locataire
-
-    WHERE bp.id_proprietaire = ?
-
-      AND c.deleted_at IS NULL
-
-      AND b.deleted_at IS NULL
-";
-
-
-$paramsHistorique = [
-    $idProprietaire
-];
-
-
-if (
-    $dateDebutSql !== null &&
-    $dateFinSql !== null
-) {
-
-    $sqlHistorique .= "
-        AND p.date_paiement >= ?
-        AND p.date_paiement <= ?
-    ";
-
-    $paramsHistorique[] =
-        $dateDebutSql;
-
-    $paramsHistorique[] =
-        $dateFinSql;
-}
-
-
-$sqlHistorique .= "
-    ORDER BY
-        p.date_paiement DESC,
-        p.id_paiement DESC
-";
-
-
-$stmt = $pdo->prepare(
-    $sqlHistorique
-);
-
-$stmt->execute(
-    $paramsHistorique
-);
-
-$historiqueRevenus =
-    $stmt->fetchAll(
-        PDO::FETCH_ASSOC
-    );
-
-
-/*
-|--------------------------------------------------------------------------
-| GRAPHIQUE
-|--------------------------------------------------------------------------
-|
-| Le graphique est uniquement annuel.
-|
-| Si aucune année n'est sélectionnée,
-| on utilise l'année actuelle.
-|
-*/
-
-$anneeGraphique =
-    $annee > 0
-        ? $annee
-        : $anneeActuelle;
-
+$nombreBiens = count($controller->getMesBiens());
+$totalRevenus = $controller->getTotalRevenus();
+$revenus = $controller->getRevenusPeriode($dateDebutSql, $dateFinSql);
+$historiqueRevenus = $controller->getHistoriqueRevenus($dateDebutSql, $dateFinSql);
+
+$anneeGraphique = $annee > 0 ? $annee : $anneeActuelle;
+$revenusMensuelsAnnee = $controller->getRevenusMensuelsAnnee($anneeGraphique);
 
 $graphiqueRevenus = [];
-
-
-/*
-| Création des 12 mois
-*/
-
-foreach ($moisNoms as $numero => $nom) {
-
-    $graphiqueRevenus[$numero] = [
-
-        'mois' => $nom,
-
-        'montant' => 0,
-    ];
+foreach ($moisNoms as $numero => $nomMois) {
+    $graphiqueRevenus[$numero] = ['mois' => $nomMois, 'montant' => 0];
 }
-
-
-/*
-| Récupération des revenus PAID
-*/
-
-$stmt = $pdo->prepare("
-    SELECT
-
-        MONTH(p.date_paiement) AS mois,
-
-        COALESCE(
-            SUM(p.montant),
-            0
-        ) AS total
-
-    FROM paiement p
-
-    INNER JOIN contrat c
-        ON c.id_contrat = p.id_contrat
-
-    INNER JOIN bien b
-        ON b.id_bien = c.id_bien
-
-    INNER JOIN bien_proprietaire bp
-        ON bp.id_bien = b.id_bien
-
-    WHERE bp.id_proprietaire = ?
-
-      AND c.deleted_at IS NULL
-
-      AND b.deleted_at IS NULL
-
-      AND p.statut = 'PAID'
-
-      AND YEAR(p.date_paiement) = ?
-
-    GROUP BY MONTH(p.date_paiement)
-
-    ORDER BY MONTH(p.date_paiement)
-");
-
-
-$stmt->execute([
-    $idProprietaire,
-    $anneeGraphique
-]);
-
-
-$revenusMensuels =
-    $stmt->fetchAll(
-        PDO::FETCH_ASSOC
-    );
-
-
-/*
-| Remplissage du graphique
-*/
-
-foreach ($revenusMensuels as $revenuMensuel) {
-
-    $numeroMois =
-        (int) $revenuMensuel['mois'];
-
-
-    if (
-        isset(
-            $graphiqueRevenus[$numeroMois]
-        )
-    ) {
-
-        $graphiqueRevenus[$numeroMois]['montant'] =
-            (float) $revenuMensuel['total'];
+foreach ($revenusMensuelsAnnee as $ligne) {
+    $numeroMois = (int) $ligne['mois'];
+    if (isset($graphiqueRevenus[$numeroMois])) {
+        $graphiqueRevenus[$numeroMois]['montant'] = (float) $ligne['total'];
     }
 }
-
-
-$graphiqueRevenus =
-    array_values(
-        $graphiqueRevenus
-    );
-
-?>
-
-<!DOCTYPE html>
-
-<html lang="fr">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
- <title>Mes revenus | LOKA</title>
-
-    <!-- CSS PRINCIPAL DU PROPRIETAIRE -->
-
-    <link
-        rel="stylesheet"
-        href="/LOKA/app/proprietaires/proprietaire.css"
-    >
-
-
-    <!-- CSS SPECIFIQUE AUX REVENUS -->
-
-     <link
-        rel="stylesheet"
-        href="/LOKA/app/proprietaires/Revenus/revenus.css"
-    >
-
-
-    <!-- POLICE -->
-
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-    >
-
-
-    <!-- FONT AWESOME -->
-
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-    >
-        
-</head>
-
-<body>
-
-<div class="dashboard">
-
-    <?php $pageActive = 'revenus'; require dirname(__DIR__) . '/sidebar.php'; ?>
-    <main class="main-content">
-
-
-        <!-- =====================================================
-             EN-TETE
-        ====================================================== -->
-
-        <header class="page-header">
-
-            <div>
-
-                <h1>
-                    Mes revenus
-                </h1>
-
-                <p>
-                    Consultez les revenus liés à vos biens.
-                </p>
-
-            </div>
-
-
-            <div class="owner-badge">
-
-                <i class="fa-solid fa-user"></i>
-
-                <span>
-
-                    <?= e(
-                        trim(
-                            ($proprietaire['prenom'] ?? '')
-                            . ' '
-                            . ($proprietaire['nom'] ?? '')
-                        )
-                    ) ?>
-
-                </span>
-
-            </div>
-
-        </header>
-
-
-        <!-- =====================================================
-             TOTAL GENERAL
-        ====================================================== -->
-
-        <section class="total-revenus-card">
-
-
-            <div class="total-revenus-content">
-
-
-                <div class="total-revenus-info">
-
-
-                    <div class="total-revenus-icon">
-
-                        <i class="fa-solid fa-wallet"></i>
-
-                    </div>
-
-
-                    <div>
-
-                        <span class="total-revenus-label">
-
-                            Total de mes revenus
-
-                        </span>
-
-
-                        <strong class="total-revenus-value">
-
-                            <?= formatMoney(
-                                $totalRevenus
-                            ) ?>
-
-                        </strong>
-
-                    </div>
-
-
-                </div>
-
-
-            </div>
-
-
-        </section>
-
-
-        <!-- =====================================================
-             FILTRES
-        ====================================================== -->
-
-        <section class="filters-card">
-
-
-            <div class="filters-header">
-
-                <h2>
-                    Filtrer les revenus
-                </h2>
-
-                <p>
-                    Sélectionnez une année et éventuellement un mois.
-                </p>
-
-            </div>
-
-
-            <form
-                method="GET"
-                action="revenus.php"
-                class="revenus-filters"
-            >
-
-
-                <!-- ANNEE -->
-
-                <div class="filter-group">
-
-                    <label for="annee">
-
-                        Année
-
-                    </label>
-
-
-                    <select
-                        name="annee"
-                        id="annee"
-                    >
-
-
-                        <option
-                            value="0"
-                            <?= $annee === 0
-                                ? 'selected'
-                                : '' ?>
-                        >
-
-                            Toutes les années
-
-                        </option>
-
-
-                        <?php
-
-                        for (
-                            $i = $anneeActuelle - 5;
-                            $i <= $anneeActuelle + 1;
-                            $i++
-                        ):
-
-                        ?>
-
-
-                            <option
-                                value="<?= $i ?>"
-                                <?= $annee === $i
-                                    ? 'selected'
-                                    : '' ?>
-                            >
-
-                                <?= $i ?>
-
-                            </option>
-
-
-                        <?php endfor; ?>
-
-
-                    </select>
-
-                </div>
-
-
-                <!-- MOIS -->
-
-                <div class="filter-group">
-
-                    <label for="mois">
-
-                        Mois
-
-                    </label>
-
-
-                    <select
-                        name="mois"
-                        id="mois"
-                    >
-
-
-                        <option
-                            value="0"
-                            <?= $mois === 0
-                                ? 'selected'
-                                : '' ?>
-                        >
-
-                            Tous les mois
-
-                        </option>
-
-
-                        <?php
-
-                        foreach (
-                            $moisNoms
-                            as $numero => $nom
-                        ):
-
-                        ?>
-
-
-                            <option
-                                value="<?= $numero ?>"
-                                <?= $mois === $numero
-                                    ? 'selected'
-                                    : '' ?>
-                            >
-
-                                <?= e($nom) ?>
-
-                            </option>
-
-
-                        <?php endforeach; ?>
-
-
-                    </select>
-
-                </div>
-
-
-                <!-- BOUTON FILTRER -->
-
-                <button
-                    type="submit"
-                    class="filter-button"
-                >
-
-                    <i class="fa-solid fa-filter"></i>
-
-                    Filtrer
-
-                </button>
-
-
-                <!-- RESET -->
-
-                <a
-                    href="revenus.php"
-                    class="reset-button"
-                >
-
-                    <i class="fa-solid fa-rotate-left"></i>
-
-                    Réinitialiser
-
-                </a>
-
-
-            </form>
-
-
-        </section>
-
-
-        <!-- =====================================================
-             PERIODE
-        ====================================================== -->
-
-        <div class="period-info">
-
-
-            <i class="fa-solid fa-calendar-days"></i>
-
-
-            <span>
-
-                Revenus affichés pour :
-
-                <strong>
-
-                    <?= e(
-                        $periodeLabel
-                    ) ?>
-
-                </strong>
-
-            </span>
-
-
-        </div>
-
-
-        <!-- =====================================================
-             STATISTIQUES
-        ====================================================== -->
-
-        <section class="stats-grid">
-
-
-            <!-- ENCAISSES -->
-
-            <article class="stat-card">
-
-
-                <div class="stat-icon">
-
-                    <i class="fa-solid fa-wallet"></i>
-
-                </div>
-
-
-                <div class="stat-content">
-
-                    <span class="stat-label">
-
-                        Revenus encaissés
-
-                    </span>
-
-
-                    <strong>
-
-                        <?= formatMoney(
-                            $revenusEncaisses
-                        ) ?>
-
-                    </strong>
-
-                </div>
-
-
-            </article>
-
-
-            <!-- ATTENTE -->
-
-            <article class="stat-card">
-
-
-                <div class="stat-icon">
-
-                    <i class="fa-solid fa-clock"></i>
-
-                </div>
-
-
-                <div class="stat-content">
-
-                    <span class="stat-label">
-
-                        En attente
-
-                    </span>
-
-
-                    <strong>
-
-                        <?= formatMoney(
-                            $revenusEnAttente
-                        ) ?>
-
-                    </strong>
-
-                </div>
-
-
-            </article>
-
-
-            <!-- RETARD -->
-
-            <article class="stat-card">
-
-
-                <div class="stat-icon">
-
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-
-                </div>
-
-
-                <div class="stat-content">
-
-                    <span class="stat-label">
-
-                        En retard
-
-                    </span>
-
-
-                    <strong>
-
-                        <?= formatMoney(
-                            $revenusEnRetard
-                        ) ?>
-
-                    </strong>
-
-                </div>
-
-
-            </article>
-
-
-            <!-- BIENS -->
-
-            <article class="stat-card">
-
-
-                <div class="stat-icon">
-
-                    <i class="fa-solid fa-building"></i>
-
-                </div>
-
-
-                <div class="stat-content">
-
-                    <span class="stat-label">
-
-                        Biens concernés
-
-                    </span>
-
-
-                    <strong>
-
-                        <?= $nombreBiens ?>
-
-                    </strong>
-
-                </div>
-
-
-            </article>
-
-
-        </section>
-
-
-        <!-- =====================================================
-             GRAPHIQUE
-        ====================================================== -->
-
-        <section class="revenus-card chart-card">
-
-
-            <div class="section-header">
-
-
-                <div>
-
-                    <h2>
-                        Évolution des revenus
-                    </h2>
-
-
-                    <p>
-
-                        Revenus encaissés par mois en
-
-                        <?= e(
-                            (string) $anneeGraphique
-                        ) ?>.
-
-                    </p>
-
-                </div>
-
-
-            </div>
-
-
-            <div class="chart-container">
-
-                <canvas
-                    id="revenusChart"
-                ></canvas>
-
-            </div>
-
-
-        </section>
-
-
-        <!-- =====================================================
-             HISTORIQUE
-        ====================================================== -->
-
-        <section class="revenus-card">
-
-
-            <div class="section-header">
-
-
-                <div>
-
-                    <h2>
-                        Historique des revenus
-                    </h2>
-
-
-                    <p>
-
-                        Revenus générés par vos biens
-                        pour <?= e($periodeLabel) ?>.
-
-                    </p>
-
-                </div>
-
-
-            </div>
-
-
-            <?php if (
-                empty($historiqueRevenus)
-            ): ?>
-
-
-                <!-- AUCUN RESULTAT -->
-
-                <div class="empty-state">
-
-
-                    <div class="empty-icon">
-
-                        <i class="fa-solid fa-chart-line"></i>
-
-                    </div>
-
-
-                    <h3>
-
-                        Aucun revenu enregistré
-
-                    </h3>
-
-
-                    <p>
-
-                        Aucun paiement ne correspond
-                        à la période sélectionnée.
-
-                    </p>
-
-
-                </div>
-
-
-            <?php else: ?>
-
-
-                <!-- TABLEAU -->
-
-                <div class="table-wrapper">
-
-
-                    <table class="revenus-table">
-
-
-                        <thead>
-
-                            <tr>
-
-                                <th>
-                                    Date
-                                </th>
-
-                                <th>
-                                    Bien
-                                </th>
-
-                                <th>
-                                    Locataire
-                                </th>
-
-                                <th>
-                                    Contrat
-                                </th>
-
-                                <th>
-                                    Mode
-                                </th>
-
-                                <th>
-                                    Montant
-                                </th>
-
-                                <th>
-                                    Statut
-                                </th>
-
-                            </tr>
-
-                        </thead>
-
-
-                        <tbody>
-
-
-                        <?php foreach (
-                            $historiqueRevenus
-                            as $revenu
-                        ): ?>
-
-
-                            <tr>
-
-
-                                <!-- DATE -->
-
-                                <td>
-
-                                    <?php
-
-                                    if (
-                                        !empty(
-                                            $revenu[
-                                                'date_paiement'
-                                            ]
-                                        )
-                                    ) {
-
-                                        echo e(
-                                            date(
-                                                'd/m/Y',
-                                                strtotime(
-                                                    $revenu[
-                                                        'date_paiement'
-                                                    ]
-                                                )
-                                            )
-                                        );
-
-                                    } else {
-
-                                        echo '—';
-
-                                    }
-
-                                    ?>
-
-                                </td>
-
-
-                                <!-- BIEN -->
-
-                                <td>
-
-
-                                    <div class="property-cell">
-
-
-                                        <strong>
-
-                                            <?= e(
-                                                $revenu[
-                                                    'reference_bien'
-                                                ]
-                                            ) ?>
-
-                                        </strong>
-
-
-                                        <?php if (
-                                            !empty(
-                                                $revenu[
-                                                    'titre_bien'
-                                                ]
-                                            )
-                                        ): ?>
-
-
-                                            <span>
-
-                                                <?= e(
-                                                    $revenu[
-                                                        'titre_bien'
-                                                    ]
-                                                ) ?>
-
-                                            </span>
-
-
-                                        <?php endif; ?>
-
-
-                                    </div>
-
-
-                                </td>
-
-
-                                <!-- LOCATAIRE -->
-
-                                <td>
-
-
-                                    <?php
-
-                                    $nomLocataire =
-                                        trim(
-                                            (
-                                                $revenu[
-                                                    'locataire_prenom'
-                                                ]
-                                                ?? ''
-                                            )
-                                            . ' '
-                                            . (
-                                                $revenu[
-                                                    'locataire_nom'
-                                                ]
-                                                ?? ''
-                                            )
-                                        );
-
-
-                                    echo e(
-                                        $nomLocataire
-                                        ?: '—'
-                                    );
-
-                                    ?>
-
-
-                                </td>
-
-
-                                <!-- CONTRAT -->
-
-                                <td>
-
-                                    <?= e(
-                                        $revenu[
-                                            'numero_contrat'
-                                        ]
-                                    ) ?>
-
-                                </td>
-
-
-                                <!-- MODE -->
-
-                                <td>
-
-                                    <?= e(
-                                        modePaiementLabel(
-                                            $revenu[
-                                                'mode_paiement'
-                                            ]
-                                        )
-                                    ) ?>
-
-                                </td>
-
-
-                                <!-- MONTANT -->
-
-                                <td class="amount">
-
-                                    <?= formatMoney(
-                                        (float)
-                                        $revenu[
-                                            'montant'
-                                        ]
-                                    ) ?>
-
-                                </td>
-
-
-                                <!-- STATUT -->
-
-                                <td>
-
-
-                                    <span
-                                        class="status-badge <?= e(
-                                            statutClass(
-                                                $revenu[
-                                                    'statut'
-                                                ]
-                                            )
-                                        ) ?>"
-                                    >
-
-                                        <?= e(
-                                            statutLabel(
-                                                $revenu[
-                                                    'statut'
-                                                ]
-                                            )
-                                        ) ?>
-
-                                    </span>
-
-
-                                </td>
-
-
-                            </tr>
-
-
-                        <?php endforeach; ?>
-
-
-                        </tbody>
-
-
-                    </table>
-
-
-                </div>
-
-
-            <?php endif; ?>
-
-
-        </section>
-
-
-    </main>
-
-
-</div>
-
-
-<!-- =========================================================
-     CHART.JS
-========================================================= -->
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-
-<script>
-
-const revenusMensuels =
-    <?= json_encode(
-        $graphiqueRevenus,
-        JSON_UNESCAPED_UNICODE |
-        JSON_UNESCAPED_SLASHES
-    ) ?>;
-
-
-const canvas =
-    document.getElementById(
-        'revenusChart'
-    );
-
-
-if (canvas) {
-
-
-    new Chart(
-        canvas,
-        {
-
-            type: 'line',
-
-
-            data: {
-
-                labels:
-                    revenusMensuels.map(
-                        item => item.mois
-                    ),
-
-
-                datasets: [
-
-                    {
-
-                        label:
-                            'Revenus encaissés',
-
-
-                        data:
-                            revenusMensuels.map(
-                                item => item.montant
-                            ),
-
-
-                        tension: 0.3,
-
-
-                        fill: true,
-
-
-                        borderWidth: 2,
-
-
-                        pointRadius: 4,
-
-
-                        pointHoverRadius: 6
-
-                    }
-
-                ]
-
+$graphiqueRevenus = array_values($graphiqueRevenus);
+
+$prenom = (string) ($proprietaire['prenom'] ?? '');
+$nom = (string) ($proprietaire['nom'] ?? '');
+
+$pageTitle = 'Mes revenus';
+$activeNav = 'Mes revenus';
+$sidebarFile = 'sidebar-proprietaire.php';
+$greetingTitle = 'Mes revenus';
+$greetingSubtitle = 'Consultez les revenus liés à vos biens.';
+$profileName = trim($prenom . ' ' . $nom) ?: 'Propriétaire';
+$profileRole = 'Propriétaire';
+$profileInitials = mb_strtoupper(mb_substr($prenom, 0, 1) . mb_substr($nom, 0, 1)) ?: 'P';
+$extraHead = '<link rel="stylesheet" href="/LOKA/app/administration/mon-agence/dashboard.css">';
+$extraScripts = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>'
+    . '<script>
+      (function () {
+        const ctx = document.getElementById("revenusChart").getContext("2d");
+        const gradient = ctx.createLinearGradient(0, 0, 0, 240);
+        gradient.addColorStop(0, "rgba(15, 139, 141, 0.22)");
+        gradient.addColorStop(1, "rgba(15, 139, 141, 0)");
+        new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: window.revenusChartLabels || [],
+            datasets: [{
+              label: "Revenus encaissés",
+              data: window.revenusChartDatas || [],
+              borderColor: "#0F8B8D",
+              backgroundColor: gradient,
+              fill: true,
+              tension: 0.4,
+              borderWidth: 2.4,
+              pointRadius: 0,
+              pointHoverRadius: 5,
+              pointHoverBackgroundColor: "#0F8B8D",
+              pointHoverBorderColor: "#fff",
+              pointHoverBorderWidth: 2,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: "#043F42", titleColor: "#fff", bodyColor: "#DDEDEC",
+                borderColor: "#0F8B8D", borderWidth: 1, padding: 10, cornerRadius: 8,
+                titleFont: { size: 11 }, bodyFont: { size: 11.5 },
+                callbacks: { label: (c) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(c.raw) },
+              },
             },
+            scales: {
+              x: { grid: { display: false }, ticks: { color: "#8AA0A0", font: { size: 10.5 } } },
+              y: { beginAtZero: true, grid: { color: "#EEF3F3" }, ticks: { color: "#8AA0A0", font: { size: 10.5 }, callback: (v) => v + " €" } },
+            },
+          },
+        });
+      })();
+    </script>';
 
+require dirname(__DIR__, 3) . '/layouts/header.php';
+?>
+    <div class="mini-stat" style="max-width:260px;margin-bottom:18px;">
+      <div class="num"><?= formatMontant($totalRevenus) ?></div>
+      <div class="lbl">Total de mes revenus encaissés</div>
+    </div>
 
-            options: {
+    <form class="filters-form" method="get" action="revenus.php">
+      <select class="filter-select" name="annee">
+        <option value="0"<?= $annee === 0 ? ' selected' : '' ?>>Toutes les années</option>
+        <?php for ($i = $anneeActuelle - 5; $i <= $anneeActuelle + 1; $i++): ?>
+          <option value="<?= $i ?>"<?= $annee === $i ? ' selected' : '' ?>><?= $i ?></option>
+        <?php endfor; ?>
+      </select>
+      <select class="filter-select" name="mois">
+        <option value="0"<?= $mois === 0 ? ' selected' : '' ?>>Tous les mois</option>
+        <?php foreach ($moisNoms as $numero => $nomMois): ?>
+          <option value="<?= $numero ?>"<?= $mois === $numero ? ' selected' : '' ?>><?= e($nomMois) ?></option>
+        <?php endforeach; ?>
+      </select>
+      <button type="submit" class="btn btn-primary">Filtrer</button>
+      <a href="revenus.php" class="btn btn-sm">Réinitialiser</a>
+    </form>
 
-                responsive: true,
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-top"><div class="kpi-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div>
+        <div class="kpi-value"><?= formatMontant($revenus['encaisses']) ?></div>
+        <div class="kpi-label">Revenus encaissés</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top"><div class="kpi-icon amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div>
+        <div class="kpi-value"><?= formatMontant($revenus['attente']) ?></div>
+        <div class="kpi-label">En attente</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top"><div class="kpi-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div></div>
+        <div class="kpi-value"><?= formatMontant($revenus['retard']) ?></div>
+        <div class="kpi-label">En retard</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top"><div class="kpi-icon teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg></div></div>
+        <div class="kpi-value"><?= $nombreBiens ?></div>
+        <div class="kpi-label">Biens concernés</div>
+      </div>
+    </div>
 
+    <div class="panel" style="margin-bottom:18px;">
+      <div class="panel-header"><div class="panel-title">Évolution des revenus en <?= (int) $anneeGraphique ?></div></div>
+      <div style="padding:10px 18px 18px;height:240px;"><canvas id="revenusChart"></canvas></div>
+    </div>
 
-                maintainAspectRatio: false,
+    <div class="panel table-panel">
+      <div class="panel-header"><div class="panel-title">Historique — <?= e($periodeLabel) ?></div></div>
+      <?php if (empty($historiqueRevenus)): ?>
+        <div class="empty-state" style="padding:48px 20px;">
+          <div class="empty-state-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <h4>Aucun revenu enregistré</h4>
+          <p>Aucun paiement ne correspond à la période sélectionnée.</p>
+        </div>
+      <?php else: ?>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>DATE</th><th>BIEN</th><th>LOCATAIRE</th><th>CONTRAT</th><th>MODE</th><th>MONTANT</th><th>STATUT</th></tr></thead>
+            <tbody>
+              <?php foreach ($historiqueRevenus as $revenu): ?>
+                <?php
+                [$label, $tone] = statutPaiementBadge($revenu['statut'] ?? null);
+                $nomLocataire = trim(($revenu['locataire_prenom'] ?? '') . ' ' . ($revenu['locataire_nom'] ?? ''));
+                ?>
+                <tr>
+                  <td class="cell-sub"><?= formatDate($revenu['date_paiement'] ?? null) ?></td>
+                  <td class="cell-title"><?= e($revenu['reference_bien'] ?? '—') ?><?php if (!empty($revenu['titre_bien'])): ?><div class="cell-sub"><?= e($revenu['titre_bien']) ?></div><?php endif; ?></td>
+                  <td class="cell-sub"><?= $nomLocataire !== '' ? e($nomLocataire) : '—' ?></td>
+                  <td class="cell-sub"><?= e($revenu['numero_contrat'] ?? '—') ?></td>
+                  <td class="cell-sub"><?= e(modePaiementLabel($revenu['mode_paiement'] ?? null)) ?></td>
+                  <td class="cell-price"><?= formatMontant($revenu['montant']) ?></td>
+                  <td><span class="status-badge <?= $tone ?>"><?= e($label) ?></span></td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      <?php endif; ?>
+    </div>
 
-
-                plugins: {
-
-                    legend: {
-
-                        display: false
-
-                    },
-
-
-                    tooltip: {
-
-                        callbacks: {
-
-                            label: function(context) {
-
-                                return new Intl.NumberFormat(
-                                    'fr-FR',
-                                    {
-                                        style: 'currency',
-                                        currency: 'EUR'
-                                    }
-                                ).format(
-                                    context.raw
-                                );
-
-                            }
-
-                        }
-
-                    }
-
-                },
-
-
-                scales: {
-
-                    y: {
-
-                        beginAtZero: true,
-
-
-                        ticks: {
-
-                            callback:
-                                function(value) {
-
-                                    return new Intl.NumberFormat(
-                                        'fr-FR',
-                                        {
-                                            style: 'currency',
-                                            currency: 'EUR',
-                                            maximumFractionDigits: 0
-                                        }
-                                    ).format(
-                                        value
-                                    );
-
-                                }
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-        }
-    );
-
-}
-
-</script>
-
-
-</body>
-
-</html>
+    <script>
+      window.revenusChartLabels = <?= json_encode(array_column($graphiqueRevenus, 'mois'), JSON_THROW_ON_ERROR) ?>;
+      window.revenusChartDatas = <?= json_encode(array_column($graphiqueRevenus, 'montant'), JSON_THROW_ON_ERROR) ?>;
+    </script>
+<?php
+require dirname(__DIR__, 3) . '/layouts/footer.php';

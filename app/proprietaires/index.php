@@ -77,25 +77,52 @@ $profileRole = 'Propriétaire';
 $profileInitials = mb_strtoupper(mb_substr($prenom, 0, 1) . mb_substr($nom, 0, 1)) ?: 'P';
 $extraHead = '<link rel="stylesheet" href="/LOKA/app/administration/mon-agence/dashboard.css">';
 $extraScripts = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>'
-    . '<script>new Chart(document.getElementById("revenueChart"), {
-        type: "line",
-        data: {
-          labels: window.revenueChartLabels || [],
-          datasets: [{
-            label: "Revenus (€)",
-            data: window.revenueChartDatas || [],
-            borderColor: "#0F8B8D",
-            backgroundColor: "rgba(15, 139, 141, 0.12)",
-            tension: 0.35,
-            fill: true,
-            pointBackgroundColor: "#0F8B8D",
-          }],
-        },
-        options: {
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true, ticks: { callback: (v) => v + " €" } } },
-        },
-      });</script>';
+    . '<script>
+      (function () {
+        const ctx = document.getElementById("revenueChart").getContext("2d");
+        const gradient = ctx.createLinearGradient(0, 0, 0, 190);
+        gradient.addColorStop(0, "rgba(15, 139, 141, 0.22)");
+        gradient.addColorStop(1, "rgba(15, 139, 141, 0)");
+        new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: window.revenueChartLabels || [],
+            datasets: [{
+              label: "Revenus",
+              data: window.revenueChartDatas || [],
+              borderColor: "#0F8B8D",
+              backgroundColor: gradient,
+              fill: true,
+              tension: 0.4,
+              borderWidth: 2.4,
+              pointRadius: 0,
+              pointHoverRadius: 5,
+              pointHoverBackgroundColor: "#0F8B8D",
+              pointHoverBorderColor: "#fff",
+              pointHoverBorderWidth: 2,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: "#043F42", titleColor: "#fff", bodyColor: "#DDEDEC",
+                borderColor: "#0F8B8D", borderWidth: 1, padding: 10, cornerRadius: 8,
+                titleFont: { size: 11 }, bodyFont: { size: 11.5 },
+                callbacks: { label: (c) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(c.raw) },
+              },
+            },
+            scales: {
+              x: { grid: { display: false }, ticks: { color: "#8AA0A0", font: { size: 10.5 } } },
+              y: { beginAtZero: true, grid: { color: "#EEF3F3" }, ticks: { color: "#8AA0A0", font: { size: 10.5 }, callback: (v) => v + " €" } },
+            },
+          },
+        });
+      })();
+    </script>';
 
 require dirname(__DIR__, 2) . '/layouts/header.php';
 ?>
@@ -132,7 +159,7 @@ require dirname(__DIR__, 2) . '/layouts/header.php';
     <section class="detail-grid" style="margin-top:18px;">
       <div class="panel">
         <div class="panel-header"><div class="panel-title">Revenus mensuels</div></div>
-        <div style="padding:18px;"><canvas id="revenueChart" height="220"></canvas></div>
+        <div style="padding:10px 16px 16px;height:190px;"><canvas id="revenueChart"></canvas></div>
       </div>
 
       <div class="panel table-panel">

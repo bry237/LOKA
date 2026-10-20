@@ -113,4 +113,74 @@ final class ProprietaireController
             $priorite
         );
     }
+
+    public function getLocataires(): array
+    {
+        return $this->model->getLocataires($this->idProprietaire());
+    }
+
+    public function getLocataireDetail(int $idLocataire): ?array
+    {
+        return $this->model->getLocataireDetail($idLocataire, $this->idProprietaire());
+    }
+
+    public function getContratsLocataire(int $idLocataire): array
+    {
+        return $this->model->getContratsLocataire($idLocataire, $this->idProprietaire());
+    }
+
+    public function getPaiements(): array
+    {
+        return $this->model->getPaiements($this->idProprietaire());
+    }
+
+    public function getTypesDocuments(): array
+    {
+        return $this->model->getTypesDocuments();
+    }
+
+    public function getDocumentsStats(): array
+    {
+        return $this->model->getDocumentsStats($this->idProprietaire());
+    }
+
+    public function getDocuments(array $filtres = []): array
+    {
+        return $this->model->getDocuments($this->idProprietaire(), $filtres);
+    }
+
+    public function getTotalRevenus(): float
+    {
+        return $this->model->getTotalRevenus($this->idProprietaire());
+    }
+
+    public function getRevenusPeriode(?string $dateDebutSql, ?string $dateFinSql): array
+    {
+        return $this->model->getRevenusPeriode($this->idProprietaire(), $dateDebutSql, $dateFinSql);
+    }
+
+    public function getHistoriqueRevenus(?string $dateDebutSql, ?string $dateFinSql): array
+    {
+        return $this->model->getHistoriqueRevenus($this->idProprietaire(), $dateDebutSql, $dateFinSql);
+    }
+
+    public function getRevenusMensuelsAnnee(int $annee): array
+    {
+        return $this->model->getRevenusMensuelsAnnee($this->idProprietaire(), $annee);
+    }
+
+    public function updateProfil(array $data): ?string
+    {
+        $erreur = $this->model->updateProfil($this->idProprietaire(), (int) $this->user['id_utilisateur'], $data);
+        if ($erreur === null) {
+            $this->proprietaire = null;
+        }
+
+        return $erreur;
+    }
+
+    public function updateMotDePasse(string $ancien, string $nouveau, string $confirmation): ?string
+    {
+        return $this->model->updateMotDePasse((int) $this->user['id_utilisateur'], $ancien, $nouveau, $confirmation);
+    }
 }
