@@ -1285,6 +1285,7 @@ $success = isset($_GET['success']);
 
 <body>
 
+<?php $pageActive = 'biens'; require __DIR__ . '/sidebar.php'; ?>
 
 <div class="content">
 

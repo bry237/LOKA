@@ -1208,6 +1208,7 @@ if ($successParam === 'image_primary') {
 
 <body>
 
+<?php $pageActive = 'biens'; require __DIR__ . '/sidebar.php'; ?>
 
 <div class="content">
 

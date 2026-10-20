@@ -45,6 +45,10 @@ $navActive = static fn (string $page): string => $currentPage === $page ? ' is-a
         </a>
     </nav>
     <div class="sidebar__footer">
-        <a href="/LOKA/app/jordan/dashboard/index.php" style="color:inherit;">&larr; Retour au portail</a>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <a href="/LOKA/app/jordan/dashboard/index.php" style="color:inherit;">&larr; Retour au portail</a>
+            <?php require dirname(__DIR__, 3) . '/layouts/notif-widget.php'; ?>
+        </div>
+        <a href="/LOKA/app/authentification/deconnexion.php" style="color:inherit;display:block;margin-top:10px;">Déconnexion</a>
     </div>
 </aside>

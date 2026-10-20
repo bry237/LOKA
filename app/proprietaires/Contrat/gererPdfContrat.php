@@ -444,9 +444,15 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
         href="/LOKA/app/proprietaires/proprietaire.css"
     >
 
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
     <style>
 
         .pdf-contrat-page {
+            margin-left: 250px;
             padding: 30px;
         }
 
@@ -618,6 +624,7 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
         @media (max-width: 800px) {
 
             .pdf-contrat-page {
+                margin-left: 80px;
                 padding: 20px;
             }
 
@@ -645,6 +652,8 @@ if (!empty($contrat['chemin_fichier_pdf'])) {
 </head>
 
 <body>
+
+<?php $pageActive = 'contrats'; require dirname(__DIR__) . '/sidebar.php'; ?>
 
 <div class="pdf-contrat-page">
 

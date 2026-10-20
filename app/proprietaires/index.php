@@ -285,70 +285,7 @@ foreach ($resultats as $ligne) {
 
     <div class="dashboard">
 
-        <aside class="sidebar">
-
-    <div class="logo">
-        <h2>LOKA</h2>
-        <p>Gestion immobilière</p>
-    </div>
-
-    <nav>
-
-        <a href="/LOKA/app/proprietaires/index.php" class="active">
-            <i class="fa-solid fa-chart-line"></i>
-            Dashboard
-        </a>
-
-        <a href="/LOKA/app/proprietaires/biens.php">
-            <i class="fa-solid fa-building"></i>
-            Mes biens
-        </a>
-
-        <a href="/LOKA/app/proprietaires/Locataires/index.php" >
-            <i class="fa-solid fa-users"></i>
-            Mes locataires
-        </a>
-
-        <a
-                href="/LOKA/app/proprietaires/Contrat/contrat.php"
-            >
-            <i class="fa-solid fa-file-contract"></i>
-            Mes contrats
-        </a>
-
-        <a href="/LOKA/app/proprietaires/Revenus/revenus.php">
-            <i class="fa-solid fa-wallet"></i>
-            Mes revenus
-        </a>
-
-        <a href="/LOKA/app/proprietaires/Paiements/index.php">
-            <i class="fa-solid fa-credit-card"></i>
-            Paiements
-        </a>
-
-        <a href="/LOKA/app/proprietaires/Quittances/quittances.php">
-            <i class="fa-solid fa-receipt"></i>
-            Quittances
-        </a>
-
-        <a
-                href="/LOKA/app/proprietaires/Documents/documents.php"
-            >
-
-                <i class="fa-solid fa-folder-open"></i>
-
-                Documents
-
-            </a>
-
-        <a href="/LOKA/app/proprietaires/Parametres/parametres.php">
-            <i class="fa-solid fa-gear"></i>
-            Paramètres
-        </a>
-
-    </nav>
-
-</aside>
+        <?php $pageActive = 'dashboard'; require __DIR__ . '/sidebar.php'; ?>
 
         <main class="content">
 

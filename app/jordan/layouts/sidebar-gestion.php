@@ -95,12 +95,13 @@ $currentPage = $currentPage ?? '';
 		<?php endforeach; ?>
 	</nav>
 	<div class="sidebar__footer">
-		<div class="sidebar__user">
+		<div class="sidebar__user" style="position:relative;">
 			<span class="sidebar__user-avatar"><?= htmlspecialchars(mb_strtoupper(mb_substr((string) ($sidebarUser['prenom'] ?? 'U'), 0, 1)), ENT_QUOTES, 'UTF-8') ?></span>
 			<span class="sidebar__user-text">
 				<span class="sidebar__user-name"><?php if ($sidebarUser): ?><?= htmlspecialchars(($sidebarUser['prenom'] ?? '') . ' ' . ($sidebarUser['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?><?php else: ?>Agence immobilière<?php endif; ?></span>
 				<span class="sidebar__user-role">Espace gestionnaire</span>
 			</span>
+			<?php require dirname(__DIR__, 3) . '/layouts/notif-widget.php'; ?>
 		</div>
 		<a class="sidebar__logout" href="/LOKA/app/authentification/deconnexion.php">
 			<span class="nav__icon"><?= $icon['logout'] ?></span>

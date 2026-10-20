@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/LocataireController.php';
+require_once dirname(__DIR__, 2) . '/core/Auth.php';
 
 $controller = new LocataireController();
 $locataire = $controller->getCurrentLocataire();
@@ -10,6 +11,11 @@ $locataire = $controller->getCurrentLocataire();
 if (!$locataire) {
     http_response_code(404);
     exit('Locataire introuvable.');
+}
+
+function e(?string $value): string
+{
+    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
 
 $section = $_GET['section'] ?? 'personnel';
@@ -28,47 +34,52 @@ $erreur = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    try {
+    if (!Auth::verifyCsrf($_POST['csrf_token'] ?? null)) {
+        $erreur = 'Le formulaire a expiré. Rechargez la page et réessayez.';
+    } else {
 
-        if ($section === 'personnel') {
+        try {
 
-            $data = [
-                'nom' => trim($_POST['nom'] ?? ''),
-                'prenom' => trim($_POST['prenom'] ?? ''),
-                'email' => trim($_POST['email'] ?? ''),
-                'telephone' => trim($_POST['telephone'] ?? ''),
-                'date_naissance' => !empty($_POST['date_naissance'])
-                    ? $_POST['date_naissance']
-                    : null,
-                'profession' => trim($_POST['profession'] ?? '')
-            ];
+            if ($section === 'personnel') {
 
-        } elseif ($section === 'adresse') {
+                $data = [
+                    'nom' => trim($_POST['nom'] ?? ''),
+                    'prenom' => trim($_POST['prenom'] ?? ''),
+                    'email' => trim($_POST['email'] ?? ''),
+                    'telephone' => trim($_POST['telephone'] ?? ''),
+                    'date_naissance' => !empty($_POST['date_naissance'])
+                        ? $_POST['date_naissance']
+                        : null,
+                    'profession' => trim($_POST['profession'] ?? '')
+                ];
 
-            $data = [
-                'adresse' => trim($_POST['adresse'] ?? ''),
-                'code_postal' => trim($_POST['code_postal'] ?? ''),
-                'ville' => trim($_POST['ville'] ?? ''),
-                'pays' => trim($_POST['pays'] ?? '')
-            ];
+            } elseif ($section === 'adresse') {
 
-        } else {
+                $data = [
+                    'adresse' => trim($_POST['adresse'] ?? ''),
+                    'code_postal' => trim($_POST['code_postal'] ?? ''),
+                    'ville' => trim($_POST['ville'] ?? ''),
+                    'pays' => trim($_POST['pays'] ?? '')
+                ];
 
-            $data = [
-                'revenu_mensuel' => $_POST['revenu_mensuel'] !== ''
-                    ? (float) $_POST['revenu_mensuel']
-                    : null,
-                'statut' => trim($_POST['statut'] ?? '')
-            ];
+            } else {
+
+                $data = [
+                    'revenu_mensuel' => $_POST['revenu_mensuel'] !== ''
+                        ? (float) $_POST['revenu_mensuel']
+                        : null,
+                    'statut' => trim($_POST['statut'] ?? '')
+                ];
+            }
+
+            $controller->updateCurrentLocataire($data);
+
+            header('Location: detail.php?success=1');
+            exit;
+
+        } catch (Throwable $ex) {
+            $erreur = 'Une erreur est survenue lors de la modification.';
         }
-
-        $controller->updateCurrentLocataire($data);
-
-        header('Location: detail.php?success=1');
-        exit;
-
-    } catch (Throwable $e) {
-        $erreur = 'Une erreur est survenue lors de la modification.';
     }
 }
 
@@ -83,273 +94,105 @@ if ($section === 'personnel') {
     $description = 'Modifiez vos informations financières.';
 }
 
+$prenom = $locataire['prenom'] ?? '';
+$nom = $locataire['nom'] ?? '';
+
+$pageTitle = $titre;
+$activeNav = 'Mon profil';
+$sidebarFile = 'sidebar-locataire.php';
+$greetingTitle = $titre;
+$greetingSubtitle = $description;
+$profileName = trim($prenom . ' ' . $nom);
+$profileRole = 'Locataire';
+$profileInitials = mb_strtoupper(mb_substr($prenom, 0, 1) . mb_substr($nom, 0, 1));
+$extraHead = '<link rel="stylesheet" href="ops.css?v=' . filemtime(__DIR__ . '/ops.css') . '">';
+
+$csrfToken = Auth::csrfToken();
+
+require dirname(__DIR__, 2) . '/layouts/header.php';
 ?>
-
-<!DOCTYPE html>
-<html lang="fr">
-
-<head>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title><?= htmlspecialchars($titre) ?> - LOKA</title>
-
-    <link rel="stylesheet" href="/LOKA/app/locataires/locataire.css">
-
-</head>
-
-<body class="modification-page">
-
-    <div class="modification-container">
-
-        <div class="modification-card">
-
-            <div class="modification-header">
-
-                <div class="modification-logo">
-                    LOKA
-                </div>
-
-                <h1><?= htmlspecialchars($titre) ?></h1>
-
-                <p>
-                    <?= htmlspecialchars($description) ?>
-                </p>
-
-            </div>
-
-            <?php if ($erreur): ?>
-
-                <div class="form-message form-error">
-                    <?= htmlspecialchars($erreur) ?>
-                </div>
-
-            <?php endif; ?>
-
-            <form method="POST" class="modification-form">
-
-                <?php if ($section === 'personnel'): ?>
-
-                    <div class="form-group">
-
-                        <label for="nom">
-                            Nom
-                        </label>
-
-                        <input
-                            type="text"
-                            id="nom"
-                            name="nom"
-                            value="<?= htmlspecialchars($locataire['nom']) ?>"
-                            required
-                        >
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label for="prenom">
-                            Prénom
-                        </label>
-
-                        <input
-                            type="text"
-                            id="prenom"
-                            name="prenom"
-                            value="<?= htmlspecialchars($locataire['prenom']) ?>"
-                            required
-                        >
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label for="email">
-                            Adresse email
-                        </label>
-
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            value="<?= htmlspecialchars($locataire['email']) ?>"
-                            required
-                        >
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label for="telephone">
-                            Téléphone
-                        </label>
-
-                        <input
-                            type="text"
-                            id="telephone"
-                            name="telephone"
-                            value="<?= htmlspecialchars($locataire['telephone'] ?? '') ?>"
-                        >
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label for="date_naissance">
-                            Date de naissance
-                        </label>
-
-                        <input
-                            type="date"
-                            id="date_naissance"
-                            name="date_naissance"
-                            value="<?= htmlspecialchars($locataire['date_naissance'] ?? '') ?>"
-                        >
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label for="profession">
-                            Profession
-                        </label>
-
-                        <input
-                            type="text"
-                            id="profession"
-                            name="profession"
-                            value="<?= htmlspecialchars($locataire['profession'] ?? '') ?>"
-                        >
-
-                    </div>
-
-                <?php elseif ($section === 'adresse'): ?>
-
-                    <div class="form-group">
-
-                        <label for="adresse">
-                            Adresse
-                        </label>
-
-                        <input
-                            type="text"
-                            id="adresse"
-                            name="adresse"
-                            value="<?= htmlspecialchars($locataire['adresse'] ?? '') ?>"
-                            required
-                        >
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label for="code_postal">
-                            Code postal
-                        </label>
-
-                        <input
-                            type="text"
-                            id="code_postal"
-                            name="code_postal"
-                            value="<?= htmlspecialchars($locataire['code_postal'] ?? '') ?>"
-                            required
-                        >
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label for="ville">
-                            Ville
-                        </label>
-
-                        <input
-                            type="text"
-                            id="ville"
-                            name="ville"
-                            value="<?= htmlspecialchars($locataire['ville'] ?? '') ?>"
-                            required
-                        >
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label for="pays">
-                            Pays
-                        </label>
-
-                        <input
-                            type="text"
-                            id="pays"
-                            name="pays"
-                            value="<?= htmlspecialchars($locataire['pays'] ?? '') ?>"
-                            required
-                        >
-
-                    </div>
-
-                <?php else: ?>
-
-                    <div class="form-group">
-
-                        <label for="revenu_mensuel">
-                            Revenu mensuel
-                        </label>
-
-                        <div class="input-with-suffix">
-
-                            <input
-                                type="number"
-                                id="revenu_mensuel"
-                                name="revenu_mensuel"
-                                step="0.01"
-                                min="0"
-                                value="<?= htmlspecialchars((string)($locataire['revenu_mensuel'] ?? '')) ?>"
-                            >
-
-                            <span>€</span>
-
-                        </div>
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label for="statut">
-                            Statut
-                        </label>
-
-                        <input
-                            type="text"
-                            id="statut"
-                            name="statut"
-                            value="<?= htmlspecialchars($locataire['statut'] ?? '') ?>"
-                        >
-
-                    </div>
-
-                <?php endif; ?>
-
-                <div class="modification-actions">
-
-                    <a href="detail.php" class="btn-cancel">
-                        Annuler
-                    </a>
-
-                    <button type="submit" class="btn-save">
-                        Enregistrer
-                    </button>
-
-                </div>
-
-            </form>
-
+    <?php if ($erreur): ?>
+      <div class="feedback error"><?= e($erreur) ?></div>
+    <?php endif; ?>
+
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title"><?= e($titre) ?></div></div>
+      <form method="POST" class="form-grid">
+        <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+
+        <?php if ($section === 'personnel'): ?>
+
+          <div class="form-field">
+            <label for="nom">Nom</label>
+            <input type="text" id="nom" name="nom" value="<?= e($locataire['nom']) ?>" required>
+          </div>
+
+          <div class="form-field">
+            <label for="prenom">Prénom</label>
+            <input type="text" id="prenom" name="prenom" value="<?= e($locataire['prenom']) ?>" required>
+          </div>
+
+          <div class="form-field">
+            <label for="email">Adresse email</label>
+            <input type="email" id="email" name="email" value="<?= e($locataire['email']) ?>" required>
+          </div>
+
+          <div class="form-field">
+            <label for="telephone">Téléphone</label>
+            <input type="text" id="telephone" name="telephone" value="<?= e($locataire['telephone'] ?? '') ?>">
+          </div>
+
+          <div class="form-field">
+            <label for="date_naissance">Date de naissance</label>
+            <input type="date" id="date_naissance" name="date_naissance" value="<?= e($locataire['date_naissance'] ?? '') ?>">
+          </div>
+
+          <div class="form-field">
+            <label for="profession">Profession</label>
+            <input type="text" id="profession" name="profession" value="<?= e($locataire['profession'] ?? '') ?>">
+          </div>
+
+        <?php elseif ($section === 'adresse'): ?>
+
+          <div class="form-field">
+            <label for="adresse">Adresse</label>
+            <input type="text" id="adresse" name="adresse" value="<?= e($locataire['adresse'] ?? '') ?>" required>
+          </div>
+
+          <div class="form-field">
+            <label for="code_postal">Code postal</label>
+            <input type="text" id="code_postal" name="code_postal" value="<?= e($locataire['code_postal'] ?? '') ?>" required>
+          </div>
+
+          <div class="form-field">
+            <label for="ville">Ville</label>
+            <input type="text" id="ville" name="ville" value="<?= e($locataire['ville'] ?? '') ?>" required>
+          </div>
+
+          <div class="form-field">
+            <label for="pays">Pays</label>
+            <input type="text" id="pays" name="pays" value="<?= e($locataire['pays'] ?? '') ?>" required>
+          </div>
+
+        <?php else: ?>
+
+          <div class="form-field">
+            <label for="revenu_mensuel">Revenu mensuel (€)</label>
+            <input type="number" id="revenu_mensuel" name="revenu_mensuel" step="0.01" min="0" value="<?= e((string) ($locataire['revenu_mensuel'] ?? '')) ?>">
+          </div>
+
+          <div class="form-field">
+            <label for="statut">Statut</label>
+            <input type="text" id="statut" name="statut" value="<?= e($locataire['statut'] ?? '') ?>">
+          </div>
+
+        <?php endif; ?>
+
+        <div class="form-actions">
+          <a href="detail.php" class="btn">Annuler</a>
+          <button type="submit" class="btn btn-primary">Enregistrer</button>
         </div>
-
+      </form>
     </div>
-
-</body>
-
-</html>
+<?php
+require dirname(__DIR__, 2) . '/layouts/footer.php';

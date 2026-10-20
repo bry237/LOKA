@@ -52,7 +52,7 @@ $pageActive = $pageActive ?? '';
 
 
         <a
-            href="/LOKA/app/proprietaires/mes_contrats.php"
+            href="/LOKA/app/proprietaires/Contrat/contrat.php"
             class="<?= $pageActive === 'contrats' ? 'active' : '' ?>"
         >
             <i class="fa-solid fa-file-contract"></i>
@@ -61,7 +61,7 @@ $pageActive = $pageActive ?? '';
 
 
         <a
-            href="/LOKA/app/proprietaires/mes_revenus.php"
+            href="/LOKA/app/proprietaires/Revenus/revenus.php"
             class="<?= $pageActive === 'revenus' ? 'active' : '' ?>"
         >
             <i class="fa-solid fa-wallet"></i>
@@ -70,7 +70,7 @@ $pageActive = $pageActive ?? '';
 
 
         <a
-            href="/LOKA/app/proprietaires/paiements.php"
+            href="/LOKA/app/proprietaires/Paiements/index.php"
             class="<?= $pageActive === 'paiements' ? 'active' : '' ?>"
         >
             <i class="fa-solid fa-credit-card"></i>
@@ -79,7 +79,7 @@ $pageActive = $pageActive ?? '';
 
 
         <a
-            href="/LOKA/app/proprietaires/quittances.php"
+            href="/LOKA/app/proprietaires/Quittances/quittances.php"
             class="<?= $pageActive === 'quittances' ? 'active' : '' ?>"
         >
             <i class="fa-solid fa-receipt"></i>
@@ -88,7 +88,7 @@ $pageActive = $pageActive ?? '';
 
 
         <a
-            href="/LOKA/app/proprietaires/documents.php"
+            href="/LOKA/app/proprietaires/Documents/documents.php"
             class="<?= $pageActive === 'documents' ? 'active' : '' ?>"
         >
             <i class="fa-solid fa-folder-open"></i>
@@ -97,7 +97,7 @@ $pageActive = $pageActive ?? '';
 
 
         <a
-            href="/LOKA/app/proprietaires/parametres.php"
+            href="/LOKA/app/proprietaires/Parametres/parametres.php"
             class="<?= $pageActive === 'parametres' ? 'active' : '' ?>"
         >
             <i class="fa-solid fa-gear"></i>
@@ -105,5 +105,13 @@ $pageActive = $pageActive ?? '';
         </a>
 
     </nav>
+
+    <div class="sidebar-footer" style="position:absolute;left:20px;right:20px;bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <?php require dirname(__DIR__, 2) . '/layouts/notif-widget.php'; ?>
+        <a href="/LOKA/app/authentification/deconnexion.php" style="display:flex;align-items:center;gap:8px;color:inherit;text-decoration:none;">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Déconnexion</span>
+        </a>
+    </div>
 
 </aside>
