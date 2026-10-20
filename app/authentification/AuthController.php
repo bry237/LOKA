@@ -97,7 +97,7 @@ final class AuthController
 			'Comptable' => '../administration/mon-agence/paiements.php',
 			'Proprietaire' => '../proprietaires/index.php',
 			'Locataire' => '../locataires/index.php',
-			'Technicien' => '../maintenance/index.php',
+			'Technicien' => '../administration/mon-agence/interventions.php',
 			default => 'connexion.php',
 		};
 	}

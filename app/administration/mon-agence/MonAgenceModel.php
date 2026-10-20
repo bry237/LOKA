@@ -1696,6 +1696,10 @@ final class MonAgenceModel
 			$sql .= ' AND i.statut = :statut';
 			$params['statut'] = $filters['statut'];
 		}
+		if (!empty($filters['assigne_a'])) {
+			$sql .= ' AND i.id_utilisateur_assigne = :assigne_a';
+			$params['assigne_a'] = (int) $filters['assigne_a'];
+		}
 		$sql .= ' ORDER BY i.created_at DESC';
 
 		$stmt = Database::connection()->prepare($sql);
@@ -1703,17 +1707,21 @@ final class MonAgenceModel
 		return $stmt->fetchAll();
 	}
 
-	public static function interventionStats(int $idAgence): array
+	public static function interventionStats(int $idAgence, ?int $assigneA = null): array
 	{
-		$stmt = Database::connection()->prepare(
-			"SELECT
+		$sql = "SELECT
 				SUM(CASE WHEN statut IN ('OPEN', 'ASSIGNED') THEN 1 ELSE 0 END) AS ouvertes,
 				SUM(CASE WHEN statut = 'IN_PROGRESS' THEN 1 ELSE 0 END) AS en_cours,
 				SUM(CASE WHEN priorite = 'URGENT' AND statut NOT IN ('RESOLVED', 'CLOSED', 'CANCELLED') THEN 1 ELSE 0 END) AS urgentes,
 				SUM(CASE WHEN statut = 'RESOLVED' AND MONTH(updated_at) = MONTH(CURDATE()) AND YEAR(updated_at) = YEAR(CURDATE()) THEN 1 ELSE 0 END) AS resolues_ce_mois
-			 FROM intervention WHERE id_agence = :id_agence"
-		);
-		$stmt->execute(['id_agence' => $idAgence]);
+			 FROM intervention WHERE id_agence = :id_agence";
+		$params = ['id_agence' => $idAgence];
+		if ($assigneA !== null) {
+			$sql .= ' AND id_utilisateur_assigne = :assigne_a';
+			$params['assigne_a'] = $assigneA;
+		}
+		$stmt = Database::connection()->prepare($sql);
+		$stmt->execute($params);
 		$row = $stmt->fetch() ?: [];
 		return [
 			'ouvertes' => (int) ($row['ouvertes'] ?? 0),

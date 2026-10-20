@@ -5,14 +5,18 @@ require_once dirname(__DIR__, 3) . '/core/Authorization.php';
 require_once __DIR__ . '/MonAgenceController.php';
 require_once __DIR__ . '/team-presentation.php';
 
-$currentUser = Authorization::requireRole('Administrateur agence');
+$currentUser = Authorization::requireRole('Administrateur agence', 'Technicien');
 $idAgence = (int) $currentUser['id_agence'];
+$isTechnicien = $currentUser['role_nom'] === 'Technicien';
 
 $filters = [
 	'search' => trim((string) ($_GET['search'] ?? '')),
 	'priorite' => (string) ($_GET['priorite'] ?? ''),
 	'statut' => (string) ($_GET['statut'] ?? ''),
 ];
+if ($isTechnicien) {
+	$filters['assigne_a'] = (int) $currentUser['id_utilisateur'];
+}
 
 $data = MonAgenceController::interventions($idAgence, $filters);
 $interventions = $data['list'];
@@ -74,7 +78,7 @@ $pageTitle = 'Interventions';
 $activeNav = 'Interventions';
 $sidebarFile = 'sidebar-agence.php';
 $greetingTitle = 'Bonjour, ' . $currentUser['prenom'];
-$greetingSubtitle = 'Suivez les interventions de maintenance de votre agence.';
+$greetingSubtitle = $isTechnicien ? 'Suivez les interventions qui vous sont assignées.' : 'Suivez les interventions de maintenance de votre agence.';
 $profileName = trim($currentUser['prenom'] . ' ' . $currentUser['nom']);
 $profileRole = $currentUser['role_nom'];
 $profileInitials = mb_strtoupper(mb_substr($currentUser['prenom'], 0, 1) . mb_substr($currentUser['nom'], 0, 1));
@@ -88,7 +92,9 @@ require dirname(__DIR__, 3) . '/layouts/header.php';
         <h1>Interventions</h1>
         <p>Maintenance et réparations sur le patrimoine de votre agence.</p>
       </div>
+      <?php if (!$isTechnicien): ?>
       <a class="btn btn-primary" href="intervention-ajouter.php" data-modal>+ Nouvelle intervention</a>
+      <?php endif; ?>
     </div>
 
     <?php if (isset($_GET['success'])): ?>

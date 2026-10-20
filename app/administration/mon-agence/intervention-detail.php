@@ -5,14 +5,15 @@ require_once dirname(__DIR__, 3) . '/core/Authorization.php';
 require_once __DIR__ . '/MonAgenceController.php';
 require_once __DIR__ . '/team-presentation.php';
 
-$currentUser = Authorization::requireRole('Administrateur agence');
+$currentUser = Authorization::requireRole('Administrateur agence', 'Technicien');
 $idAgence = (int) $currentUser['id_agence'];
+$isTechnicien = $currentUser['role_nom'] === 'Technicien';
 
 $isModal = (($_GET['modal'] ?? $_POST['modal'] ?? '') === '1');
 
 $id = (int) ($_GET['id'] ?? $_POST['id'] ?? 0);
 $intervention = MonAgenceController::interventionDetail($idAgence, $id);
-if (!$intervention) {
+if (!$intervention || ($isTechnicien && (int) $intervention['id_utilisateur_assigne'] !== (int) $currentUser['id_utilisateur'])) {
 	header('Location: interventions.php?error=' . urlencode('Intervention introuvable.') . ($isModal ? '&modal=1' : ''));
 	exit;
 }
@@ -52,7 +53,7 @@ $pageTitle = $intervention['titre'];
 $activeNav = 'Interventions';
 $sidebarFile = 'sidebar-agence.php';
 $greetingTitle = 'Bonjour, ' . $currentUser['prenom'];
-$greetingSubtitle = 'Détail de l’intervention.';
+$greetingSubtitle = $isTechnicien ? 'Détail de l’intervention qui vous est assignée.' : 'Détail de l’intervention.';
 $profileName = trim($currentUser['prenom'] . ' ' . $currentUser['nom']);
 $profileRole = $currentUser['role_nom'];
 $profileInitials = mb_strtoupper(mb_substr($currentUser['prenom'], 0, 1) . mb_substr($currentUser['nom'], 0, 1));

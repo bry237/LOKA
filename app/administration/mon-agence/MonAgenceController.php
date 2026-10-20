@@ -1591,9 +1591,10 @@ HTML;
 	/** @return array{list: array, stats: array} */
 	public static function interventions(int $idAgence, array $filters): array
 	{
+		$assigneA = !empty($filters['assigne_a']) ? (int) $filters['assigne_a'] : null;
 		return [
 			'list' => MonAgenceModel::interventions($idAgence, $filters),
-			'stats' => MonAgenceModel::interventionStats($idAgence),
+			'stats' => MonAgenceModel::interventionStats($idAgence, $assigneA),
 		];
 	}
 
