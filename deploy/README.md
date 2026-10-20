@@ -56,26 +56,35 @@ Dans le vPanel, section **MySQL Databases** :
    l'**hôte MySQL** (souvent différent du serveur FTP, ex: `sql200.infinityfree.com`
    — c'est indiqué dans le vPanel).
 3. Ouvre **phpMyAdmin** (lien disponible dans le vPanel), sélectionne ta base,
-   onglet **Importer**, et importe le fichier
-   **`database/schema/loka_database_mysql.shared-hosting.sql`** de ce dépôt
-   (pas le fichier `loka_database_mysql.sql` original). Deux adaptations par
-   rapport à l'original, toutes deux liées aux limites d'un hébergement
-   mutualisé gratuit :
-   - les 2 triggers de la table `document` sont retirés (droit `TRIGGER`
-     refusé aux comptes MySQL gratuits, erreur `#1142` sinon) — la règle
-     qu'ils imposaient (un document rattaché à une seule entité) reste
-     appliquée côté PHP (`DocumentValidator`), seul le filet de sécurité
-     redondant au niveau base de données saute ;
-   - toutes les tables sont créées **sans** leurs clés étrangères, qui sont
-     ajoutées ensuite via des `ALTER TABLE` une fois que les 41 tables
-     existent toutes — évite l'erreur `#1005 (Errcode 150)` que
-     phpMyAdmin déclenche quand il importe un gros fichier en plusieurs
-     morceaux et perd au passage le `FOREIGN_KEY_CHECKS=0` qui aurait
-     permis de créer les tables dans le désordre.
+   onglet **Importer**, et importe **dans l'ordre, en 3 imports séparés**
+   (bouton "Exécuter" à chaque fois avant de passer au suivant) les fichiers
+   du dossier `database/schema/shared-hosting/` de ce dépôt :
 
-   (Même schéma au final : 41 tables, mêmes 62 clés étrangères, mêmes
-   données de référence — rôles, types de biens, etc., pas de faux comptes.
-   Testé par un import réel en local avant d'être ajouté au dépôt.)
+   1. `01-structure.sql` — crée les 41 tables (sans leurs clés étrangères)
+   2. `02-donnees-reference.sql` — insère les données de référence (rôles,
+      types de biens, types de documents, équipements, abonnements — pas de
+      faux comptes)
+   3. `03-cles-etrangeres.sql` — ajoute les 62 clés étrangères, maintenant que
+      toutes les tables existent
+
+   Pourquoi en 3 fichiers séparés et pas un seul gros fichier ? Deux limites
+   des hébergements mutualisés gratuits, rencontrées en conditions réelles :
+   - les comptes MySQL gratuits n'ont pas le droit `TRIGGER` (erreur `#1142`
+     sur les 2 triggers de la table `document` — la règle qu'ils imposaient,
+     un document rattaché à une seule entité, reste appliquée côté PHP dans
+     `DocumentValidator`, seul le filet de sécurité redondant côté base
+     saute) ;
+   - phpMyAdmin importe les gros fichiers SQL en plusieurs morceaux et ne
+     garantit pas que le `FOREIGN_KEY_CHECKS=0` du début du fichier reste
+     actif jusqu'à la fin — un fichier unique fait alors échouer la création
+     des tables qui référencent une table pas encore créée (`#1005 Errcode
+     150`). En séparant structure / données / contraintes, l'ordre de
+     création des tables n'a plus aucune importance, quel que soit le
+     comportement de l'hébergeur.
+
+   (Même schéma au final que l'original : 41 tables + 1 vue, 62 clés
+   étrangères, mêmes données de référence. Testé par un import réel en 3
+   requêtes séparées en local avant d'être ajouté au dépôt.)
 
 ## Étape 4 — Choisir la version PHP
 
