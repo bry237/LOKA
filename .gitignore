@@ -2,6 +2,7 @@
 /config/stripe_local.php
 /config/env.local.php
 /database/backups/
+/database/schema/shared-hosting/04-comptes-demo.sql
 
 # Dossiers de fichiers uploadés à l'exécution (créés par le code à la
 # volée, jamais versionnés — voir deploy/README.md)
