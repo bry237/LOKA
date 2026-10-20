@@ -10,10 +10,21 @@ require_once __DIR__ . '/SmsSender.php';
  */
 final class OtpService
 {
-	private const CODE_LENGTH = 6;
 	private const TTL_MINUTES = 10;
 	private const MAX_ATTEMPTS = 5;
 	private const RESEND_COOLDOWN_SECONDS = 60;
+
+	/**
+	 * Code OTP temporairement fixe pour toutes les créations de compte (particulier,
+	 * professionnel, locataire, agence) et les premières connexions d'équipe invitée.
+	 * Raison : l'envoi SMS réel est cassé (sender alphanumérique "LOKA" filtré par les
+	 * opérateurs français — voir le compte Vonage, achat de numéro bloqué tant qu'il
+	 * n'est pas vérifié), donc le code n'arrive pas de façon fiable par SMS. En attendant
+	 * une livraison SMS fonctionnelle, tout le monde utilise ce même code pour continuer
+	 * à tester/valider les inscriptions. À retirer et revenir à un code aléatoire dès que
+	 * l'envoi SMS est rétabli (repasser SMS_PROVIDER en "vonage" avec un numéro vérifié).
+	 */
+	private const FIXED_CODE = '20262027';
 
 	/**
 	 * @return array{ok: bool, error: ?string, retry_after: ?int}
@@ -34,7 +45,7 @@ final class OtpService
 			}
 		}
 
-		$code = str_pad((string) random_int(0, 999999), self::CODE_LENGTH, '0', STR_PAD_LEFT);
+		$code = self::FIXED_CODE;
 		$expiration = (new DateTimeImmutable('+' . self::TTL_MINUTES . ' minutes'))->format('Y-m-d H:i:s');
 
 		$insert = $db->prepare(

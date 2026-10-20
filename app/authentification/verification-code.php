@@ -68,14 +68,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				<header class="form-heading">
 					<p class="eyebrow">Vérification</p>
 					<h1>Confirmez votre numéro</h1>
-					<p>Saisissez le code à 6 chiffres envoyé par SMS au <?= htmlspecialchars($telephone, ENT_QUOTES, 'UTF-8') ?>.</p>
+					<p>Saisissez le code à 8 chiffres envoyé par SMS au <?= htmlspecialchars($telephone, ENT_QUOTES, 'UTF-8') ?>.</p>
 				</header>
 				<?php if ($resent): ?><p class="form-message form-message--info" role="status">Un nouveau code vous a été envoyé par SMS.</p><?php endif; ?>
 				<?php if ($error !== null): ?><p class="form-message form-message--error" role="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
 				<form class="auth-form" method="post" action="verification-code.php" novalidate>
 					<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
 					<input type="hidden" name="action" value="verify">
-					<div class="field"><label for="otp-code">Code de vérification</label><input id="otp-code" name="code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required autofocus></div>
+					<div class="field"><label for="otp-code">Code de vérification</label><input id="otp-code" name="code" type="text" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" autocomplete="one-time-code" required autofocus></div>
 					<button class="button button--primary" type="submit">Vérifier</button>
 				</form>
 				<form method="post" action="verification-code.php">
