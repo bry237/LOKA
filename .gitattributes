@@ -1,0 +1,5 @@
+# Les scripts de déploiement tournent sur Linux : toujours des fins de
+# ligne LF dans le dépôt, quel que soit le réglage core.autocrlf local
+# (confirmé : déjà le cas avec autocrlf=true, ceci le garantit aussi
+# pour toute autre configuration future).
+*.sh text eol=lf

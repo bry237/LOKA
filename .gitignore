@@ -1,3 +1,10 @@
 /.htaccess
 /config/stripe_local.php
 /database/backups/
+
+# Dossiers de fichiers uploadés à l'exécution (créés par le code à la
+# volée, jamais versionnés — voir deploy/README.md)
+/vendor/
+/storage/documents/
+/uploads/
+/public/uploads/

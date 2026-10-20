@@ -1,0 +1,40 @@
+name: Déploiement LOKA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  lint:
+    name: Vérification PHP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer
+
+      - name: Lint de tous les fichiers PHP
+        run: |
+          find . -name "*.php" -not -path "./vendor/*" -print0 \
+            | xargs -0 -n1 -P4 php -l
+
+      - name: Installation des dépendances Composer (vérification)
+        run: composer install --no-dev --prefer-dist --no-progress
+
+  deploy:
+    name: Déploiement sur le serveur
+    needs: lint
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Connexion SSH et exécution de deploy.sh
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: bash /var/www/LOKA/deploy/deploy.sh
