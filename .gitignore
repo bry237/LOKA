@@ -1,5 +1,6 @@
 /.htaccess
 /config/stripe_local.php
+/config/env.local.php
 /database/backups/
 
 # Dossiers de fichiers uploadés à l'exécution (créés par le code à la

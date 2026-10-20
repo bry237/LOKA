@@ -4,7 +4,14 @@ declare(strict_types=1);
 /**
  * Clés/API des services externes.
  * ANTHROPIC_API_KEY doit être fournie via variable d'environnement (jamais commitée en clair).
+ *
+ * Voir config/database.php : config/env.local.php (non versionné) peut définir ces variables
+ * via putenv() sur un hébergement où SetEnv Apache ne suffit pas.
  */
+if (is_file(__DIR__ . '/env.local.php')) {
+	require_once __DIR__ . '/env.local.php';
+}
+
 return [
 	'anthropic' => [
 		'api_key' => getenv('ANTHROPIC_API_KEY') ?: '',

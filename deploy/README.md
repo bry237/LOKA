@@ -1,120 +1,101 @@
-# Déploiement LOKA — pipeline CI/CD gratuit (Oracle Cloud Free Tier)
+# Déploiement LOKA — pipeline CI/CD gratuit, sans carte bancaire (InfinityFree)
 
 Déploiement automatique : chaque `push` sur `main` déclenche GitHub Actions, qui
-vérifie le code PHP puis se connecte en SSH au serveur pour mettre à jour le
-site. Coût réel : **0 €**, à vie, tant que tu restes dans les limites "Always
-Free" d'Oracle Cloud (largement suffisant pour ce projet).
+vérifie le code PHP, construit les dépendances Composer, puis envoie tout par
+FTP vers un hébergement mutualisé 100% gratuit. Coût réel : **0 €**, aucune
+carte bancaire requise.
 
-La carte bancaire demandée par Oracle à l'inscription sert uniquement à la
-vérification anti-abus — rien n'est débité sur l'offre Always Free. Tu peux
-configurer une alerte de budget à 0 € dans Oracle Cloud si tu veux être
-rassuré(e).
+> Historique : on avait d'abord préparé un déploiement SSH vers un VPS Oracle
+> Cloud (gratuit à vie mais carte requise à l'inscription) — abandonné suite à
+> un refus de carte. Cette version FTP est 100% sans carte, mais plus limitée
+> (pas de SSH, pas de ligne de commande sur le serveur).
 
 ## Vue d'ensemble du pipeline
 
 ```
 toi (git push main) → GitHub Actions
-                         ├─ job "lint"   : php -l sur tout le projet
-                         └─ job "deploy" : SSH vers le serveur → deploy.sh
-                                              ├─ git pull
-                                              ├─ composer install
-                                              └─ re-vérification php -l
+                         ├─ job "lint"   : php -l + composer install (vérification)
+                         └─ job "deploy" : composer install --no-dev (construit vendor/)
+                                            → envoi FTP de tout le projet vers l'hébergeur
 ```
 
-Aucune étape manuelle après la mise en place initiale ci-dessous.
+Aucune étape manuelle après la mise en place initiale ci-dessous — à une
+exception près : l'hébergeur n'a pas d'accès en ligne de commande, donc un
+changement de **structure** de base de données reste à appliquer à la main
+via phpMyAdmin (voir "Limites" en bas de page).
 
 ---
 
-## Étape 1 — Créer le compte Oracle Cloud
+## Étape 1 — Créer le compte et l'hébergement
 
-1. Va sur https://www.oracle.com/cloud/free/ et inscris-toi (email, carte
-   bancaire pour vérification, pas de prélèvement sur l'offre gratuite).
-2. Une fois dans la console, va dans **Compute > Instances > Create Instance**.
-3. **Image** : Ubuntu 22.04 (ou 24.04).
-4. **Shape** : clique sur "Change shape" → choisis **Ampere (ARM)**,
-   `VM.Standard.A1.Flex`, et règle 2 OCPU / 12 Go de RAM (reste dans le
-   quota "Always Free" qui va jusqu'à 4 OCPU / 24 Go au total).
-   - Si tu as une erreur "Out of capacity" sur ta région, retente plus tard
-     ou bascule sur le shape AMD `VM.Standard.E2.1.Micro` (plus petit mais
-     toujours gratuit à vie, et largement suffisant pour démarrer).
-5. **Clé SSH** : laisse Oracle générer une paire de clés et télécharge-la
-   (ou colle une clé publique que tu as déjà) — c'est la clé qui te permet
-   de te connecter en `ssh ubuntu@<IP>` pour faire le provisionnement.
-6. Crée l'instance, note son **IP publique**.
-7. Dans **Networking > Virtual Cloud Networks > (ton VCN) > Security Lists**,
-   ajoute des règles d'entrée (Ingress) pour les ports **80** et **443**
-   (TCP, source `0.0.0.0/0`) — le port 22 (SSH) est généralement déjà ouvert
-   par défaut.
+1. Va sur **https://infinityfree.net/** (ou un équivalent comme 000webhost —
+   les étapes sont similaires) et inscris-toi avec ton email. Aucune carte
+   bancaire demandée.
+2. Clique **Create Account** (un "compte" = un site). Choisis un sous-domaine
+   gratuit, par exemple `loka-app.infinityfreeapp.com` (ou connecte ton propre
+   nom de domaine si tu en as un, gratuitement aussi).
+3. Attends l'activation (quelques minutes en général).
 
-## Étape 2 — Générer la clé SSH que GitHub Actions utilisera
+## Étape 2 — Récupérer les accès FTP
 
-Sur **ta machine** (pas sur le serveur) :
+Dans le **Control Panel (vPanel)** de ton hébergement, section **FTP
+Accounts** / **FTP Details** :
 
-```bash
-ssh-keygen -t ed25519 -C "github-actions-loka" -f gh-actions-key
-```
+- **FTP Server** (ex: `ftpupload.net`)
+- **FTP Username** (ex: `if0_12345678`)
+- **FTP Password** (celui que tu as choisi ou qui t'a été donné)
 
-Ça crée deux fichiers : `gh-actions-key` (clé **privée** — ira dans un
-secret GitHub) et `gh-actions-key.pub` (clé **publique** — ira sur le
-serveur). Garde les deux sous la main pour les étapes suivantes.
+Note ces 3 valeurs — elles vont dans les secrets GitHub (étape 5).
 
-## Étape 3 — Provisionner le serveur
+## Étape 3 — Créer la base de données
 
-Connecte-toi au serveur avec la clé Oracle de l'étape 1 :
+Dans le vPanel, section **MySQL Databases** :
 
-```bash
-ssh ubuntu@<IP_PUBLIQUE>
-```
+1. Crée une nouvelle base (note le nom généré, ex: `if0_12345678_loka`).
+2. Note aussi : **nom d'utilisateur MySQL**, **mot de passe**, et surtout
+   l'**hôte MySQL** (souvent différent du serveur FTP, ex: `sql200.infinityfree.com`
+   — c'est indiqué dans le vPanel).
+3. Ouvre **phpMyAdmin** (lien disponible dans le vPanel), sélectionne ta base,
+   onglet **Importer**, et importe le fichier
+   `database/schema/loka_database_mysql.sql` de ce dépôt (schéma + données de
+   référence uniquement — rôles, types de biens, etc. — pas de faux comptes).
 
-Récupère le script de provisionnement (le repo n'est pas encore cloné sur
-le serveur à ce stade, donc on le télécharge directement) :
+## Étape 4 — Choisir la version PHP
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/bry237/LOKA/main/deploy/provision.sh -o provision.sh
-sudo bash provision.sh
-```
-
-Le script va te demander, dans l'ordre :
-1. De coller le contenu de `gh-actions-key.pub` (étape 2).
-2. D'ajouter une **Deploy Key** sur GitHub (il t'affiche la clé à coller
-   dans https://github.com/bry237/LOKA/settings/keys — coche "Allow write
-   access" **décoché**, lecture seule suffit).
-3. Un mot de passe pour l'utilisateur MySQL applicatif (`loka_app`) —
-   choisis-en un et note-le, tu en auras besoin à l'étape suivante.
-
-À la fin, le script t'affiche un résumé avec les prochaines étapes.
-
-## Étape 4 — Configurer les variables d'environnement du serveur
-
-```bash
-sudo nano /etc/apache2/sites-available/loka.conf
-```
-
-Remplace `LOKA_DB_PASSWORD CHANGE-MOI` par le mot de passe choisi à
-l'étape 3. Laisse `SMS_PROVIDER log` tel quel pour l'instant (voir
-mémoire projet : l'envoi SMS réel via Vonage est bloqué tant que le
-compte n'est pas vérifié avec un numéro acheté — pas bloquant pour le
-déploiement). Si tu as des clés Stripe à activer, décommente et
-renseigne les lignes `STRIPE_*`.
-
-```bash
-sudo systemctl reload apache2
-```
-
-Teste : `http://<IP_PUBLIQUE>/LOKA/` doit afficher la page d'accueil LOKA.
+Dans le vPanel, section **PHP Version** (parfois sous "Software" ou directement
+en haut du panneau) : choisis la version la plus récente disponible, idéalement
+**8.1 ou plus** (le projet est développé et testé en PHP 8.2).
 
 ## Étape 5 — Configurer les secrets GitHub Actions
 
 Sur https://github.com/bry237/LOKA/settings/secrets/actions, ajoute 3
-secrets (**New repository secret**) :
+secrets (**New repository secret**) avec les valeurs de l'étape 2 :
 
-| Nom               | Valeur                                              |
-|-------------------|------------------------------------------------------|
-| `SSH_HOST`        | l'IP publique du serveur                            |
-| `SSH_USER`        | `deploy`                                             |
-| `SSH_PRIVATE_KEY` | le contenu **complet** de `gh-actions-key` (la clé privée, pas `.pub`) |
+| Nom              | Valeur                          |
+|------------------|----------------------------------|
+| `FTP_SERVER`     | le serveur FTP (étape 2)        |
+| `FTP_USERNAME`   | l'utilisateur FTP (étape 2)     |
+| `FTP_PASSWORD`   | le mot de passe FTP (étape 2)   |
 
-## Étape 6 — Premier déploiement
+## Étape 6 — Configurer la connexion à la base (une seule fois, à la main)
+
+L'hébergeur ne permet pas de définir des variables d'environnement serveur de
+façon fiable (pas d'accès SSH, et `SetEnv` dans `.htaccess` ne remonte pas
+toujours jusqu'à PHP selon le mode d'exécution utilisé par l'hébergeur). À la
+place, `config/database.php` et `config/services.php` chargent un fichier
+`config/env.local.php` s'il existe — ce fichier n'est **jamais** versionné ni
+envoyé par le pipeline automatique, tu l'uploades toi-même **une seule fois** :
+
+1. Sur ta machine, copie `config/env.local.php.example` vers
+   `config/env.local.php` et remplis les vraies valeurs (celles de l'étape 3
+   pour la base de données).
+2. Connecte-toi en FTP (avec FileZilla par exemple, identifiants de l'étape 2)
+   et dépose ce fichier unique dans `htdocs/LOKA/config/env.local.php`.
+
+Il restera en place à chaque déploiement automatique (le pipeline l'exclut
+explicitement de l'envoi, voir `.github/workflows/deploy.yml`).
+
+## Étape 7 — Premier déploiement
 
 Fusionne `odyssee` dans `main` (ou pousse directement sur `main`) :
 
@@ -124,54 +105,38 @@ git merge odyssee
 git push origin main
 ```
 
-Va dans l'onglet **Actions** du dépôt GitHub : le workflow "Déploiement
-LOKA" se lance automatiquement, lint puis déploie. À partir de maintenant,
+Va dans l'onglet **Actions** du dépôt GitHub : le workflow "Déploiement LOKA"
+se lance automatiquement, lint puis déploie par FTP. À partir de maintenant,
 **chaque push sur `main` redéploie automatiquement**.
 
----
-
-## (Optionnel) Nom de domaine + HTTPS gratuit
-
-Sans domaine, le site reste accessible en `http://<IP>/LOKA/` — ça
-fonctionne, mais sans HTTPS (gênant pour Stripe en production). Deux
-options gratuites :
-
-- **Tu as déjà un nom de domaine** : crée un enregistrement DNS de type `A`
-  pointant vers l'IP publique du serveur.
-- **Tu n'en as pas** : https://www.duckdns.org/ donne un sous-domaine
-  gratuit (`tonnom.duckdns.org`) sans carte bancaire, en 2 minutes.
-
-Puis sur le serveur :
-
-```bash
-sudo apt install certbot python3-certbot-apache
-sudo sed -i 's/CHANGE-MOI.example.com/tonnom.duckdns.org/' /etc/apache2/sites-available/loka.conf
-sudo systemctl reload apache2
-sudo certbot --apache -d tonnom.duckdns.org
-```
-
-Certbot configure le HTTPS et renouvelle automatiquement le certificat
-(gratuit, Let's Encrypt).
+Teste ensuite : `https://loka-app.infinityfreeapp.com/LOKA/` (remplace par ton
+sous-domaine — le HTTPS gratuit est généralement actif automatiquement, parfois
+avec quelques heures de délai sur un compte tout juste créé).
 
 ---
 
 ## Limites à connaître
 
-- **Pas de migrations automatiques de base de données.** Ce projet n'a pas
-  d'outil de migration (voir mémoire projet : un seul fichier de schéma
-  SQL, appliqué manuellement). Si tu modifies le schéma en local, il
-  faudra réappliquer le changement à la main sur la base de production
-  (`mysql -u loka_app -p loka < nouveau_fichier.sql` ou des `ALTER TABLE`
-  ciblés) — le pipeline ne déploie que le code PHP, jamais la structure de
-  la base.
-- **Les fichiers uploadés par les utilisateurs** (documents, photos,
-  quittances PDF, contrats) vivent directement sur le serveur, en dehors
-  de git (`storage/`, `uploads/`, `public/uploads/` — maintenant dans
-  `.gitignore`). Ils survivent aux déploiements (`deploy.sh` ne fait
-  jamais `git clean`), mais ne sont pas sauvegardés automatiquement —
-  pense à les copier (`rsync`/`scp`) de temps en temps si tu veux une
-  sauvegarde.
-- **Oracle Cloud Free Tier** a de vraies limites de capacité ("out of
-  host capacity" sur les shapes Ampere selon la région/le moment) mais
-  reste gratuit à vie une fois l'instance créée — ce n'est pas un essai
-  limité dans le temps comme AWS/GCP.
+- **Pas de migrations automatiques de base de données**, comme pour n'importe
+  quelle approche sans accès shell sur ce projet (voir mémoire projet : un seul
+  fichier de schéma SQL, pas d'outil de migration). Si tu modifies le schéma en
+  local, réimporte le changement à la main via phpMyAdmin.
+- **Pas d'accès ligne de commande** sur le serveur — tout ce qui nécessiterait
+  normalement du SSH (purge de cache, scripts ponctuels) doit passer par une
+  page PHP dédiée ou phpMyAdmin.
+- **Compte suspendu après ~30 jours d'inactivité** côté hébergeur : connecte-toi
+  de temps en temps au vPanel pour garder le compte actif.
+- **Les fichiers uploadés par les utilisateurs** (documents, photos, quittances
+  PDF, contrats — `storage/`, `uploads/`, `public/uploads/`, dans `.gitignore`)
+  vivent uniquement sur le serveur FTP, ne sont jamais écrasés par le pipeline
+  (`dangerous-clean-slate: false`), mais ne sont pas sauvegardés automatiquement
+  — pense à les télécharger de temps en temps en FTP si tu veux une sauvegarde.
+- **Ressources partagées** : hébergement mutualisé, performances correctes pour
+  une démo/un petit usage mais pas pour un trafic important.
+
+## Si tu retrouves un moyen de payer (ou qu'une carte finit par passer)
+
+Le dossier `deploy/` gardait avant une version SSH (Oracle Cloud Free Tier,
+gratuit à vie mais carte requise) — plus robuste (vrai serveur, vraie ligne de
+commande, migrations possibles). Dis-le-moi si tu veux qu'on la reprenne : elle
+n'a pas été supprimée de l'historique git, seulement retirée du dossier actif.

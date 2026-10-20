@@ -26,15 +26,39 @@ jobs:
         run: composer install --no-dev --prefer-dist --no-progress
 
   deploy:
-    name: Déploiement sur le serveur
+    name: Déploiement FTP
     needs: lint
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: Connexion SSH et exécution de deploy.sh
-        uses: appleboy/ssh-action@v1.0.3
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: bash /var/www/LOKA/deploy/deploy.sh
+          php-version: "8.2"
+          tools: composer
+
+      # L'hébergeur mutualisé n'a pas Composer (pas d'accès shell) : on construit
+      # vendor/ ici, dans le pipeline, puis on l'envoie avec le reste par FTP.
+      - name: Installation des dépendances Composer
+        run: composer install --no-dev --prefer-dist --no-progress --optimize-autoloader
+
+      - name: Déploiement FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          server-dir: /htdocs/LOKA/
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            **/.github/**/*
+            deploy/**
+            database/backups/**
+            config/env.local.php
+            config/env.local.php.example
