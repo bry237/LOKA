@@ -15,7 +15,7 @@
     margin-left: 250px;
     padding: 35px;
     min-height: 100vh;
-    background: #f4f7f8;
+    background: var(--background);
 }
 
 
@@ -443,7 +443,7 @@ tbody tr:hover {
 }
 
 .revenus-table thead {
-    background: #f4f7f8;
+    background: var(--background);
 }
 
 .revenus-table th {
@@ -620,7 +620,7 @@ tbody tr:hover {
 }
 
 .reset-button:hover {
-    background: #f4f7f8;
+    background: var(--background);
 }
 
 

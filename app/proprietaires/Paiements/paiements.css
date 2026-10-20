@@ -15,7 +15,7 @@
     margin-left: 250px;
     padding: 35px;
     min-height: 100vh;
-    background: #f4f7f8;
+    background: var(--background);
 }
 
 

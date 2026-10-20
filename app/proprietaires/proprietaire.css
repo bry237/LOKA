@@ -104,7 +104,9 @@ margin-bottom:35px;
 }
 
 .topbar h1{
-font-size:32px;
+font-size:28px;
+font-family:Georgia,serif;
+font-weight:700;
 color:var(--heading);
 }
 
