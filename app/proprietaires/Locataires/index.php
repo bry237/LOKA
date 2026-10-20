@@ -30,7 +30,7 @@ function contratStatutBadge(?string $statut): array
         'DRAFT' => ['Brouillon', 'attente'],
         'RENEWED' => ['Renouvelé', 'actif'],
         'EXPIRED' => ['Expiré', 'inactif'],
-        'TERMINATED', 'TERMINATED_EARLY' => ['Résilié', 'suspendu'],
+        'TERMINATED' => ['Résilié', 'suspendu'],
         default => ['Non renseigné', 'inactif'],
     };
 }
