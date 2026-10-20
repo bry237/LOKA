@@ -53,6 +53,20 @@ final class LocataireController
         return $this->model->searchAvailableHousing($filters);
     }
 
+    public function getHousingDetail(int $idBien): ?array
+    {
+        Authorization::requireRole('Locataire');
+
+        $housing = $this->model->findAvailableHousingDetail($idBien);
+        if (!$housing) {
+            return null;
+        }
+
+        $housing['images'] = $this->model->findHousingImages($idBien);
+
+        return $housing;
+    }
+
     public function getDonneesQuittance(int $idPaiement): ?array
 {
     $locataire = $this->getCurrentLocataire();

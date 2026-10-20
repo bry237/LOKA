@@ -36,6 +36,14 @@ $filters = [
 
 $logements = $controller->searchHousing($filters);
 
+$hasAdvancedFilters = (bool) (
+    $filters['balcon'] || $filters['terrasse'] || $filters['jardin'] || $filters['piscine']
+    || $filters['ascenseur'] || $filters['chauffage_sol'] || $filters['acces_pmr']
+    || $filters['meuble'] || $filters['exposition'] || $filters['chauffage']
+    || $filters['climatisation'] || $filters['etat_bien'] || $filters['classe_energetique']
+    || $filters['type_vendeur']
+);
+
 function e(?string $value): string
 {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
@@ -109,102 +117,108 @@ require dirname(__DIR__, 2) . '/layouts/header.php';
             <label for="surface_min">Surface minimum</label>
             <input type="number" id="surface_min" name="surface_min" value="<?= e($filters['surface_min']) ?>" min="0" placeholder="m²">
           </div>
-
-          <div class="form-section-title">Caractéristiques du logement</div>
-          <div class="form-field span-2" style="grid-column:span 3;">
-            <div style="display:flex;flex-wrap:wrap;gap:16px;">
-              <label class="filter-checkbox"><input type="checkbox" name="balcon" value="1" <?= checked($filters['balcon']) ?>><span>Balcon</span></label>
-              <label class="filter-checkbox"><input type="checkbox" name="terrasse" value="1" <?= checked($filters['terrasse']) ?>><span>Terrasse</span></label>
-              <label class="filter-checkbox"><input type="checkbox" name="jardin" value="1" <?= checked($filters['jardin']) ?>><span>Jardin</span></label>
-              <label class="filter-checkbox"><input type="checkbox" name="piscine" value="1" <?= checked($filters['piscine']) ?>><span>Piscine</span></label>
-              <label class="filter-checkbox"><input type="checkbox" name="ascenseur" value="1" <?= checked($filters['ascenseur']) ?>><span>Ascenseur</span></label>
-              <label class="filter-checkbox"><input type="checkbox" name="chauffage_sol" value="1" <?= checked($filters['chauffage_sol']) ?>><span>Chauffage au sol</span></label>
-              <label class="filter-checkbox"><input type="checkbox" name="acces_pmr" value="1" <?= checked($filters['acces_pmr']) ?>><span>Accès PMR</span></label>
-            </div>
-          </div>
-
-          <div class="form-field">
-            <label for="meuble">Meublé</label>
-            <select id="meuble" name="meuble">
-              <option value="">Peu importe</option>
-              <option value="OUI" <?= selected('OUI', $filters['meuble']) ?>>Oui</option>
-              <option value="NON" <?= selected('NON', $filters['meuble']) ?>>Non</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label for="exposition">Exposition</label>
-            <select id="exposition" name="exposition">
-              <option value="">Peu importe</option>
-              <option value="NORD" <?= selected('NORD', $filters['exposition']) ?>>Nord</option>
-              <option value="SUD" <?= selected('SUD', $filters['exposition']) ?>>Sud</option>
-              <option value="EST" <?= selected('EST', $filters['exposition']) ?>>Est</option>
-              <option value="OUEST" <?= selected('OUEST', $filters['exposition']) ?>>Ouest</option>
-              <option value="NORD_OUEST" <?= selected('NORD_OUEST', $filters['exposition']) ?>>Nord-Ouest</option>
-              <option value="NORD_EST" <?= selected('NORD_EST', $filters['exposition']) ?>>Nord-Est</option>
-              <option value="SUD_EST" <?= selected('SUD_EST', $filters['exposition']) ?>>Sud-Est</option>
-              <option value="SUD_OUEST" <?= selected('SUD_OUEST', $filters['exposition']) ?>>Sud-Ouest</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label for="chauffage">Chauffage</label>
-            <select id="chauffage" name="chauffage">
-              <option value="">Peu importe</option>
-              <option value="INDIVIDUEL" <?= selected('INDIVIDUEL', $filters['chauffage']) ?>>Individuel</option>
-              <option value="COLLECTIF" <?= selected('COLLECTIF', $filters['chauffage']) ?>>Collectif</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label for="climatisation">Climatisation</label>
-            <select id="climatisation" name="climatisation">
-              <option value="">Peu importe</option>
-              <option value="OUI" <?= selected('OUI', $filters['climatisation']) ?>>Oui</option>
-              <option value="NON" <?= selected('NON', $filters['climatisation']) ?>>Non</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label for="etat_bien">État du bien</label>
-            <select id="etat_bien" name="etat_bien">
-              <option value="">Peu importe</option>
-              <option value="TRES_BON" <?= selected('TRES_BON', $filters['etat_bien']) ?>>Très bon état</option>
-              <option value="BON" <?= selected('BON', $filters['etat_bien']) ?>>Bon état</option>
-              <option value="RENOVER" <?= selected('RENOVER', $filters['etat_bien']) ?>>À rénover</option>
-              <option value="TRAVAUX_A_VENIR" <?= selected('TRAVAUX_A_VENIR', $filters['etat_bien']) ?>>Travaux à venir</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label for="classe_energetique">Classe énergétique</label>
-            <select id="classe_energetique" name="classe_energetique">
-              <option value="">Toutes les classes</option>
-              <option value="A" <?= selected('A', $filters['classe_energetique']) ?>>A</option>
-              <option value="B" <?= selected('B', $filters['classe_energetique']) ?>>B</option>
-              <option value="C" <?= selected('C', $filters['classe_energetique']) ?>>C</option>
-              <option value="D" <?= selected('D', $filters['classe_energetique']) ?>>D</option>
-              <option value="E" <?= selected('E', $filters['classe_energetique']) ?>>E</option>
-              <option value="F" <?= selected('F', $filters['classe_energetique']) ?>>F</option>
-              <option value="G" <?= selected('G', $filters['classe_energetique']) ?>>G</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label for="type_vendeur">Type de vendeur</label>
-            <select id="type_vendeur" name="type_vendeur">
-              <option value="">Peu importe</option>
-              <option value="PARTICULIER" <?= selected('PARTICULIER', $filters['type_vendeur']) ?>>Particulier</option>
-              <option value="PROFESSIONNEL" <?= selected('PROFESSIONNEL', $filters['type_vendeur']) ?>>Professionnel</option>
-            </select>
-          </div>
-
-          <div class="form-section-title">Trier les résultats</div>
           <div class="form-field">
             <label for="tri">Trier par</label>
             <select id="tri" name="tri">
-              <option value="">Pertinence</option>
-              <option value="recent" <?= selected('recent', $filters['tri']) ?>>Plus récentes</option>
+              <option value="">Plus récentes</option>
               <option value="ancien" <?= selected('ancien', $filters['tri']) ?>>Plus anciennes</option>
               <option value="prix_croissant" <?= selected('prix_croissant', $filters['tri']) ?>>Prix croissant</option>
               <option value="prix_decroissant" <?= selected('prix_decroissant', $filters['tri']) ?>>Prix décroissant</option>
             </select>
           </div>
         </div>
+
+        <details class="filters-advanced"<?= $hasAdvancedFilters ? ' open' : '' ?>>
+          <summary>
+            Plus de critères
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="form-grid cols-3">
+            <div class="form-section-title">Caractéristiques du logement</div>
+            <div class="form-field span-2" style="grid-column:span 3;">
+              <div style="display:flex;flex-wrap:wrap;gap:16px;">
+                <label class="filter-checkbox"><input type="checkbox" name="balcon" value="1" <?= checked($filters['balcon']) ?>><span>Balcon</span></label>
+                <label class="filter-checkbox"><input type="checkbox" name="terrasse" value="1" <?= checked($filters['terrasse']) ?>><span>Terrasse</span></label>
+                <label class="filter-checkbox"><input type="checkbox" name="jardin" value="1" <?= checked($filters['jardin']) ?>><span>Jardin</span></label>
+                <label class="filter-checkbox"><input type="checkbox" name="piscine" value="1" <?= checked($filters['piscine']) ?>><span>Piscine</span></label>
+                <label class="filter-checkbox"><input type="checkbox" name="ascenseur" value="1" <?= checked($filters['ascenseur']) ?>><span>Ascenseur</span></label>
+                <label class="filter-checkbox"><input type="checkbox" name="chauffage_sol" value="1" <?= checked($filters['chauffage_sol']) ?>><span>Chauffage au sol</span></label>
+                <label class="filter-checkbox"><input type="checkbox" name="acces_pmr" value="1" <?= checked($filters['acces_pmr']) ?>><span>Accès PMR</span></label>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="meuble">Meublé</label>
+              <select id="meuble" name="meuble">
+                <option value="">Peu importe</option>
+                <option value="OUI" <?= selected('OUI', $filters['meuble']) ?>>Oui</option>
+                <option value="NON" <?= selected('NON', $filters['meuble']) ?>>Non</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="exposition">Exposition</label>
+              <select id="exposition" name="exposition">
+                <option value="">Peu importe</option>
+                <option value="NORD" <?= selected('NORD', $filters['exposition']) ?>>Nord</option>
+                <option value="SUD" <?= selected('SUD', $filters['exposition']) ?>>Sud</option>
+                <option value="EST" <?= selected('EST', $filters['exposition']) ?>>Est</option>
+                <option value="OUEST" <?= selected('OUEST', $filters['exposition']) ?>>Ouest</option>
+                <option value="NORD_OUEST" <?= selected('NORD_OUEST', $filters['exposition']) ?>>Nord-Ouest</option>
+                <option value="NORD_EST" <?= selected('NORD_EST', $filters['exposition']) ?>>Nord-Est</option>
+                <option value="SUD_EST" <?= selected('SUD_EST', $filters['exposition']) ?>>Sud-Est</option>
+                <option value="SUD_OUEST" <?= selected('SUD_OUEST', $filters['exposition']) ?>>Sud-Ouest</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="chauffage">Chauffage</label>
+              <select id="chauffage" name="chauffage">
+                <option value="">Peu importe</option>
+                <option value="INDIVIDUEL" <?= selected('INDIVIDUEL', $filters['chauffage']) ?>>Individuel</option>
+                <option value="COLLECTIF" <?= selected('COLLECTIF', $filters['chauffage']) ?>>Collectif</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="climatisation">Climatisation</label>
+              <select id="climatisation" name="climatisation">
+                <option value="">Peu importe</option>
+                <option value="OUI" <?= selected('OUI', $filters['climatisation']) ?>>Oui</option>
+                <option value="NON" <?= selected('NON', $filters['climatisation']) ?>>Non</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="etat_bien">État du bien</label>
+              <select id="etat_bien" name="etat_bien">
+                <option value="">Peu importe</option>
+                <option value="TRES_BON" <?= selected('TRES_BON', $filters['etat_bien']) ?>>Très bon état</option>
+                <option value="BON" <?= selected('BON', $filters['etat_bien']) ?>>Bon état</option>
+                <option value="RENOVER" <?= selected('RENOVER', $filters['etat_bien']) ?>>À rénover</option>
+                <option value="TRAVAUX_A_VENIR" <?= selected('TRAVAUX_A_VENIR', $filters['etat_bien']) ?>>Travaux à venir</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="classe_energetique">Classe énergétique</label>
+              <select id="classe_energetique" name="classe_energetique">
+                <option value="">Toutes les classes</option>
+                <option value="A" <?= selected('A', $filters['classe_energetique']) ?>>A</option>
+                <option value="B" <?= selected('B', $filters['classe_energetique']) ?>>B</option>
+                <option value="C" <?= selected('C', $filters['classe_energetique']) ?>>C</option>
+                <option value="D" <?= selected('D', $filters['classe_energetique']) ?>>D</option>
+                <option value="E" <?= selected('E', $filters['classe_energetique']) ?>>E</option>
+                <option value="F" <?= selected('F', $filters['classe_energetique']) ?>>F</option>
+                <option value="G" <?= selected('G', $filters['classe_energetique']) ?>>G</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="type_vendeur">Type de vendeur</label>
+              <select id="type_vendeur" name="type_vendeur">
+                <option value="">Peu importe</option>
+                <option value="PARTICULIER" <?= selected('PARTICULIER', $filters['type_vendeur']) ?>>Particulier</option>
+                <option value="PROFESSIONNEL" <?= selected('PROFESSIONNEL', $filters['type_vendeur']) ?>>Professionnel</option>
+              </select>
+            </div>
+          </div>
+        </details>
+
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">Rechercher</button>
           <a href="recherche.php" class="btn">Réinitialiser</a>
@@ -271,7 +285,7 @@ require dirname(__DIR__, 2) . '/layouts/header.php';
 
               <div class="result-card-footer">
                 <span>Charges : <?= number_format((float) $logement['charges'], 0, ',', ' ') ?> €</span>
-                <a href="../biens/detail.php?id=<?= (int) $logement['id_bien'] ?>" class="btn btn-primary btn-sm">Voir le logement</a>
+                <a href="biens/detail.php?id=<?= (int) $logement['id_bien'] ?>" class="btn btn-primary btn-sm">Voir le logement</a>
               </div>
             </div>
           </article>

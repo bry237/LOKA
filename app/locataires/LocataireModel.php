@@ -146,6 +146,16 @@ final class LocataireModel extends Model
         return $housing ?: null;
     }
 
+    /**
+     * Recherche publique de logements disponibles (onglet "Recherche" du locataire).
+     *
+     * Deux bugs corrigés ici : (1) il manquait un WHERE de base, donc tous les biens
+     * étaient renvoyés (loués/archivés compris), pas seulement ceux à louer ; (2) les
+     * filtres étaient concaténés avec "AND" sans WHERE préalable — comme ils suivaient
+     * directement un LEFT JOIN, ils finissaient greffés sur la condition ON de ce JOIN
+     * (toujours syntaxiquement valide en SQL) au lieu de filtrer les lignes, donc aucun
+     * filtre autre que "ville" n'avait d'effet réel.
+     */
     public function searchAvailableHousing(array $filters = []): array
     {
         $sql = "
@@ -160,21 +170,34 @@ final class LocataireModel extends Model
             b.charges,
             b.caution,
             b.description,
+            b.meuble,
+            b.climatisation,
+            b.balcon,
+            b.terrasse,
+            b.jardin,
+            b.piscine,
+            b.ascenseur,
+            b.chauffage_sol,
+            b.acces_pmr,
             tb.nom AS type_bien,
             a.ligne1,
             a.code_postal,
             a.ville,
             a.region,
             a.pays,
-            bi.image_url
+            (
+                SELECT bi.image_url FROM bien_image bi
+                WHERE bi.id_bien = b.id_bien
+                ORDER BY bi.est_principale DESC, bi.ordre ASC
+                LIMIT 1
+            ) AS image_url
         FROM bien b
         INNER JOIN type_bien tb
             ON tb.id_type_bien = b.id_type_bien
         INNER JOIN adresse a
             ON a.id_adresse = b.id_adresse
-        LEFT JOIN bien_image bi
-            ON bi.id_bien = b.id_bien
-            AND bi.est_principale = 1
+        WHERE b.statut = 'AVAILABLE'
+          AND b.deleted_at IS NULL
         ";
 
         $params = [];
@@ -209,14 +232,73 @@ final class LocataireModel extends Model
             $params['surface_min'] = (float) $filters['surface_min'];
         }
 
-        $sql .= "
-            ORDER BY b.created_at DESC
-        ";
+        foreach (['balcon', 'terrasse', 'jardin', 'piscine', 'ascenseur', 'chauffage_sol', 'acces_pmr'] as $feature) {
+            if (!empty($filters[$feature])) {
+                $sql .= " AND b.$feature = 1";
+            }
+        }
+
+        foreach (['meuble', 'exposition', 'chauffage', 'climatisation', 'etat_bien', 'classe_energetique', 'type_vendeur'] as $field) {
+            if (!empty($filters[$field])) {
+                $sql .= " AND b.$field = :$field";
+                $params[$field] = $filters[$field];
+            }
+        }
+
+        $sql .= match ($filters['tri'] ?? '') {
+            'ancien' => ' ORDER BY b.created_at ASC',
+            'prix_croissant' => ' ORDER BY b.loyer ASC',
+            'prix_decroissant' => ' ORDER BY b.loyer DESC',
+            default => ' ORDER BY b.created_at DESC',
+        };
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
 
         return $stmt->fetchAll();
+    }
+
+    /**
+     * Fiche détaillée d'une annonce publique (page "leboncoin-like" du locataire) :
+     * uniquement un bien AVAILABLE, pour ne pas exposer un logement déjà loué.
+     */
+    public function findAvailableHousingDetail(int $idBien): ?array
+    {
+        $sql = "
+            SELECT
+                b.id_bien, b.reference, b.titre, b.surface, b.nombre_pieces, b.etage,
+                b.loyer, b.charges, b.caution, b.description, b.statut,
+                b.acces_pmr, b.ascenseur, b.balcon, b.chauffage, b.chauffage_sol,
+                b.classe_energetique, b.climatisation, b.etat_bien, b.exposition,
+                b.jardin, b.meuble, b.piscine, b.terrasse, b.type_vendeur,
+                b.date_disponibilite, b.dpe_classe, b.ges_classe,
+                tb.nom AS type_bien,
+                a.ligne1, a.ligne2, a.code_postal, a.ville, a.region, a.pays,
+                ag.nom AS agence_nom, ag.telephone AS agence_telephone, ag.email AS agence_email
+            FROM bien b
+            INNER JOIN type_bien tb ON tb.id_type_bien = b.id_type_bien
+            INNER JOIN adresse a ON a.id_adresse = b.id_adresse
+            INNER JOIN agence ag ON ag.id_agence = b.id_agence
+            WHERE b.id_bien = :id_bien
+              AND b.statut = 'AVAILABLE'
+              AND b.deleted_at IS NULL
+            LIMIT 1
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id_bien' => $idBien]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
+    public function findHousingImages(int $idBien): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT image_url FROM bien_image WHERE id_bien = :id_bien ORDER BY est_principale DESC, ordre ASC'
+        );
+        $stmt->execute(['id_bien' => $idBien]);
+
+        return array_column($stmt->fetchAll(), 'image_url');
     }
 
     public function findDonneesQuittance(int $idPaiement, int $idLocataire): ?array

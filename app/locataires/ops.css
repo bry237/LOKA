@@ -108,29 +108,60 @@
   }
   .filter-checkbox input{width:16px;height:16px;flex-shrink:0;cursor:pointer;accent-color:var(--primary);}
 
+  /* ---------- Bloc "Plus de critères" repliable (recherche) ---------- */
+  .filters-advanced{margin-top:6px;border-top:1px solid var(--border);}
+  .filters-advanced summary{
+    cursor:pointer;font-size:13px;font-weight:700;color:var(--primary);
+    list-style:none;display:inline-flex;align-items:center;gap:6px;padding:14px 18px;
+    user-select:none;
+  }
+  .filters-advanced summary::-webkit-details-marker{display:none;}
+  .filters-advanced summary svg{width:13px;height:13px;transition:transform .15s;flex-shrink:0;}
+  .filters-advanced[open] summary svg{transform:rotate(180deg);}
+  .filters-advanced .form-grid{padding-top:0;}
+
   /* ---------- Grille de résultats (recherche de logement) ---------- */
-  .result-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;}
-  @media (max-width:900px){ .result-grid{grid-template-columns:1fr;} }
+  .result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  @media (max-width:1150px){ .result-grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:700px){ .result-grid{grid-template-columns:1fr;} }
   .result-card-image{
-    width:100%;height:190px;border-radius:var(--radius-lg) var(--radius-lg) 0 0;overflow:hidden;
+    width:100%;height:170px;border-radius:var(--radius-lg) var(--radius-lg) 0 0;overflow:hidden;
     background:#EEF3F3;color:#8AA0A0;
     display:flex;align-items:center;justify-content:center;
   }
   .result-card-image img{width:100%;height:100%;object-fit:cover;display:block;}
-  .result-card-body{padding:18px;}
+  .result-card-body{padding:16px;}
   .result-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
   .result-type{font-size:10.5px;font-weight:700;letter-spacing:.04em;color:var(--primary);text-transform:uppercase;}
-  .result-card-body h3{margin:2px 0 0;font-size:15px;color:var(--heading);}
-  .result-price{font-size:17px;font-weight:800;color:var(--heading);white-space:nowrap;text-align:right;}
+  .result-card-body h3{margin:2px 0 0;font-size:14.5px;color:var(--heading);line-height:1.3;}
+  .result-price{font-size:16px;font-weight:800;color:var(--heading);white-space:nowrap;text-align:right;}
   .result-price small{font-size:11px;font-weight:600;color:#8AA0A0;}
   .result-location{
     display:flex;align-items:center;gap:5px;margin:8px 0 0;font-size:12.5px;color:var(--text);
   }
-  .result-meta{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:12.5px;color:var(--text);}
+  .result-meta{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:12px;color:var(--text);}
   .result-meta span{display:inline-flex;align-items:center;gap:5px;}
-  .result-description{margin:10px 0 0;font-size:12.5px;color:var(--text);line-height:1.5;}
+  .result-description{
+    margin:10px 0 0;font-size:12.5px;color:var(--text);line-height:1.5;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
   .result-card-footer{
     display:flex;align-items:center;justify-content:space-between;gap:10px;
     margin-top:14px;padding-top:14px;border-top:1px solid var(--border);
+  }
+
+  /* ---------- Fiche détail d'une annonce (recherche > voir le logement) ---------- */
+  .listing-hero{
+    width:100%;height:360px;border-radius:var(--radius-lg);overflow:hidden;
+    background:#EEF3F3;color:#8AA0A0;
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:10px;
+  }
+  .listing-hero img{width:100%;height:100%;object-fit:cover;display:block;}
+  @media (max-width:700px){ .listing-hero{height:220px;} }
+  .listing-gallery{display:flex;gap:10px;margin-bottom:18px;overflow-x:auto;padding-bottom:2px;}
+  .listing-gallery img{
+    width:96px;height:72px;object-fit:cover;border-radius:8px;flex-shrink:0;
+    border:2px solid transparent;
   }
   .result-card-footer span{font-size:12px;color:#8AA0A0;}
