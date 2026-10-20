@@ -113,16 +113,21 @@ secrets (**New repository secret**) avec les valeurs de l'étape 2 :
 
 L'hébergeur ne permet pas de définir des variables d'environnement serveur de
 façon fiable (pas d'accès SSH, et `SetEnv` dans `.htaccess` ne remonte pas
-toujours jusqu'à PHP selon le mode d'exécution utilisé par l'hébergeur). À la
-place, `config/database.php` et `config/services.php` chargent un fichier
-`config/env.local.php` s'il existe — ce fichier n'est **jamais** versionné ni
-envoyé par le pipeline automatique, tu l'uploades toi-même **une seule fois** :
+toujours jusqu'à PHP selon le mode d'exécution utilisé par l'hébergeur ; sur
+InfinityFree, `putenv()` est carrément dans `disable_functions` — constaté en
+conditions réelles). À la place, `config/database.php` et `config/services.php`
+lisent (via `config/env.php`) un fichier `config/env.local.php` s'il existe —
+ce fichier **retourne un simple tableau PHP** (pas de `putenv()`, pour marcher
+même quand l'hébergeur le bloque) et n'est **jamais** versionné ni envoyé par
+le pipeline automatique : tu l'uploades toi-même **une seule fois** :
 
 1. Sur ta machine, copie `config/env.local.php.example` vers
    `config/env.local.php` et remplis les vraies valeurs (celles de l'étape 3
    pour la base de données).
 2. Connecte-toi en FTP (avec FileZilla par exemple, identifiants de l'étape 2)
-   et dépose ce fichier unique dans `htdocs/LOKA/config/env.local.php`.
+   et dépose ce fichier unique dans `htdocs/LOKA/config/env.local.php` — bien
+   au même niveau que les autres fichiers de `config/` (pas dans un sous-dossier
+   `config/config/`).
 
 Il restera en place à chaque déploiement automatique (le pipeline l'exclut
 explicitement de l'envoi, voir `.github/workflows/deploy.yml`).
