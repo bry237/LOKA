@@ -21,6 +21,12 @@ if (!file_exists($filePath)) {
 	exit('Fichier introuvable sur le serveur.');
 }
 
-header('Content-Type: text/html; charset=UTF-8');
+$download = ($_GET['download'] ?? '') === '1';
+$filename = 'quittance-' . preg_replace('/[^A-Za-z0-9_-]/', '-', (string) $quittance['numero']) . '.pdf';
+
+header('Content-Type: application/pdf');
+header('Content-Disposition: ' . ($download ? 'attachment' : 'inline') . '; filename="' . $filename . '"');
+header('Content-Length: ' . filesize($filePath));
 header('Cache-Control: private, max-age=0, must-revalidate');
 readfile($filePath);
+exit;
