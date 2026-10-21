@@ -156,7 +156,7 @@ $dpeLabels = ['A' => 'dpe-a', 'B' => 'dpe-b', 'C' => 'dpe-c', 'D' => 'dpe-d', 'E
 						<div class="photo-grid">
 							<?php foreach (array_slice($photos, 0, 4) as $photo): ?>
 								<div class="photo">
-									<img src="/LOKA/<?= htmlspecialchars($photo['chemin_stockage'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($photo['nom_fichier'], ENT_QUOTES, 'UTF-8') ?>">
+									<img src="/LOKA/public/<?= htmlspecialchars($photo['chemin_stockage'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($photo['nom_fichier'], ENT_QUOTES, 'UTF-8') ?>">
 									<div class="photo__body">
 										<?= $photo['est_principale'] ? '<span class="badge badge--available">Photo principale</span>' : '' ?>
 									</div>
