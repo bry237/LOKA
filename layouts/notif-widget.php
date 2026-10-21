@@ -10,8 +10,12 @@ declare(strict_types=1);
  */
 require_once __DIR__ . '/../core/Auth.php';
 $lkNotifCsrf = Auth::csrfToken();
+// 'bottom' (par défaut) ouvre le panneau vers le haut, pour un bouton placé en bas de page
+// (pied de sidebar). 'top' l'ouvre vers le bas, pour un bouton placé dans une barre du haut
+// (topbar) — voir app/jordan/layouts/sidebar-gestion.php.
+$lkNotifAnchor = $lkNotifAnchor ?? 'bottom';
 ?>
-<div class="lk-notif-wrap" data-csrf="<?= htmlspecialchars($lkNotifCsrf, ENT_QUOTES, 'UTF-8') ?>">
+<div class="lk-notif-wrap" data-csrf="<?= htmlspecialchars($lkNotifCsrf, ENT_QUOTES, 'UTF-8') ?>" data-anchor="<?= htmlspecialchars($lkNotifAnchor, ENT_QUOTES, 'UTF-8') ?>">
   <button type="button" class="lk-notif-btn" id="lkNotifBtn" aria-label="Notifications">
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     <span class="lk-notif-dot" id="lkNotifDot" hidden></span>
@@ -111,11 +115,16 @@ $lkNotifCsrf = Auth::csrfToken();
   function positionPanel() {
     var rect = btn.getBoundingClientRect();
     var width = panel.offsetWidth || 320;
-    var left = Math.min(rect.left, window.innerWidth - width - 12);
+    var left = Math.min(rect.right - width, window.innerWidth - width - 12);
     left = Math.max(left, 12);
     panel.style.left = left + 'px';
-    panel.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
-    panel.style.top = 'auto';
+    if (wrap.dataset.anchor === 'top') {
+      panel.style.top = (rect.bottom + 8) + 'px';
+      panel.style.bottom = 'auto';
+    } else {
+      panel.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+      panel.style.top = 'auto';
+    }
   }
   btn.addEventListener('click', function (e) {
     e.stopPropagation();

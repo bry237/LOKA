@@ -101,7 +101,6 @@ $currentPage = $currentPage ?? '';
 				<span class="sidebar__user-name"><?php if ($sidebarUser): ?><?= htmlspecialchars(($sidebarUser['prenom'] ?? '') . ' ' . ($sidebarUser['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?><?php else: ?>Agence immobilière<?php endif; ?></span>
 				<span class="sidebar__user-role">Espace gestionnaire</span>
 			</span>
-			<?php require dirname(__DIR__, 3) . '/layouts/notif-widget.php'; ?>
 		</div>
 		<a class="sidebar__logout" href="/LOKA/app/authentification/deconnexion.php">
 			<span class="nav__icon"><?= $icon['logout'] ?></span>
@@ -109,3 +108,31 @@ $currentPage = $currentPage ?? '';
 		</a>
 	</div>
 </aside>
+<?php
+// Le bouton de notifications vit dans la topbar de chaque page (pas la sidebar) : le widget est
+// rendu ici hors sidebar (dans un conteneur "hidden", pour ne pas apparaître un instant comme
+// un 3e enfant du flex ".app-shell" avant d'être déplacé), puis relocalisé en JS dans
+// ".topbar-right" (ou directement dans ".topbar" quand une page n'a pas de bloc de droite) —
+// chaque page du module Jordan construit sa propre topbar inline, donc ce déplacement générique
+// évite de dupliquer le bouton dans chaque fichier.
+$lkNotifAnchor = 'top';
+?>
+<div id="lkNotifHolder" hidden>
+<?php require dirname(__DIR__, 3) . '/layouts/notif-widget.php'; ?>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Exécuté après coup (DOMContentLoaded) : au moment où ce script s'exécute, la topbar de la
+  // page (imprimée après la sidebar dans le HTML) n'existe pas encore si on l'appelle tout de
+  // suite — d'où l'attente du chargement complet du document avant de déplacer le bouton.
+  var wrap = document.querySelector('.lk-notif-wrap');
+  var topbar = document.querySelector('header.topbar, .topbar');
+  if (!wrap || !topbar) return;
+  var right = topbar.querySelector('.topbar-right');
+  if (right) {
+    right.insertBefore(wrap, right.firstChild);
+  } else {
+    topbar.appendChild(wrap);
+  }
+});
+</script>
