@@ -144,7 +144,7 @@ final class BienValidator
 			return ['photo' => 'La photo doit peser au maximum 5 Mo.'];
 		}
 		$tmpPath = (string) ($file['tmp_name'] ?? '');
-		if (!is_uploaded_file($tmpPath) || @getimagesize($tmpPath) === false) {
+		if ($tmpPath === '' || !is_file($tmpPath) || @getimagesize($tmpPath) === false) {
 			return ['photo' => 'Le fichier envoyé n’est pas une image valide.'];
 		}
 		$mime = (new finfo(FILEINFO_MIME_TYPE))->file($tmpPath);

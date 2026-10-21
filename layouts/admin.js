@@ -317,14 +317,17 @@
       return Promise.all(reads);
     }
 
-    function submitModalForm(form) {
+    function submitModalForm(form, submitter) {
       const token = ++requestToken;
       modalDirty = true;
       setModalContent('<div class="modal-loading"><span class="modal-spinner"></span>Enregistrement…</div>');
       fileFieldsToBase64(form)
         .then((fileFields) => {
           const params = new URLSearchParams();
-          new FormData(form).forEach((value, key) => {
+          // Le bouton cliqué (ex. <button name="statut" value="ASSIGNED">) doit être passé
+          // explicitement à FormData : sans lui, son name/value est silencieusement omis et
+          // l'action correspondante n'est jamais envoyée au serveur.
+          new FormData(form, submitter).forEach((value, key) => {
             if (typeof value === 'string') params.append(key, value);
           });
           params.set('modal', '1');
@@ -374,7 +377,7 @@
     document.addEventListener('submit', (e) => {
       if (!e.target.closest('#modalBody')) return;
       e.preventDefault();
-      submitModalForm(e.target);
+      submitModalForm(e.target, e.submitter);
     });
 
     document.addEventListener('keydown', (e) => {

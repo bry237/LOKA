@@ -17,7 +17,9 @@ class RapportModel {
                 FROM paiement p
                 JOIN echeance e ON p.id_echeance = e.id_echeance
                 JOIN contrat c ON e.id_contrat = c.id_contrat
-                WHERE c.id_agence = :agence_id";
+                WHERE c.id_agence = :agence_id
+                  AND p.statut = 'PAID'
+                  AND p.date_paiement IS NOT NULL";
         
         $params = [':agence_id' => $agencyId];
 

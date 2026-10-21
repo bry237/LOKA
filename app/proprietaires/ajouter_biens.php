@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/core/Authorization.php';
 require_once dirname(__DIR__, 2) . '/core/Database.php';
+require_once dirname(__DIR__, 2) . '/core/UploadHelper.php';
 
 
 /*
@@ -670,10 +671,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $ordre = 1;
 
-        if (
-            isset($_FILES['photos'])
-            && is_array($_FILES['photos']['name'] ?? null)
-        ) {
+        $photosEnvoyees = UploadHelper::resolveMultiple('photos');
+
+        if ($photosEnvoyees !== []) {
 
             $formatsAutorises = [
                 'image/jpeg' => 'jpg',
@@ -686,23 +686,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
 
 
-            foreach (
-                $_FILES['photos']['tmp_name']
-                as $index => $tmpName
-            ) {
+            foreach ($photosEnvoyees as $photoFile) {
 
-                $error =
-                    $_FILES['photos']['error'][$index]
-                    ?? UPLOAD_ERR_NO_FILE;
-
-
-                /*
-                | Pas de fichier
-                */
-
-                if ($error === UPLOAD_ERR_NO_FILE) {
-                    continue;
-                }
+                $tmpName = (string) $photoFile['tmp_name'];
+                $error = (int) $photoFile['error'];
 
 
                 /*
@@ -721,7 +708,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 | Vérification du fichier
                 */
 
-                if (!is_uploaded_file($tmpName)) {
+                if ($tmpName === '' || !is_file($tmpName)) {
 
                     throw new Exception(
                         'Fichier photo invalide.'
@@ -733,11 +720,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 | Taille maximale : 5 Mo
                 */
 
-                $taille =
-                    (int) (
-                        $_FILES['photos']['size'][$index]
-                        ?? 0
-                    );
+                $taille = (int) $photoFile['size'];
 
                 if ($taille > 5 * 1024 * 1024) {
 
@@ -794,8 +777,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 | Déplacement physique
                 */
 
-                if (!move_uploaded_file(
-                    $tmpName,
+                if (!UploadHelper::store(
+                    $photoFile,
                     $destination
                 )) {
 
@@ -1446,6 +1429,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         method="POST"
         enctype="multipart/form-data"
         class="property-form"
+        data-upload-fallback
     >
 
         <input type="hidden" name="csrf_token" value="<?= e(Auth::csrfToken()) ?>">
@@ -2417,6 +2401,7 @@ if (photoUrlsInput) {
 }
 
 </script>
+<script src="/LOKA/public/assets/js/upload-fallback.js"></script>
 
 
 </body>

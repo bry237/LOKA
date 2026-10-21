@@ -120,7 +120,7 @@ require dirname(__DIR__, 2) . '/layouts/header.php';
           <div class="info-row"><span class="info-label">Jour d'échéance</span><span class="info-value"><?= e((string) $logement['jour_echeance']) ?></span></div>
         </div>
         <div class="form-actions">
-          <a href="../contrats/detail.php?id=<?= (int) $logement['id_contrat'] ?>" class="btn btn-primary">Consulter mon contrat</a>
+          <a href="contrats/detail.php?id=<?= (int) $logement['id_contrat'] ?>" class="btn btn-primary">Consulter mon contrat</a>
         </div>
       </div>
     </div>

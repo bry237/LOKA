@@ -256,13 +256,16 @@ final class ProprietaireModel extends Model
                 c.type_contrat, c.chemin_fichier_pdf,
                 b.id_bien, b.titre AS titre_bien, b.reference AS reference_bien,
                 l.nom AS locataire_nom, l.prenom AS locataire_prenom, l.email AS locataire_email, l.telephone AS locataire_telephone,
-                cs.statut AS statut_signature, cs.date_signature, cs.date_depot, cs.confirmation
+                cs.statut AS statut_signature, cs.date_signature, cs.date_depot, cs.confirmation,
+                ag.nom AS agence_nom, ad.ligne1 AS adresse_ligne1, ad.code_postal AS adresse_cp, ad.ville AS adresse_ville
             FROM contrat c
             INNER JOIN bien b ON b.id_bien = c.id_bien
             INNER JOIN bien_proprietaire bp ON bp.id_bien = b.id_bien
             LEFT JOIN contrat_locataire cl ON cl.id_contrat = c.id_contrat AND cl.titulaire_principal = 1
             LEFT JOIN locataire l ON l.id_locataire = cl.id_locataire
             LEFT JOIN contrat_signature cs ON cs.id_contrat = c.id_contrat AND cs.id_locataire = cl.id_locataire
+            LEFT JOIN agence ag ON ag.id_agence = c.id_agence
+            LEFT JOIN adresse ad ON ad.id_adresse = b.id_adresse
             WHERE c.id_contrat = :id_contrat
               AND bp.id_proprietaire = :id_proprietaire
               AND c.deleted_at IS NULL
@@ -485,6 +488,91 @@ final class ProprietaireModel extends Model
         $stmt->execute();
 
         return $stmt->fetchAll();
+    }
+
+    /** Locataires des biens du propriétaire (pour associer un document à l'un d'eux). */
+    public function getLocatairesDeMesBiens(int $idProprietaire): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT DISTINCT l.id_locataire, l.nom, l.prenom
+             FROM locataire l
+             INNER JOIN contrat_locataire cl ON cl.id_locataire = l.id_locataire
+             INNER JOIN contrat c ON c.id_contrat = cl.id_contrat
+             INNER JOIN bien_proprietaire bp ON bp.id_bien = c.id_bien
+             WHERE bp.id_proprietaire = :id AND l.deleted_at IS NULL
+             ORDER BY l.nom, l.prenom'
+        );
+        $stmt->execute(['id' => $idProprietaire]);
+
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Enregistre un document déjà stocké sur disque (chemin + métadonnées), associé au
+     * propriétaire et, éventuellement, à un de ses biens/contrats/locataires. Les identifiants
+     * optionnels sont revérifiés ici : jamais fait confiance à un id posté sans contrôle
+     * d'appartenance au propriétaire.
+     *
+     * @param array{id_type_document:int, id_bien:?int, id_contrat:?int, id_locataire:?int,
+     *     nom:string, nom_original:string, mime_type:string, taille_octets:int, chemin_stockage:string} $data
+     */
+    public function creerDocument(int $idProprietaire, array $data): int
+    {
+        $idBien = $data['id_bien'];
+        if ($idBien !== null) {
+            $check = $this->db->prepare('SELECT 1 FROM bien_proprietaire WHERE id_bien = :id_bien AND id_proprietaire = :id LIMIT 1');
+            $check->execute(['id_bien' => $idBien, 'id' => $idProprietaire]);
+            if (!$check->fetchColumn()) {
+                throw new RuntimeException('Ce bien ne vous appartient pas.');
+            }
+        }
+
+        $idContrat = $data['id_contrat'];
+        if ($idContrat !== null) {
+            $check = $this->db->prepare(
+                'SELECT 1 FROM contrat c INNER JOIN bien_proprietaire bp ON bp.id_bien = c.id_bien
+                 WHERE c.id_contrat = :id_contrat AND bp.id_proprietaire = :id LIMIT 1'
+            );
+            $check->execute(['id_contrat' => $idContrat, 'id' => $idProprietaire]);
+            if (!$check->fetchColumn()) {
+                throw new RuntimeException('Ce contrat ne vous appartient pas.');
+            }
+        }
+
+        $idLocataire = $data['id_locataire'];
+        if ($idLocataire !== null) {
+            $check = $this->db->prepare(
+                'SELECT 1 FROM contrat_locataire cl
+                 INNER JOIN contrat c ON c.id_contrat = cl.id_contrat
+                 INNER JOIN bien_proprietaire bp ON bp.id_bien = c.id_bien
+                 WHERE cl.id_locataire = :id_locataire AND bp.id_proprietaire = :id LIMIT 1'
+            );
+            $check->execute(['id_locataire' => $idLocataire, 'id' => $idProprietaire]);
+            if (!$check->fetchColumn()) {
+                throw new RuntimeException('Ce locataire n’est rattaché à aucun de vos biens.');
+            }
+        }
+
+        $stmt = $this->db->prepare(
+            'INSERT INTO document (id_type_document, id_bien, id_contrat, id_proprietaire, id_locataire,
+                nom, nom_original, mime_type, taille_octets, chemin_stockage, version)
+             VALUES (:id_type_document, :id_bien, :id_contrat, :id_proprietaire, :id_locataire,
+                :nom, :nom_original, :mime_type, :taille_octets, :chemin_stockage, 1)'
+        );
+        $stmt->execute([
+            'id_type_document' => $data['id_type_document'],
+            'id_bien' => $idBien,
+            'id_contrat' => $idContrat,
+            'id_proprietaire' => $idProprietaire,
+            'id_locataire' => $idLocataire,
+            'nom' => $data['nom'],
+            'nom_original' => $data['nom_original'],
+            'mime_type' => $data['mime_type'],
+            'taille_octets' => $data['taille_octets'],
+            'chemin_stockage' => $data['chemin_stockage'],
+        ]);
+
+        return (int) $this->db->lastInsertId();
     }
 
     /**
@@ -817,5 +905,109 @@ final class ProprietaireModel extends Model
         ]);
 
         return (int) $this->db->lastInsertId();
+    }
+
+    /** Biens du propriétaire éligibles à un nouveau contrat (pas de bien supprimé). */
+    public function getMesBiensPourContrat(int $idProprietaire): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT b.id_bien, b.titre, b.reference, b.id_agence, b.loyer, b.charges, b.caution
+             FROM bien b
+             INNER JOIN bien_proprietaire bp ON bp.id_bien = b.id_bien
+             WHERE bp.id_proprietaire = :id AND b.deleted_at IS NULL
+             ORDER BY b.titre'
+        );
+        $stmt->execute(['id' => $idProprietaire]);
+
+        return $stmt->fetchAll();
+    }
+
+    /** Locataires de l'agence qui gère les biens de ce propriétaire (pour l'associer à un contrat). */
+    public function getLocatairesDeLAgence(int $idAgence): array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT id_locataire, nom, prenom, email
+             FROM locataire
+             WHERE id_agence = :id_agence AND deleted_at IS NULL AND statut = 'ACTIVE'
+             ORDER BY nom, prenom"
+        );
+        $stmt->execute(['id_agence' => $idAgence]);
+
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Crée un contrat pour un bien du propriétaire et y associe un locataire comme titulaire
+     * principal, afin qu'il apparaisse immédiatement côté locataire (table contrat_locataire).
+     *
+     * @param array{id_bien:int, id_locataire:int, date_debut:string, date_fin:?string, loyer:float,
+     *     charges:float, depot_garantie:float, frequence_paiement:string, jour_echeance:int,
+     *     type_contrat:string} $data
+     */
+    public function creerContrat(int $idProprietaire, array $data): int
+    {
+        $stmt = $this->db->prepare(
+            'SELECT b.id_agence FROM bien b
+             INNER JOIN bien_proprietaire bp ON bp.id_bien = b.id_bien
+             WHERE b.id_bien = :id_bien AND bp.id_proprietaire = :id_proprietaire AND b.deleted_at IS NULL
+             LIMIT 1'
+        );
+        $stmt->execute(['id_bien' => $data['id_bien'], 'id_proprietaire' => $idProprietaire]);
+        $idAgence = $stmt->fetchColumn();
+        if (!$idAgence) {
+            throw new RuntimeException('Ce bien ne vous appartient pas.');
+        }
+        $idAgence = (int) $idAgence;
+
+        $locataireCheck = $this->db->prepare(
+            'SELECT 1 FROM locataire WHERE id_locataire = :id_locataire AND id_agence = :id_agence AND deleted_at IS NULL LIMIT 1'
+        );
+        $locataireCheck->execute(['id_locataire' => $data['id_locataire'], 'id_agence' => $idAgence]);
+        if (!$locataireCheck->fetchColumn()) {
+            throw new RuntimeException('Ce locataire n’appartient pas à l’agence qui gère ce bien.');
+        }
+
+        $numero = 'CT-' . date('Ymd-His') . '-' . strtoupper(bin2hex(random_bytes(3)));
+
+        $this->db->beginTransaction();
+        try {
+            $insertContrat = $this->db->prepare(
+                "INSERT INTO contrat (id_agence, id_bien, numero, date_debut, date_fin, loyer, charges,
+                    depot_garantie, frequence_paiement, jour_echeance, statut, type_contrat)
+                 VALUES (:id_agence, :id_bien, :numero, :date_debut, :date_fin, :loyer, :charges,
+                    :depot_garantie, :frequence_paiement, :jour_echeance, 'ACTIVE', :type_contrat)"
+            );
+            $insertContrat->execute([
+                'id_agence' => $idAgence,
+                'id_bien' => $data['id_bien'],
+                'numero' => $numero,
+                'date_debut' => $data['date_debut'],
+                'date_fin' => $data['date_fin'],
+                'loyer' => $data['loyer'],
+                'charges' => $data['charges'],
+                'depot_garantie' => $data['depot_garantie'],
+                'frequence_paiement' => $data['frequence_paiement'],
+                'jour_echeance' => $data['jour_echeance'],
+                'type_contrat' => $data['type_contrat'],
+            ]);
+            $idContrat = (int) $this->db->lastInsertId();
+
+            $insertLocataire = $this->db->prepare(
+                'INSERT INTO contrat_locataire (id_contrat, id_locataire, titulaire_principal, date_entree)
+                 VALUES (:id_contrat, :id_locataire, 1, :date_entree)'
+            );
+            $insertLocataire->execute([
+                'id_contrat' => $idContrat,
+                'id_locataire' => $data['id_locataire'],
+                'date_entree' => $data['date_debut'],
+            ]);
+
+            $this->db->commit();
+        } catch (Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+
+        return $idContrat;
     }
 }

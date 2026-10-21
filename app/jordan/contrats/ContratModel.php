@@ -164,20 +164,27 @@ class ContratModel {
     public function attachTenant(int $agencyId, int $contractId, array $input): void {
         if (!$this->find($agencyId, $contractId)) return;
 
-        $sql = "INSERT INTO contrat_locataire (id_contrat, id_locataire, titulaire_principal, date_entree, date_sortie) 
+        $sql = "INSERT INTO contrat_locataire (id_contrat, id_locataire, titulaire_principal, date_entree, date_sortie)
                 VALUES (:id_contrat, :id_locataire, :titulaire_principal, :date_entree, :date_sortie)
-                ON DUPLICATE KEY UPDATE 
-                titulaire_principal = :titulaire_principal, 
-                date_entree = :date_entree, 
-                date_sortie = :date_sortie";
+                ON DUPLICATE KEY UPDATE
+                titulaire_principal = :titulaire_principal_up,
+                date_entree = :date_entree_up,
+                date_sortie = :date_sortie_up";
+
+        $titulairePrincipal = $input['titulaire_principal'] ?? 0;
+        $dateEntree = $input['date_entree'] ?: null;
+        $dateSortie = $input['date_sortie'] ?: null;
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             ':id_contrat' => $contractId,
             ':id_locataire' => $input['id_locataire'],
-            ':titulaire_principal' => $input['titulaire_principal'] ?? 0,
-            ':date_entree' => $input['date_entree'] ?: null,
-            ':date_sortie' => $input['date_sortie'] ?: null
+            ':titulaire_principal' => $titulairePrincipal,
+            ':date_entree' => $dateEntree,
+            ':date_sortie' => $dateSortie,
+            ':titulaire_principal_up' => $titulairePrincipal,
+            ':date_entree_up' => $dateEntree,
+            ':date_sortie_up' => $dateSortie
         ]);
     }
 

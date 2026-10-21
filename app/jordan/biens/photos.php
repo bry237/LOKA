@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__, 3) . '/core/Authorization.php';
+require_once dirname(__DIR__, 3) . '/core/UploadHelper.php';
 require_once __DIR__ . '/BienValidator.php';
 require_once __DIR__ . '/BienModel.php';
 $user = Authorization::requireRole('Administrateur plateforme', 'Administrateur agence', 'Gestionnaire immobilier');
@@ -17,16 +18,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		try {
 			$action = $_POST['action'] ?? '';
 			if ($action === 'upload') {
-				$errors = BienValidator::photo($_FILES['photo'] ?? []);
+				$photoFile = UploadHelper::resolve('photo') ?? [];
+				$errors = BienValidator::photo($photoFile);
 				if ($errors === []) {
-					$mime = (new finfo(FILEINFO_MIME_TYPE))->file($_FILES['photo']['tmp_name']);
+					$mime = (new finfo(FILEINFO_MIME_TYPE))->file($photoFile['tmp_name']);
 					$extension = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'][$mime];
 					$filename = bin2hex(random_bytes(16)) . '.' . $extension;
 					$directory = dirname(__DIR__, 3) . '/public/uploads/photos';
 					if (!is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)) {
 						throw new RuntimeException('Le dossier de stockage des photos est indisponible.');
 					}
-					if (!move_uploaded_file($_FILES['photo']['tmp_name'], $directory . '/' . $filename)) {
+					if (!UploadHelper::store($photoFile, $directory . '/' . $filename)) {
 						throw new RuntimeException('Le stockage de la photo a échoué.');
 					}
 					$storedFile = $directory . '/' . $filename;
@@ -93,7 +95,7 @@ $csrfToken = Auth::csrfToken();
 			<section class="card">
 				<div class="card__header"><h2 class="card__title">Ajouter une photo</h2></div>
 				<div class="card__body">
-					<form method="post" enctype="multipart/form-data">
+					<form method="post" enctype="multipart/form-data" data-upload-fallback>
 						<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
 						<input type="hidden" name="action" value="upload">
 						<div class="form-grid">
@@ -141,5 +143,6 @@ $csrfToken = Auth::csrfToken();
 		</main>
 	</div>
 </div>
+<script src="/LOKA/public/assets/js/upload-fallback.js"></script>
 </body>
 </html>

@@ -63,7 +63,11 @@ final class ContratModel extends Model
                     cs.confirmation,
                     cs.date_signature,
                     cs.chemin_fichier_signe,
-                    cs.date_depot
+                    cs.date_depot,
+                    ag.nom AS agence_nom,
+                    ad.ligne1 AS adresse_ligne1,
+                    ad.code_postal AS adresse_cp,
+                    ad.ville AS adresse_ville
                 FROM contrat c
                 INNER JOIN contrat_locataire cl
                     ON cl.id_contrat = c.id_contrat
@@ -72,6 +76,10 @@ final class ContratModel extends Model
                 LEFT JOIN contrat_signature cs
                     ON cs.id_contrat = c.id_contrat
                     AND cs.id_locataire = cl.id_locataire
+                LEFT JOIN agence ag
+                    ON ag.id_agence = c.id_agence
+                LEFT JOIN adresse ad
+                    ON ad.id_adresse = b.id_adresse
                 WHERE c.id_contrat = :id_contrat
                   AND cl.id_locataire = :id_locataire
                   AND c.deleted_at IS NULL

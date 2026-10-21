@@ -1658,6 +1658,25 @@ HTML;
 		return $ok;
 	}
 
+	/** @return string|null Message d'erreur, ou null si l'affectation a réussi. */
+	public static function assignIntervention(int $idAgence, int $idIntervention, int $idTechnicien, int $idUtilisateur): ?string
+	{
+		$stmt = Database::connection()->prepare(
+			"SELECT 1 FROM utilisateur u INNER JOIN role r ON r.id_role = u.id_role
+			 WHERE u.id_utilisateur = :id AND u.id_agence = :id_agence AND r.nom = 'Technicien' AND u.deleted_at IS NULL"
+		);
+		$stmt->execute(['id' => $idTechnicien, 'id_agence' => $idAgence]);
+		if (!$stmt->fetchColumn()) {
+			return 'Ce membre de l’équipe n’est pas un technicien de votre agence.';
+		}
+
+		if (!MonAgenceModel::assignIntervention($idAgence, $idIntervention, $idTechnicien)) {
+			return 'Intervention introuvable pour votre agence.';
+		}
+		Logger::audit('UPDATE', 'intervention', $idIntervention, $idUtilisateur, $idAgence, null, ['id_utilisateur_assigne' => $idTechnicien]);
+		return null;
+	}
+
 	/** @return string|null Message d'erreur, ou null si l'opération a réussi. */
 	public static function closeIntervention(int $idAgence, int $idIntervention, array $input, int $idUtilisateur): ?string
 	{

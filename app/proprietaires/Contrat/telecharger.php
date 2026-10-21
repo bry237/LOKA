@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/ProprietaireController.php';
+require_once dirname(__DIR__, 3) . '/core/ContratPdf.php';
 
 function afficherErreur(string $message, int $code = 404): void
 {
@@ -51,7 +52,17 @@ try {
     $chemin = trim((string) ($contrat['chemin_fichier_pdf'] ?? ''));
 
     if ($chemin === '') {
-        afficherErreur('Le document du contrat n’a pas encore été ajouté par l’agence.');
+        // Aucun PDF déposé (contrat créé en ligne par l'agence ou le propriétaire) :
+        // on génère un résumé du contrat à la volée, comme pour les quittances.
+        $pdf = ContratPdf::generate($contrat);
+
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="contrat-' . (int) $contrat['id_contrat'] . '.pdf"');
+        header('Content-Length: ' . strlen($pdf));
+        header('X-Content-Type-Options: nosniff');
+
+        echo $pdf;
+        exit;
     }
 
     $racine = dirname(__DIR__, 3);

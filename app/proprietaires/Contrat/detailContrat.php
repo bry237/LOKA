@@ -76,6 +76,10 @@ require dirname(__DIR__, 3) . '/layouts/header.php';
       Retour à mes contrats
     </a>
 
+    <?php if (($_GET['success'] ?? '') === 'created'): ?>
+      <div class="feedback success">Contrat créé. Votre locataire peut maintenant le consulter depuis son espace.</div>
+    <?php endif; ?>
+
     <div class="detail-header">
       <div class="detail-identity">
         <div>

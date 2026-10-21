@@ -1800,6 +1800,17 @@ final class MonAgenceModel
 		return $stmt->rowCount() > 0;
 	}
 
+	/** Assigne l'intervention à un technicien de l'agence et passe son statut à ASSIGNED. */
+	public static function assignIntervention(int $idAgence, int $idIntervention, int $idTechnicien): bool
+	{
+		$stmt = Database::connection()->prepare(
+			"UPDATE intervention SET id_utilisateur_assigne = :id_technicien, statut = 'ASSIGNED', updated_at = NOW()
+			 WHERE id_intervention = :id AND id_agence = :id_agence"
+		);
+		$stmt->execute(['id_technicien' => $idTechnicien, 'id' => $idIntervention, 'id_agence' => $idAgence]);
+		return $stmt->rowCount() > 0;
+	}
+
 	public static function closeIntervention(int $idAgence, int $idIntervention, ?float $coutFinal, string $compteRendu): bool
 	{
 		$stmt = Database::connection()->prepare(

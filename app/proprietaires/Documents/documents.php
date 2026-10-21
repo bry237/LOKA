@@ -114,8 +114,16 @@ require dirname(__DIR__, 3) . '/layouts/header.php';
       <a href="documents.php" class="btn btn-sm">Réinitialiser</a>
     </form>
 
+    <?php if (($_GET['success'] ?? '') === 'added'): ?>
+      <div class="feedback success">Document ajouté.</div>
+    <?php endif; ?>
+
     <div class="panel table-panel">
-      <div class="panel-header"><div class="panel-title">Documents</div><span style="font-size:12px;color:var(--text);"><?= count($documents) ?> document<?= count($documents) > 1 ? 's' : '' ?> trouvé<?= count($documents) > 1 ? 's' : '' ?></span></div>
+      <div class="panel-header">
+        <div class="panel-title">Documents</div>
+        <span style="font-size:12px;color:var(--text);"><?= count($documents) ?> document<?= count($documents) > 1 ? 's' : '' ?> trouvé<?= count($documents) > 1 ? 's' : '' ?></span>
+        <a href="ajouterDocument.php" class="btn btn-primary" style="margin-left:auto;">+ Ajouter un document</a>
+      </div>
       <?php if (empty($documents)): ?>
         <div class="empty-state" style="padding:48px 20px;">
           <div class="empty-state-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg></div>

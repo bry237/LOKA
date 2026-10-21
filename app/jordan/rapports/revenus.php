@@ -75,7 +75,7 @@ $moyenneMensuelle = count($data) > 0 ? $totalEncaisse / count($data) : 0;
                     <tbody>
                         <?php foreach($data as $row): ?>
                         <tr>
-                            <td><?= htmlspecialchars($row['mois'], ENT_QUOTES) ?></td>
+                            <td><?= htmlspecialchars($row['mois'] ?? '—', ENT_QUOTES) ?></td>
                             <td><?= number_format((float)$row['total_encaisse'], 2, ',', ' ') ?> €</td>
                             <td><?= htmlspecialchars((string)$row['nb_paiements'], ENT_QUOTES) ?></td>
                         </tr>

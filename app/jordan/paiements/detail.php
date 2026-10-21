@@ -61,7 +61,7 @@ if (!$isModal): ?>
                             <h3 class="form-section-title">Informations générales</h3>
                             <dl class="data-list">
                                 <dt>Montant</dt><dd><?= number_format((float)$paiement['montant'], 2, ',', ' ') ?> €</dd>
-                                <dt>Date</dt><dd><?= date('d/m/Y', strtotime($paiement['date_paiement'])) ?></dd>
+                                <dt>Date</dt><dd><?= $paiement['date_paiement'] ? date('d/m/Y', strtotime($paiement['date_paiement'])) : '—' ?></dd>
                                 <dt>Mode de paiement</dt><dd><?= htmlspecialchars($modeLabels[$paiement['mode_paiement']] ?? $paiement['mode_paiement'], ENT_QUOTES, 'UTF-8') ?></dd>
                                 <dt>Référence</dt><dd><?= htmlspecialchars($paiement['reference_transaction'] ?? '—', ENT_QUOTES, 'UTF-8') ?></dd>
                             </dl>

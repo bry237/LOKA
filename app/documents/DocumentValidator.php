@@ -117,8 +117,8 @@ final class DocumentValidator
            ============================================== */
 
         if (
-            !isset($file['tmp_name'])
-            || !is_uploaded_file($file['tmp_name'])
+            empty($file['tmp_name'])
+            || !is_file((string) $file['tmp_name'])
         ) {
             $errors[] = 'Le fichier envoyé est invalide.';
         } else {

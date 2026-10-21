@@ -74,7 +74,8 @@ require dirname(__DIR__, 3) . '/layouts/header.php';
         <div class="empty-state" style="padding:48px 20px;">
           <div class="empty-state-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg></div>
           <h4>Aucun contrat pour le moment</h4>
-          <p>Les contrats de location de vos biens apparaîtront ici dès qu'ils seront créés par votre agence.</p>
+          <p>Créez un contrat pour un de vos biens, ou attendez que votre agence en crée un.</p>
+          <a href="ajouterContrat.php" class="btn btn-primary" style="margin-top:16px;">+ Ajouter un contrat</a>
         </div>
       </div>
     <?php else: ?>
@@ -82,6 +83,7 @@ require dirname(__DIR__, 3) . '/layouts/header.php';
         <div class="panel-header">
           <div class="panel-title">Mes contrats</div>
           <span class="panel-sub" style="margin:0;"><?= count($contrats) ?> contrat(s)</span>
+          <a href="ajouterContrat.php" class="btn btn-primary" style="margin-left:auto;">+ Ajouter un contrat</a>
         </div>
         <div class="document-list">
           <?php foreach ($contrats as $c): ?>

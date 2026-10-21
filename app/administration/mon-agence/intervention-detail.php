@@ -32,6 +32,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$successMessage = 'Statut mis à jour.';
 			$intervention = MonAgenceController::interventionDetail($idAgence, $id);
 		}
+	} elseif ($action === 'assign') {
+		$idTechnicien = (int) ($_POST['id_utilisateur_assigne'] ?? 0);
+		if ($idTechnicien < 1) {
+			$errors['assign'] = 'Choisissez un technicien.';
+		} else {
+			$error = MonAgenceController::assignIntervention($idAgence, $id, $idTechnicien, (int) $currentUser['id_utilisateur']);
+			if ($error === null) {
+				$successMessage = 'Intervention assignée.';
+				$intervention = MonAgenceController::interventionDetail($idAgence, $id);
+			} else {
+				$errors['assign'] = $error;
+			}
+		}
 	} elseif ($action === 'close') {
 		$error = MonAgenceController::closeIntervention($idAgence, $id, $_POST, (int) $currentUser['id_utilisateur']);
 		if ($error === null) {
@@ -42,6 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		}
 	}
 }
+
+$techniciens = array_values(array_filter(MonAgenceModel::team($idAgence), static fn (array $m): bool => $m['role_nom'] === 'Technicien'));
 
 $icons = teamIcons();
 $priorityLabels = ['LOW' => 'Faible', 'MEDIUM' => 'Moyenne', 'HIGH' => 'Haute', 'URGENT' => 'Urgente'];
@@ -80,6 +95,9 @@ if (!$isModal) require dirname(__DIR__, 3) . '/layouts/header.php';
     <?php if (!empty($errors['compte_rendu'])): ?>
       <div class="feedback error"><?= htmlspecialchars($errors['compte_rendu'], ENT_QUOTES, 'UTF-8') ?></div>
     <?php endif; ?>
+    <?php if (!empty($errors['assign'])): ?>
+      <div class="feedback error"><?= htmlspecialchars($errors['assign'], ENT_QUOTES, 'UTF-8') ?></div>
+    <?php endif; ?>
 
     <div class="detail-grid">
       <div class="detail-col">
@@ -114,14 +132,35 @@ if (!$isModal) require dirname(__DIR__, 3) . '/layouts/header.php';
       <div class="panel">
         <div class="panel-header"><div class="panel-title">Actions</div></div>
         <div style="padding:18px;">
+          <?php if (!$isTechnicien && in_array($intervention['statut'], ['OPEN', 'ASSIGNED'], true)): ?>
+            <form method="post" action="intervention-detail.php?id=<?= $id ?>" class="form-grid full" style="padding:0;margin-bottom:16px;">
+              <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+              <?php if ($isModal): ?><input type="hidden" name="modal" value="1"><?php endif; ?>
+              <input type="hidden" name="action" value="assign">
+              <div class="form-field">
+                <label for="id_utilisateur_assigne">Assigner à un technicien</label>
+                <?php if (empty($techniciens)): ?>
+                  <p class="cell-sub" style="margin:0;">Aucun technicien dans l’équipe. Invitez-en un depuis « Équipe ».</p>
+                <?php else: ?>
+                  <select id="id_utilisateur_assigne" name="id_utilisateur_assigne" required>
+                    <option value="">— Choisir —</option>
+                    <?php foreach ($techniciens as $tech): ?>
+                      <option value="<?= (int) $tech['id_utilisateur'] ?>" <?= (int) $intervention['id_utilisateur_assigne'] === (int) $tech['id_utilisateur'] ? 'selected' : '' ?>><?= htmlspecialchars($tech['prenom'] . ' ' . $tech['nom'], ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                <?php endif; ?>
+              </div>
+              <?php if (!empty($techniciens)): ?>
+                <div class="form-actions"><button type="submit" class="btn btn-secondary"><?= $intervention['statut'] === 'ASSIGNED' ? 'Réassigner' : 'Assigner' ?></button></div>
+              <?php endif; ?>
+            </form>
+          <?php endif; ?>
+
           <?php if (!in_array($intervention['statut'], ['CLOSED', 'CANCELLED'], true)): ?>
             <form method="post" action="intervention-detail.php?id=<?= $id ?>" class="status-actions">
               <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
               <?php if ($isModal): ?><input type="hidden" name="modal" value="1"><?php endif; ?>
               <input type="hidden" name="action" value="update_status">
-              <?php if ($intervention['statut'] === 'OPEN'): ?>
-                <button type="submit" name="statut" value="ASSIGNED" class="btn btn-secondary">Assigner</button>
-              <?php endif; ?>
               <?php if (in_array($intervention['statut'], ['OPEN', 'ASSIGNED'], true)): ?>
                 <button type="submit" name="statut" value="IN_PROGRESS" class="btn btn-primary">Commencer</button>
               <?php endif; ?>

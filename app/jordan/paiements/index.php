@@ -110,7 +110,7 @@ $modeLabels = ['BANK_TRANSFER' => 'Virement', 'CARD' => 'Carte', 'CASH' => 'Esp�
                         <tbody>
                             <?php foreach ($paiements as $p): ?>
                             <tr>
-                                <td><?= date('d/m/Y', strtotime($p['date_paiement'])) ?></td>
+                                <td><?= $p['date_paiement'] ? date('d/m/Y', strtotime($p['date_paiement'])) : '—' ?></td>
                                 <td class="cell-title"><?= htmlspecialchars($p['locataire_prenom'] . ' ' . $p['locataire_nom'], ENT_QUOTES, 'UTF-8') ?></td>
                                 <td><?= htmlspecialchars($p['bien_nom'], ENT_QUOTES, 'UTF-8') ?></td>
                                 <td><?= number_format((float)$p['montant'], 2, ',', ' ') ?> €</td>

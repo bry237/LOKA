@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/core/Authorization.php';
 require_once dirname(__DIR__, 2) . '/core/Model.php';
+require_once dirname(__DIR__, 2) . '/core/Database.php';
+require_once dirname(__DIR__, 2) . '/core/UploadHelper.php';
 
 require_once __DIR__ . '/DocumentController.php';
 require_once __DIR__ . '/DocumentValidator.php';
@@ -80,11 +82,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
        Vérification du fichier
        ============================================== */
 
+    $file = UploadHelper::resolve('document') ?? [];
+
     if (empty($errors)) {
 
-        $validation = DocumentValidator::validate(
-            $_FILES['document'] ?? []
-        );
+        $validation = DocumentValidator::validate($file);
 
         if (!$validation['valid']) {
             $errors = $validation['errors'];
@@ -97,8 +99,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
        ============================================== */
 
     if (empty($errors)) {
-
-        $file = $_FILES['document'];
 
         $tmpName = $file['tmp_name'];
 
@@ -192,8 +192,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                    ---------------------------------- */
 
                 if (
-                    !move_uploaded_file(
-                        $tmpName,
+                    !UploadHelper::store(
+                        $file,
                         $destination
                     )
                 ) {
@@ -210,18 +210,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     try {
 
-                        $db = new PDO(
-                            'mysql:host=localhost;dbname=loka;charset=utf8mb4',
-                            'root',
-                            '',
-                            [
-                                PDO::ATTR_ERRMODE =>
-                                    PDO::ERRMODE_EXCEPTION,
-
-                                PDO::ATTR_DEFAULT_FETCH_MODE =>
-                                    PDO::FETCH_ASSOC
-                            ]
-                        );
+                        $db = Database::connection();
 
 
                         /*
@@ -387,7 +376,7 @@ require dirname(__DIR__, 2) . '/layouts/header.php';
         <div class="feedback success" style="margin:0 18px 14px;"><?= e($success) ?></div>
       <?php endif; ?>
 
-      <form method="POST" enctype="multipart/form-data">
+      <form method="POST" enctype="multipart/form-data" data-upload-fallback>
         <input type="hidden" name="csrf_token" value="<?= e($_SESSION['document_csrf_token']) ?>">
         <div class="form-grid full">
           <div class="form-field">
@@ -403,4 +392,5 @@ require dirname(__DIR__, 2) . '/layouts/header.php';
       </form>
     </div>
 <?php
+$extraScripts = '<script src="/LOKA/public/assets/js/upload-fallback.js"></script>';
 require dirname(__DIR__, 2) . '/layouts/footer.php';
