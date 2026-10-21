@@ -305,7 +305,9 @@
       fd.set('modal', '1');
       modalDirty = true;
       setModalContent('<div class="modal-loading"><span class="modal-spinner"></span>Enregistrement…</div>');
-      fetch(form.action, { method: (form.method || 'POST').toUpperCase(), body: fd, credentials: 'same-origin' })
+      // form.action peut être masqué par un <input name="action"> (DOM : les éléments nommés
+      // du formulaire écrasent les propriétés natives) — on lit l'attribut HTML brut à la place.
+      fetch(form.getAttribute('action'), { method: (form.method || 'POST').toUpperCase(), body: fd, credentials: 'same-origin' })
         .then(handleFragmentResponse)
         .then((html) => {
           if (html === null || token !== requestToken) return;
