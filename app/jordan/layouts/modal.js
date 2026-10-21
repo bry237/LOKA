@@ -80,15 +80,48 @@
       });
   }
 
+  // L'hébergement de production bloque (403, au niveau du reverse proxy, avant PHP) toute
+  // requête POST en multipart/form-data. On encode donc les fichiers sélectionnés en base64
+  // et on envoie tout en application/x-www-form-urlencoded — voir core/UploadHelper.php
+  // côté serveur, qui sait lire ce repli en plus de $_FILES classique.
+  function fileFieldsToBase64(form) {
+    const inputs = Array.from(form.querySelectorAll('input[type="file"]'));
+    const reads = inputs
+      .filter((input) => input.files && input.files[0])
+      .map((input) => new Promise((resolve, reject) => {
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = () => resolve([input.name, file.name, String(reader.result).split(',')[1] || '']);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      }));
+    return Promise.all(reads);
+  }
+
   function submitModalForm(form) {
     const token = ++requestToken;
-    const fd = new FormData(form);
-    fd.set('modal', '1');
     modalDirty = true;
     setModalContent('<div class="modal-loading"><span class="modal-spinner"></span>Enregistrement…</div>');
-    // form.action peut être masqué par un <input name="action"> (DOM : les éléments nommés
-    // du formulaire écrasent les propriétés natives) — on lit l'attribut HTML brut à la place.
-    fetch(form.getAttribute('action'), { method: (form.method || 'POST').toUpperCase(), body: fd, credentials: 'same-origin' })
+    fileFieldsToBase64(form)
+      .then((fileFields) => {
+        const params = new URLSearchParams();
+        new FormData(form).forEach((value, key) => {
+          if (typeof value === 'string') params.append(key, value);
+        });
+        params.set('modal', '1');
+        fileFields.forEach(([name, filename, base64]) => {
+          params.set(name + '_b64', base64);
+          params.set(name + '_name', filename);
+        });
+        // form.action peut être masqué par un <input name="action"> (DOM : les éléments nommés
+        // du formulaire écrasent les propriétés natives) — on lit l'attribut HTML brut à la place.
+        return fetch(form.getAttribute('action'), {
+          method: (form.method || 'POST').toUpperCase(),
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params.toString(),
+          credentials: 'same-origin',
+        });
+      })
       .then(handleFragmentResponse)
       .then((html) => {
         if (html === null || token !== requestToken) return;

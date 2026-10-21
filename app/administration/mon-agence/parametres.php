@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 	if ($action === 'logo') {
 		$accentColor = (string) ($_POST['couleur_accent'] ?? '');
-		$error = MonAgenceController::uploadAgencyLogo($idAgence, (int) $currentUser['id_utilisateur'], $_FILES['logo'] ?? null, $accentColor !== '' ? $accentColor : null);
+		$error = MonAgenceController::uploadAgencyLogo($idAgence, (int) $currentUser['id_utilisateur'], UploadHelper::resolve('logo'), $accentColor !== '' ? $accentColor : null);
 		if ($error === null) {
 			$successMessage = 'Logo mis à jour.';
 		} else {

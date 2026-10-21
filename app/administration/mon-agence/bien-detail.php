@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$errors['_global'] = $error;
 		}
 	} elseif ($action === 'add_photo') {
-		$error = MonAgenceController::addBienPhoto($idAgence, $id, $_FILES['photo'] ?? null, !empty($_POST['principale']), $idUtilisateur);
+		$error = MonAgenceController::addBienPhoto($idAgence, $id, UploadHelper::resolve('photo'), !empty($_POST['principale']), $idUtilisateur);
 		$successMessage = $error === null ? 'Photo ajoutée.' : '';
 		if ($error !== null) {
 			$errors['_global'] = $error;

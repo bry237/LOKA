@@ -9,6 +9,7 @@ require_once dirname(__DIR__, 3) . '/core/SubscriptionLimiter.php';
 require_once dirname(__DIR__, 3) . '/core/Phone.php';
 require_once dirname(__DIR__, 3) . '/core/StripeClient.php';
 require_once dirname(__DIR__, 3) . '/core/Color.php';
+require_once dirname(__DIR__, 3) . '/core/UploadHelper.php';
 
 final class MonAgenceController
 {
@@ -319,7 +320,7 @@ final class MonAgenceController
 
 		$storedName = bin2hex(random_bytes(16)) . '.' . self::BIEN_PHOTO_ALLOWED_MIMES[$mimeType];
 		$destination = $destinationDir . DIRECTORY_SEPARATOR . $storedName;
-		if (!move_uploaded_file($file['tmp_name'], $destination)) {
+		if (!UploadHelper::store($file, $destination)) {
 			return 'Impossible d’enregistrer la photo envoyée.';
 		}
 
@@ -1772,7 +1773,7 @@ HTML;
 		$storedName = bin2hex(random_bytes(16)) . '.' . self::DOCUMENT_ALLOWED_MIMES[$mimeType];
 		$destination = $destinationDir . DIRECTORY_SEPARATOR . $storedName;
 
-		if (!move_uploaded_file($file['tmp_name'], $destination)) {
+		if (!UploadHelper::store($file, $destination)) {
 			return ['_global' => 'Impossible d’enregistrer le fichier envoyé.'];
 		}
 
@@ -1927,7 +1928,7 @@ HTML;
 		}
 
 		$storedName = bin2hex(random_bytes(16)) . '.' . self::LOGO_ALLOWED_MIMES[$mimeType];
-		if (!move_uploaded_file($file['tmp_name'], $destinationDir . DIRECTORY_SEPARATOR . $storedName)) {
+		if (!UploadHelper::store($file, $destinationDir . DIRECTORY_SEPARATOR . $storedName)) {
 			return 'Impossible d’enregistrer le fichier envoyé.';
 		}
 

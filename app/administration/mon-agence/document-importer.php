@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	};
 	$values['entity_id'] = $entityColumn !== null ? (string) ($_POST[$entityColumn] ?? '') : '';
 
-	$errors = MonAgenceController::createDocument($idAgence, $_POST, $_FILES['fichier'] ?? null);
+	$errors = MonAgenceController::createDocument($idAgence, $_POST, UploadHelper::resolve('fichier'));
 	if (!$errors) {
 		header('Location: documents.php?success=' . urlencode('Document importé.') . ($isModal ? '&modal=1' : ''));
 		exit;

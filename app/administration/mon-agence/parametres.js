@@ -10,22 +10,42 @@
 
     var reader = new FileReader();
     reader.onload = function (e) {
+      var dataUrl = e.target.result;
       var img = new Image();
       img.onload = function () {
         var hex = extractDominantColor(img);
         if (hex) colorField.value = hex;
-        submitForm();
+        submitForm(file.name, dataUrl.split(',')[1] || '');
       };
-      img.onerror = submitForm;
-      img.src = e.target.result;
+      img.onerror = function () { submitForm(file.name, dataUrl.split(',')[1] || ''); };
+      img.src = dataUrl;
     };
-    reader.onerror = submitForm;
+    reader.onerror = function () { submitForm(file.name, ''); };
     reader.readAsDataURL(file);
   });
 
-  function submitForm() {
+  // L'hébergement de production bloque (403, au niveau du reverse proxy, avant PHP) toute
+  // requête POST en multipart/form-data. On encode donc le logo en base64 dans des champs
+  // cachés et on soumet le formulaire en application/x-www-form-urlencoded (son encodage par
+  // défaut) plutôt qu'en multipart — voir core/UploadHelper.php côté serveur.
+  function submitForm(filename, base64) {
+    setHiddenField('logo_b64', base64);
+    setHiddenField('logo_name', filename);
+    input.removeAttribute('name');
+    form.removeAttribute('enctype');
     if (form.requestSubmit) form.requestSubmit();
     else form.submit();
+  }
+
+  function setHiddenField(name, value) {
+    var field = form.querySelector('input[name="' + name + '"]');
+    if (!field) {
+      field = document.createElement('input');
+      field.type = 'hidden';
+      field.name = name;
+      form.appendChild(field);
+    }
+    field.value = value;
   }
 
   // Couleur la plus fréquente parmi les pixels opaques, hors quasi-blanc/quasi-noir (fonds de
