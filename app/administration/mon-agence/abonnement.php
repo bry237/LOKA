@@ -24,18 +24,15 @@ if (($_GET['success'] ?? '') === '1') {
 	$planJustConfirmed = true; // changement de plan gratuit, déjà appliqué par checkout.php
 }
 
-$subscription = MonAgenceModel::subscription($idAgence);
-$plans = AbonnementModel::activePlans();
+$subscription = AbonnementModel::activeSubscription($idAgence);
 $usage = SubscriptionLimiter::usage($idAgence);
 
-// Le catalogue contient aussi d'anciens plans créés pour tester l'intégration Stripe (noms et
-// descriptions de test). On ne les affiche pas ici : présentation uniquement, rien n'est modifié
-// en base — un administrateur peut les désactiver proprement depuis la gestion des abonnements.
-$catalogPlanNames = ['Gratuit', 'Pro', 'Max'];
-$plans = array_values(array_filter(
-	$plans,
-	static fn (array $p): bool => in_array($p['nom'], $catalogPlanNames, true) || ($subscription && $p['nom'] === $subscription['nom'])
-));
+// Formules proposées à l'agence : tout plan actif du catalogue, plus son plan actuel même s'il
+// a été désactivé depuis (pour ne pas faire disparaître la formule en cours sous ses pieds).
+$plans = AbonnementModel::activePlans();
+if ($subscription && !in_array($subscription['id_abonnement'], array_column($plans, 'id_abonnement'), true)) {
+	$plans[] = $subscription;
+}
 
 $pageTitle = 'Abonnement';
 $activeNav = 'Abonnement';
