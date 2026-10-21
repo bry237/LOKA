@@ -53,16 +53,14 @@ require dirname(__DIR__, 3) . '/layouts/header.php';
                   <td class="cell-sub"><?= number_format((float) $q['montant'], 2, ',', ' ') ?> €</td>
                   <td class="cell-sub"><?= (new DateTimeImmutable($q['date_emission']))->format('d/m/Y') ?></td>
                   <td style="display:flex;gap:14px;align-items:center;">
-                    <?php if ($q['chemin_fichier_pdf']): ?>
-                      <a class="consult-link" href="quittance-document.php?id=<?= (int) $q['id_quittance'] ?>" target="_blank" rel="noopener">
-                        Voir le document
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
-                      </a>
-                      <a class="consult-link" href="quittance-document.php?id=<?= (int) $q['id_quittance'] ?>&download=1">
-                        Télécharger
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 11 12 16 17 11"/><path d="M5 21h14"/></svg>
-                      </a>
-                    <?php endif; ?>
+                    <a class="consult-link" href="quittance-document.php?id=<?= (int) $q['id_quittance'] ?>" target="_blank" rel="noopener">
+                      Voir le document
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+                    </a>
+                    <a class="consult-link" href="quittance-document.php?id=<?= (int) $q['id_quittance'] ?>&download=1">
+                      Télécharger
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 11 12 16 17 11"/><path d="M5 21h14"/></svg>
+                    </a>
                   </td>
                 </tr>
               <?php endforeach; ?>
